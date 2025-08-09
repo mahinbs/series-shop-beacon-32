@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import React from 'react';
 import { 
   Home, 
   BookOpen, 
@@ -20,7 +19,6 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 
@@ -95,166 +93,123 @@ export function AdminSidebar({ selectedPage, onPageSelect }: AdminSidebarProps) 
   
   const getNavClass = (pageId: string) =>
     isActive(pageId) 
-      ? "bg-primary text-primary-foreground hover:bg-primary/90" 
-      : "hover:bg-muted/80 text-muted-foreground hover:text-foreground";
+      ? "bg-primary/10 text-primary border-l-2 border-primary" 
+      : "hover:bg-muted/50 text-muted-foreground hover:text-foreground";
 
   return (
     <Sidebar 
       className={`
-        ${collapsed ? "w-16" : "w-72"} 
-        border-r bg-gradient-to-b from-background to-muted/20 
-        transition-all duration-300 ease-in-out
-        flex-shrink-0
+        ${collapsed ? "w-16" : "w-64"} 
+        border-r transition-all duration-300 ease-in-out
+        flex-shrink-0 overflow-hidden
       `} 
       collapsible="icon"
     >
-      
-      <SidebarContent className="px-2">
-        <SidebarGroup className="py-4">
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-4 mb-3 uppercase tracking-wide">
-            {!collapsed && "Pages"}
-          </SidebarGroupLabel>
-          
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              {adminPages.map((page) => {
-                const Icon = page.icon;
-                return (
-                  <SidebarMenuItem key={page.id}>
-                    <SidebarMenuButton 
-                      asChild 
-                      className={`
-                        ${getNavClass(page.id)} 
-                        rounded px-3 py-2
-                      `}
-                    >
-                      <button
+      <SidebarContent className="p-0 overflow-hidden">
+        <div className="p-4 space-y-4">
+          {/* Admin Pages Section */}
+          <SidebarGroup>
+            <SidebarGroupLabel className={`
+              px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground
+              ${collapsed ? "sr-only" : "block"}
+            `}>
+              Administration
+            </SidebarGroupLabel>
+            
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1 mt-2">
+                {adminPages.map((page) => {
+                  const Icon = page.icon;
+                  return (
+                    <SidebarMenuItem key={page.id}>
+                      <SidebarMenuButton
                         onClick={() => onPageSelect(page.id)}
-                        className="w-full text-left flex items-center gap-3"
+                        className={`
+                          w-full h-10 px-2 flex items-center gap-3 rounded-md
+                          transition-colors duration-200
+                          ${getNavClass(page.id)}
+                          ${collapsed ? "justify-center" : "justify-start"}
+                          overflow-hidden
+                        `}
+                        title={collapsed ? page.title : undefined}
                       >
-                        <Icon className="h-4 w-4" />
-                        {!collapsed && <span className="truncate">{page.title}</span>}
-                      </button>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                        <Icon className="h-4 w-4 flex-shrink-0" />
+                        {!collapsed && (
+                          <span className="text-sm font-medium truncate min-w-0 flex-1">
+                            {page.title}
+                          </span>
+                        )}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
-        {/* Enhanced Quick Actions Section */}
-        <SidebarGroup className="py-4 border-t border-border/50">
-          <SidebarGroupLabel className="text-xs font-semibold text-muted-foreground px-4 mb-3 uppercase tracking-wide">
-            {!collapsed && "Quick Actions"}
-          </SidebarGroupLabel>
-          
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`
-                    ${getNavClass('hero-banners')} 
-                    transition-all duration-200 ease-in-out
-                    hover:shadow-sm hover:bg-accent/80
-                    ${isActive('hero-banners') ? 'shadow-md bg-primary text-primary-foreground hover:bg-primary/90' : ''}
-                    rounded-lg mx-2 mb-1 border border-transparent
-                    ${isActive('hero-banners') ? 'border-primary/20' : 'hover:border-accent'}
-                  `}
-                >
-                  <button
+          {/* Quick Actions Section - moved into main pages */}
+          <SidebarGroup>
+            <SidebarGroupLabel className={`
+              px-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground
+              ${collapsed ? "sr-only" : "block"}
+            `}>
+              Quick Actions
+            </SidebarGroupLabel>
+            
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-1 mt-2">
+                <SidebarMenuItem>
+                  <SidebarMenuButton
                     onClick={() => onPageSelect('hero-banners')}
-                    className="w-full flex items-center gap-3 px-3 py-3 text-left group"
+                    className={`
+                      w-full h-10 px-2 flex items-center gap-3 rounded-md
+                      transition-colors duration-200
+                      ${getNavClass('hero-banners')}
+                      ${collapsed ? "justify-center" : "justify-start"}
+                      overflow-hidden
+                    `}
+                    title={collapsed ? "Hero Banners" : undefined}
                   >
-                    <Image className={`
-                      h-5 w-5 flex-shrink-0 transition-transform duration-200
-                      ${isActive('hero-banners') ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground'}
-                      group-hover:scale-110
-                    `} />
+                    <Image className="h-4 w-4 flex-shrink-0" />
                     {!collapsed && (
-                      <div className="flex-1 min-w-0">
-                        <div className={`
-                          font-medium text-sm truncate
-                          ${isActive('hero-banners') ? 'text-primary-foreground' : 'text-foreground'}
-                        `}>
-                          Hero Banners
-                        </div>
-                        <div className={`
-                          text-xs mt-0.5 truncate
-                          ${isActive('hero-banners') ? 'text-primary-foreground/80' : 'text-muted-foreground'}
-                        `}>
-                          Manage carousel banners
-                        </div>
-                      </div>
+                      <span className="text-sm font-medium truncate min-w-0 flex-1">
+                        Hero Banners
+                      </span>
                     )}
-                    {!collapsed && isActive('hero-banners') && (
-                      <div className="w-2 h-2 rounded-full bg-primary-foreground animate-pulse" />
-                    )}
-                  </button>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              
-              <SidebarMenuItem>
-                <SidebarMenuButton 
-                  asChild 
-                  className={`
-                    ${getNavClass('books-management')} 
-                    transition-all duration-200 ease-in-out
-                    hover:shadow-sm hover:bg-accent/80
-                    ${isActive('books-management') ? 'shadow-md bg-primary text-primary-foreground hover:bg-primary/90' : ''}
-                    rounded-lg mx-2 mb-1 border border-transparent
-                    ${isActive('books-management') ? 'border-primary/20' : 'hover:border-accent'}
-                  `}
-                >
-                  <button
-                    onClick={() => onPageSelect('books-management')}
-                    className="w-full flex items-center gap-3 px-3 py-3 text-left group"
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => onPageSelect('announcements-management')}
+                    className={`
+                      w-full h-10 px-2 flex items-center gap-3 rounded-md
+                      transition-colors duration-200
+                      ${getNavClass('announcements-management')}
+                      ${collapsed ? "justify-center" : "justify-start"}
+                      overflow-hidden
+                    `}
+                    title={collapsed ? "Announcements" : undefined}
                   >
-                    <BookOpen className={`
-                      h-5 w-5 flex-shrink-0 transition-transform duration-200
-                      ${isActive('books-management') ? 'text-primary-foreground' : 'text-muted-foreground group-hover:text-foreground'}
-                      group-hover:scale-110
-                    `} />
+                    <Megaphone className="h-4 w-4 flex-shrink-0" />
                     {!collapsed && (
-                      <div className="flex-1 min-w-0">
-                        <div className={`
-                          font-medium text-sm truncate
-                          ${isActive('books-management') ? 'text-primary-foreground' : 'text-foreground'}
-                        `}>
-                          Books Management
-                        </div>
-                        <div className={`
-                          text-xs mt-0.5 truncate
-                          ${isActive('books-management') ? 'text-primary-foreground/80' : 'text-muted-foreground'}
-                        `}>
-                          Add books below home banner
-                        </div>
-                      </div>
+                      <span className="text-sm font-medium truncate min-w-0 flex-1">
+                        Announcements
+                      </span>
                     )}
-                    {!collapsed && isActive('books-management') && (
-                      <div className="w-2 h-2 rounded-full bg-primary-foreground animate-pulse" />
-                    )}
-                  </button>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        </div>
 
         {/* Brand/Logo Area */}
         {!collapsed && (
-          <div className="mt-auto mb-4 px-4">
-            <div className="rounded-lg bg-gradient-to-r from-primary/10 to-primary/5 p-3 border border-primary/10">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center">
-                  <Settings className="h-4 w-4 text-primary" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium">CMS Dashboard</div>
-                  <div className="text-xs text-muted-foreground">v1.0</div>
-                </div>
-              </div>
+          <div className="mt-auto p-4 border-t">
+            <div className="text-center space-y-1">
+              <p className="text-xs font-medium text-muted-foreground">CMS Dashboard</p>
+              <p className="text-xs text-muted-foreground/70">v2.1.0</p>
             </div>
           </div>
         )}
