@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { User, Session } from '@supabase/supabase-js';
@@ -16,10 +17,14 @@ interface AuthContextType {
   session: Session | null;
   isLoading: boolean;
   isAdmin: boolean;
+  // Alias fields for legacy code
+  isAuthenticated: boolean;
+  logout: () => Promise<void>;
   signUp: (email: string, password: string, fullName?: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-  updateProfile: (updates: Partial<Profile>) => Promise<void>;
+  // Accept legacy name/avatar keys and map them internally
+  updateProfile: (updates: Partial<Profile> & { name?: string; avatar?: string }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -176,17 +181,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) throw error;
   };
 
-  const updateProfile = async (updates: Partial<Profile>) => {
+  const updateProfile = async (updates: Partial<Profile> & { name?: string; avatar?: string }) => {
     if (!user || !profile) throw new Error('No user logged in');
+
+    // Map legacy keys to current schema
+    const mapped: Partial<Profile> = { ...updates };
+    if (Object.prototype.hasOwnProperty.call(updates, 'name')) {
+      (mapped as any).full_name = updates.name ?? null;
+      delete (mapped as any).name;
+    }
+    if (Object.prototype.hasOwnProperty.call(updates, 'avatar')) {
+      (mapped as any).avatar_url = updates.avatar ?? null;
+      delete (mapped as any).avatar;
+    }
 
     const { error } = await supabase
       .from('profiles')
-      .update(updates)
+      .update(mapped)
       .eq('user_id', user.id);
 
     if (error) throw error;
 
-    setProfile({ ...profile, ...updates });
+    // Update local state
+    setProfile({ ...profile, ...mapped });
   };
 
   return (
@@ -196,6 +213,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       session,
       isLoading,
       isAdmin,
+      isAuthenticated: !!user,
+      logout: signOut,
       signUp,
       signIn,
       signOut,

@@ -7,393 +7,240 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instanciate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "13.0.4"
+  }
   public: {
     Tables: {
-      books: {
+      announcements: {
         Row: {
-          id: string
-          title: string
-          author: string | null
-          category: string
-          product_type: 'book' | 'merchandise' | 'digital' | 'other'
-          price: number
-          original_price: number | null
-          coins: string | null
-          image_url: string
-          hover_image_url: string | null
-          description: string | null
-          can_unlock_with_coins: boolean
-          section_type: 'new-releases' | 'best-sellers' | 'leaving-soon' | 'featured' | 'trending'
-          label: string | null
-          is_new: boolean
-          is_on_sale: boolean
-          display_order: number
-          is_active: boolean
-          stock_quantity: number | null
-          sku: string | null
-          weight: number | null
-          dimensions: string | null
-          tags: string[] | null
+          content: string
           created_at: string
+          display_order: number
+          id: string
+          image_url: string | null
+          is_active: boolean
+          title: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          title: string
-          author?: string | null
-          category: string
-          product_type?: 'book' | 'merchandise' | 'digital' | 'other'
-          price: number
-          original_price?: number | null
-          coins?: string | null
-          image_url: string
-          hover_image_url?: string | null
-          description?: string | null
-          can_unlock_with_coins?: boolean
-          section_type: 'new-releases' | 'best-sellers' | 'leaving-soon' | 'featured' | 'trending'
-          label?: string | null
-          is_new?: boolean
-          is_on_sale?: boolean
-          display_order?: number
-          is_active?: boolean
-          stock_quantity?: number | null
-          sku?: string | null
-          weight?: number | null
-          dimensions?: string | null
-          tags?: string[] | null
+          content: string
           created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          title: string
           updated_at?: string
         }
         Update: {
-          id?: string
-          title?: string
-          author?: string | null
-          category?: string
-          product_type?: 'book' | 'merchandise' | 'digital' | 'other'
-          price?: number
-          original_price?: number | null
-          coins?: string | null
-          image_url?: string
-          hover_image_url?: string | null
-          description?: string | null
-          can_unlock_with_coins?: boolean
-          section_type?: 'new-releases' | 'best-sellers' | 'leaving-soon' | 'featured' | 'trending'
-          label?: string | null
-          is_new?: boolean
-          is_on_sale?: boolean
-          display_order?: number
-          is_active?: boolean
-          stock_quantity?: number | null
-          sku?: string | null
-          weight?: number | null
-          dimensions?: string | null
-          tags?: string[] | null
+          content?: string
           created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          title?: string
           updated_at?: string
         }
+        Relationships: []
+      }
+      books: {
+        Row: {
+          author: string | null
+          can_unlock_with_coins: boolean
+          category: string
+          coins: string | null
+          created_at: string
+          description: string | null
+          dimensions: string | null
+          display_order: number | null
+          hover_image_url: string | null
+          id: string
+          image_url: string
+          is_active: boolean
+          is_new: boolean | null
+          is_on_sale: boolean | null
+          label: string | null
+          original_price: number | null
+          price: number
+          product_type: string | null
+          section_type: string
+          sku: string | null
+          stock_quantity: number | null
+          tags: string[] | null
+          title: string
+          updated_at: string
+          weight: number | null
+        }
+        Insert: {
+          author?: string | null
+          can_unlock_with_coins?: boolean
+          category: string
+          coins?: string | null
+          created_at?: string
+          description?: string | null
+          dimensions?: string | null
+          display_order?: number | null
+          hover_image_url?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean
+          is_new?: boolean | null
+          is_on_sale?: boolean | null
+          label?: string | null
+          original_price?: number | null
+          price: number
+          product_type?: string | null
+          section_type: string
+          sku?: string | null
+          stock_quantity?: number | null
+          tags?: string[] | null
+          title: string
+          updated_at?: string
+          weight?: number | null
+        }
+        Update: {
+          author?: string | null
+          can_unlock_with_coins?: boolean
+          category?: string
+          coins?: string | null
+          created_at?: string
+          description?: string | null
+          dimensions?: string | null
+          display_order?: number | null
+          hover_image_url?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean
+          is_new?: boolean | null
+          is_on_sale?: boolean | null
+          label?: string | null
+          original_price?: number | null
+          price?: number
+          product_type?: string | null
+          section_type?: string
+          sku?: string | null
+          stock_quantity?: number | null
+          tags?: string[] | null
+          title?: string
+          updated_at?: string
+          weight?: number | null
+        }
+        Relationships: []
       }
       hero_banners: {
         Row: {
-          id: string
-          title: string
-          subtitle: string
-          image_url: string
-          display_order: number
-          is_active: boolean
           created_at: string
+          display_order: number
+          id: string
+          image_url: string
+          is_active: boolean
+          subtitle: string
+          title: string
           updated_at: string
         }
         Insert: {
-          id?: string
-          title: string
-          subtitle: string
-          image_url: string
-          display_order?: number
-          is_active?: boolean
           created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+          is_active?: boolean
+          subtitle: string
+          title: string
           updated_at?: string
         }
         Update: {
+          created_at?: string
+          display_order?: number
           id?: string
-          title?: string
-          subtitle?: string
           image_url?: string
-          display_order?: number
           is_active?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      announcements: {
-        Row: {
-          id: string
-          title: string
-          content: string
-          image_url: string | null
-          is_active: boolean
-          display_order: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          title: string
-          content: string
-          image_url?: string | null
-          is_active?: boolean
-          display_order?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
+          subtitle?: string
           title?: string
-          content?: string
-          image_url?: string | null
-          is_active?: boolean
-          display_order?: number
-          created_at?: string
           updated_at?: string
         }
-      }
-      profiles: {
-        Row: {
-          id: string
-          user_id: string
-          email: string | null
-          full_name: string | null
-          avatar_url: string | null
-          phone: string | null
-          address: string | null
-          city: string | null
-          state: string | null
-          zip_code: string | null
-          country: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          email?: string | null
-          full_name?: string | null
-          avatar_url?: string | null
-          phone?: string | null
-          address?: string | null
-          city?: string | null
-          state?: string | null
-          zip_code?: string | null
-          country?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          email?: string | null
-          full_name?: string | null
-          avatar_url?: string | null
-          phone?: string | null
-          address?: string | null
-          city?: string | null
-          state?: string | null
-          zip_code?: string | null
-          country?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      user_roles: {
-        Row: {
-          id: string
-          user_id: string
-          role: 'admin' | 'user'
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          role?: 'admin' | 'user'
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          role?: 'admin' | 'user'
-          created_at?: string
-        }
-      }
-      cart_items: {
-        Row: {
-          id: string
-          user_id: string
-          product_id: string
-          quantity: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          product_id: string
-          quantity?: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          product_id?: string
-          quantity?: number
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      orders: {
-        Row: {
-          id: string
-          user_id: string
-          order_number: string
-          status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
-          subtotal: number
-          tax: number
-          shipping: number
-          discount: number
-          total: number
-          shipping_address: Json | null
-          billing_address: Json | null
-          payment_method: string | null
-          payment_status: 'pending' | 'paid' | 'failed' | 'refunded'
-          notes: string | null
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          user_id: string
-          order_number: string
-          status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
-          subtotal: number
-          tax?: number
-          shipping?: number
-          discount?: number
-          total: number
-          shipping_address?: Json | null
-          billing_address?: Json | null
-          payment_method?: string | null
-          payment_status?: 'pending' | 'paid' | 'failed' | 'refunded'
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string
-          order_number?: string
-          status?: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled'
-          subtotal?: number
-          tax?: number
-          shipping?: number
-          discount?: number
-          total?: number
-          shipping_address?: Json | null
-          billing_address?: Json | null
-          payment_method?: string | null
-          payment_status?: 'pending' | 'paid' | 'failed' | 'refunded'
-          notes?: string | null
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      order_items: {
-        Row: {
-          id: string
-          order_id: string
-          product_id: string
-          product_title: string
-          product_author: string | null
-          product_image_url: string | null
-          quantity: number
-          unit_price: number
-          total_price: number
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          order_id: string
-          product_id: string
-          product_title: string
-          product_author?: string | null
-          product_image_url?: string | null
-          quantity: number
-          unit_price: number
-          total_price: number
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          order_id?: string
-          product_id?: string
-          product_title?: string
-          product_author?: string | null
-          product_image_url?: string | null
-          quantity?: number
-          unit_price?: number
-          total_price?: number
-          created_at?: string
-        }
-      }
-      user_sessions: {
-        Row: {
-          id: string
-          user_id: string | null
-          session_token: string
-          cart_data: Json | null
-          expires_at: string
-          created_at: string
-        }
-        Insert: {
-          id?: string
-          user_id?: string | null
-          session_token: string
-          cart_data?: Json | null
-          expires_at: string
-          created_at?: string
-        }
-        Update: {
-          id?: string
-          user_id?: string | null
-          session_token?: string
-          cart_data?: Json | null
-          expires_at?: string
-          created_at?: string
-        }
+        Relationships: []
       }
       page_sections: {
         Row: {
+          content: Json
+          created_at: string
           id: string
           page_name: string
           section_name: string
-          content: Json
-          created_at: string
           updated_at: string
         }
         Insert: {
+          content?: Json
+          created_at?: string
           id?: string
           page_name: string
           section_name: string
-          content?: Json
-          created_at?: string
           updated_at?: string
         }
         Update: {
+          content?: Json
+          created_at?: string
           id?: string
           page_name?: string
           section_name?: string
-          content?: Json
-          created_at?: string
           updated_at?: string
         }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -403,21 +250,13 @@ export type Database = {
       has_role: {
         Args: {
           _user_id: string
-          _role: 'admin' | 'user'
+          _role: Database["public"]["Enums"]["app_role"]
         }
         Returns: boolean
       }
-      update_updated_at_column: {
-        Args: Record<PropertyKey, never>
-        Returns: unknown
-      }
-      generate_order_number: {
-        Args: Record<PropertyKey, never>
-        Returns: string
-      }
     }
     Enums: {
-      app_role: 'admin' | 'user'
+      app_role: "admin" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -544,6 +383,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["admin", "user"],
+    },
   },
 } as const

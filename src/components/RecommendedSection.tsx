@@ -1,362 +1,93 @@
-import { Button } from '@/components/ui/button';
-import { Diamond, ShoppingCart, Sword, Sparkles, Zap, Ghost, Laugh, Crown, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
-import { useScrollAnimation } from '@/hooks/useScrollAnimation';
-import { useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
-import { useRecommendations } from '@/hooks/useRecommendations';
+import React from 'react';
+import { Book } from '@/components/ui/Book';
+import { SectionTitle } from '@/components/ui/SectionTitle';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { Book as BookType } from '@/types';
 import { useCart } from '@/hooks/useCart';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 
-const RecommendedSection = () => {
-  const { elementRef, isVisible } = useScrollAnimation(0.1);
-  const navigate = useNavigate();
+const RecommendedSection = (props: any) => {
+  const [books, setBooks] = useState<BookType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { addToCart } = useCart();
-  const [showGenres, setShowGenres] = useState(false);
-  const [activeSection, setActiveSection] = useState<'recommended' | 'genres'>('recommended');
-  const [currentPage, setCurrentPage] = useState(0);
-  const [activeFilter, setActiveFilter] = useState<'digital' | 'merchandise'>('digital');
-  const { recommendations, loading, isPersonalized } = useRecommendations();
-  
-  const itemsPerPage = 4;
-  
-  // Filter recommendations based on active filter
-  const filteredRecommendations = recommendations.filter(item => {
-    const matches = (() => {
-      switch (activeFilter) {
-        case 'digital':
-          return item.type === 'Digital';
-        case 'merchandise':
-          return item.type === 'Merchandise';
-        default:
-          return true;
-      }
-    })();
-    
-    // Debug logging
-    if (process.env.NODE_ENV === 'development') {
-      console.log(`Filtering item: ${item.title} (type: ${item.type}) for filter: ${activeFilter} - matches: ${matches}`);
-    }
-    
-    return matches;
-  });
-  
-  const totalPages = Math.ceil(filteredRecommendations.length / itemsPerPage);
-  const currentItems = filteredRecommendations.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
-  const genres = [
-    { name: 'SLICE OF LIFE', imageUrl: '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png', filter: 'slice-of-life' },
-    { name: 'DRAMA', imageUrl: '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png', filter: 'drama' },
-    { name: 'HIGH SCHOOL ROMANCE', imageUrl: '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png', filter: 'romance' },
-    { name: 'FANTASY', imageUrl: '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png', filter: 'fantasy' },
-    { name: 'ACTION TALES', imageUrl: '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png', filter: 'action' }
-  ];
-
-  const handleGenreClick = (filter: string) => {
-    navigate(`/shop-all?genre=${filter}`);
-  };
-
-  const nextPage = () => {
-    if (currentPage < totalPages - 1) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const prevPage = () => {
-    if (currentPage > 0) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const viewAll = () => {
-    navigate(`/shop-all?recommended=true&filter=${activeFilter}`);
-  };
-
-  // Reset current page when filter changes
   useEffect(() => {
-    setCurrentPage(0);
-  }, [activeFilter]);
+    const fetchBooks = async () => {
+      setIsLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('books')
+          .select('*')
+          .eq('section_type', 'new-releases')
+          .eq('is_active', true)
+          .order('display_order', { ascending: true })
+          .limit(5);
 
-  const handleAddToCart = (e: React.MouseEvent, item: any) => {
-    e.stopPropagation();
-    
-    const cartItem = {
-      id: item.id,
-      title: item.title,
-      author: item.author || 'Unknown Author',
-      price: typeof item.price === 'string' ? parseFloat(item.price.replace('$', '')) : item.price,
-      originalPrice: item.originalPrice ? (typeof item.originalPrice === 'string' ? parseFloat(item.originalPrice.replace('$', '')) : item.originalPrice) : undefined,
-      imageUrl: item.imageUrl || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png',
-      category: item.genre?.[0] || 'General',
-      product_type: item.type === 'Digital' ? 'book' : item.type === 'Merchandise' ? 'merchandise' : 'book',
-      inStock: true,
-      coins: item.coins,
-      canUnlockWithCoins: false
+        if (error) {
+          console.error("Error fetching books:", error);
+          toast.error("Failed to load recommended books.");
+        }
+
+        if (data) {
+          setBooks(data);
+        }
+      } finally {
+        setIsLoading(false);
+      }
     };
-    
-    addToCart(cartItem);
+
+    fetchBooks();
+  }, []);
+
+  const handleAddToCart = async (book: BookType) => {
+    try {
+      if (!book?.id) {
+        toast.error("This book does not have a valid ID.");
+        return;
+      }
+
+      const normalizeProductType = (t: any) =>
+        (['book', 'merchandise', 'digital', 'other'].includes(t) ? t : 'book') as 'book' | 'merchandise' | 'digital' | 'other';
+
+      await addToCart({ ...book, product_type: normalizeProductType(book.product_type) });
+      toast.success(`${book.title} added to cart!`);
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast.error("Failed to add to cart. Please try again.");
+    }
   };
 
-  const handleBuyNow = (e: React.MouseEvent, item: any) => {
-    e.stopPropagation();
-    
-    // First add to cart
-    handleAddToCart(e, item);
-    
-    // Then navigate to cart
-    navigate('/cart');
-  };
+  const normalizeProductType = (t: any) =>
+    (['book', 'merchandise', 'digital', 'other'].includes(t) ? t : 'book') as 'book' | 'merchandise' | 'digital' | 'other';
 
   return (
-    <section 
-      id="featured-series"
-      ref={elementRef}
-      className={`relative bg-gradient-to-br from-gray-800 via-gray-850 to-gray-900 py-12 overflow-hidden transition-all duration-1000 transform ${
-        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-      }`}
-    >
-      {/* Enhanced background decoration */}
-      <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-10 left-1/4 w-64 h-64 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-10 right-1/4 w-48 h-48 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full blur-3xl animate-pulse" style={{animationDelay: '1.5s'}}></div>
-      </div>
-
-      <div className="container mx-auto px-4 relative z-10">
-        <div className={`flex items-center justify-between mb-8 transition-all duration-1000 delay-200 transform ${
-          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
-        }`}>
-          <div className="flex items-center space-x-6">
-              <div>
-                <h2 className="text-3xl font-bold text-white mb-2">
-                  <span 
-                    onClick={() => setActiveSection('recommended')}
-                    className={`cursor-pointer hover:opacity-80 transition-all duration-300 relative ${
-                      activeSection === 'recommended' 
-                        ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-400 bg-clip-text text-transparent after:content-[""] after:absolute after:bottom-[-8px] after:left-0 after:w-full after:h-1 after:bg-gradient-to-r after:from-red-600 after:via-red-500 after:to-red-400 after:rounded-full' 
-                        : 'text-white'
-                    }`}
-                  >
-                    {isPersonalized ? 'Recommended For You' : 'Popular Recommendations'}
-                  </span>
-                  <span className="text-white text-3xl font-bold ml-4">|</span>
-                  <span 
-                    onClick={() => setActiveSection('genres')}
-                    className={`ml-4 cursor-pointer hover:opacity-80 transition-all duration-300 relative ${
-                      activeSection === 'genres' 
-                        ? 'bg-gradient-to-r from-red-600 via-red-500 to-red-400 bg-clip-text text-transparent after:content-[""] after:absolute after:bottom-[-8px] after:left-0 after:w-full after:h-1 after:bg-gradient-to-r after:from-red-600 after:via-red-500 after:to-red-400 after:rounded-full' 
-                        : 'text-white'
-                    }`}
-                  >
-                    Genres
-                  </span>
-                </h2>
-                <div className="flex items-center space-x-4">
-                  <p className="text-gray-400">
-                    {activeSection === 'recommended' 
-                      ? (isPersonalized ? 'Curated picks based on your interests' : 'Popular titles everyone loves')
-                      : 'Discover your favorite genres'
-                    }
-                  </p>
-                  {isPersonalized && (
-                    <span className="bg-gradient-to-r from-green-600 to-green-700 text-white text-xs font-bold px-2 py-1 rounded-full">
-                      PERSONALIZED
-                    </span>
-                  )}
-                </div>
-              </div>
-          </div>
-          <div className="flex space-x-4">
-            <button 
-              onClick={() => setActiveFilter('digital')}
-              className={`group px-6 py-3 rounded-lg text-sm font-semibold shadow-lg transition-all duration-300 ${
-                activeFilter === 'digital'
-                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 hover:shadow-red-500/25'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
-              }`}
-            >
-              <span className="relative z-10">Digital</span>
-            </button>
-            <button 
-              onClick={() => setActiveFilter('merchandise')}
-              className={`group px-6 py-3 rounded-lg text-sm font-semibold shadow-lg transition-all duration-300 ${
-                activeFilter === 'merchandise'
-                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 hover:shadow-red-500/25'
-                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
-              }`}
-            >
-              <span className="relative z-10">Merchandise</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Conditional Content Based on Active Section */}
-        {activeSection === 'genres' ? (
-          <div className={`space-y-8 transition-all duration-500 transform ${
-            isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'
-          }`}>
-            {genres.map((genre, genreIndex) => (
-              <div key={genre.name} className="bg-black rounded-xl p-6 border border-gray-700/50">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold text-white tracking-wider">{genre.name}</h3>
-            <Button 
-              onClick={() => handleGenreClick(genre.filter)}
-              className="bg-white text-black hover:bg-gray-100 hover:text-black transition-all duration-300"
-            >
-              View All
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {currentItems.slice(0, 4).map((item, index) => (
-              <div 
-                key={item.id} 
-                className="group bg-gradient-to-br from-gray-900 to-gray-950 rounded-xl overflow-hidden hover:from-gray-850 hover:to-gray-900 transition-all duration-500 transform hover:scale-105 border border-gray-700/50 hover:border-purple-500/30"
+    <section className="container py-8">
+      <SectionTitle title="New Releases" />
+      {isLoading ? (
+        <p>Loading...</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+          {books.map((book) => (
+            <div key={book.id}>
+              <Book
+                key={book.id}
+                title={book.title}
+                author={book.author || 'Unknown'}
+                price={book.price}
+                imageUrl={book.image_url}
+              />
+              <Button
+                className="w-full mt-2"
+                onClick={() => handleAddToCart({ ...book, product_type: normalizeProductType(book.product_type) })}
               >
-              <div className="relative overflow-hidden">
-                <img 
-                  src={item.imageUrl} 
-                  alt={item.title}
-                  className="w-full h-48 object-cover transition-transform duration-500 group-hover:scale-110"
-                />
-                <span className="absolute top-3 right-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-sm">
-                  {item.type}
-                </span>
-              </div>
-              
-              <div className="p-4 space-y-2">
-                <h4 className="text-white font-semibold text-sm group-hover:text-purple-300 transition-colors duration-300">{item.title}</h4>
-                <p className="text-gray-400 text-xs group-hover:text-gray-300 transition-colors duration-300">{item.author}</p>
-                <div className="flex items-center justify-between">
-                  <span className="text-white font-bold text-sm group-hover:text-purple-300 transition-colors duration-300">{item.price}</span>
-                  <span className="text-gray-400 text-xs">{item.coins}</span>
-                </div>
-              </div>
+                Add to Cart
+              </Button>
             </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="space-y-6">
-            {/* Navigation and View All */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-4">
-                {totalPages > 1 && (
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={prevPage}
-                      disabled={currentPage === 0}
-                      className="text-gray-400 hover:text-white disabled:opacity-50"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </Button>
-                    <span className="text-gray-400 text-sm">
-                      {currentPage + 1} of {totalPages}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={nextPage}
-                      disabled={currentPage === totalPages - 1}
-                      className="text-gray-400 hover:text-white disabled:opacity-50"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-              {filteredRecommendations.length > itemsPerPage && (
-                <Button
-                  onClick={viewAll}
-                  className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
-                >
-                  View All ({filteredRecommendations.length})
-                </Button>
-              )}
-            </div>
-
-            {/* Recommendations Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {loading ? (
-                [...Array(4)].map((_, index) => (
-                  <div key={index} className="bg-gray-800 rounded-xl animate-pulse h-80"></div>
-                ))
-              ) : filteredRecommendations.length === 0 ? (
-                <div className="col-span-full text-center py-12">
-                  <div className="text-gray-400 text-lg mb-4">
-                    No {activeFilter} items found
-                  </div>
-                  <p className="text-gray-500">
-                    Try selecting a different filter or check back later for new items.
-                  </p>
-                </div>
-              ) : (
-                currentItems.map((item, index) => (
-                  <div 
-                    key={item.id} 
-                    className={`group bg-gradient-to-br from-gray-900 to-gray-950 rounded-xl overflow-hidden hover:from-gray-850 hover:to-gray-900 transition-all duration-700 transform hover:scale-105 hover:-translate-y-4 hover:shadow-2xl hover:shadow-purple-500/20 border border-gray-700/50 hover:border-purple-500/30 ${
-                      isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
-                    }`}
-                    style={{ transitionDelay: `${400 + index * 200}ms` }}
-                  >
-                    <div className="relative group/image overflow-hidden">
-                      <img 
-                        src={item.imageUrl} 
-                        alt={item.title}
-                        className="w-full h-64 object-cover transition-transform duration-700 group-hover:scale-110"
-                      />
-                      <span className="absolute top-3 right-3 bg-gradient-to-r from-gray-700 to-gray-800 text-white text-xs font-semibold px-3 py-1 rounded-full backdrop-blur-sm transition-all duration-300 group-hover:from-purple-600 group-hover:to-purple-700">
-                        {item.type}
-                      </span>
-                      
-                      {/* Hover overlay with gradient */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-purple-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                    </div>
-                    
-                    <div className="p-5 space-y-3">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-white font-semibold text-lg group-hover:text-purple-300 transition-colors duration-300 flex-1 mr-2">{item.title}</h3>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="text-red-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 transform hover:scale-110 w-8 h-8 flex-shrink-0"
-                        >
-                          <Diamond className="w-4 h-4 transition-transform duration-300 group-hover:animate-pulse" />
-                        </Button>
-                      </div>
-                      <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">{item.author}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-white font-bold text-lg group-hover:text-purple-300 transition-colors duration-300">{item.price}</span>
-                        <span className="text-gray-400 text-xs">{item.coins}</span>
-                      </div>
-                      
-                      <div className="flex flex-col space-y-2 pt-2">
-                        <Button 
-                          size="sm" 
-                          className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25"
-                          onClick={(e) => handleAddToCart(e, item)}
-                        >
-                          <ShoppingCart className="w-3 h-3 mr-2" />
-                          Add to Cart
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          className="w-full bg-white border-gray-600 text-black hover:bg-gray-100 hover:text-black text-xs transform hover:scale-105 transition-all duration-300"
-                          onClick={(e) => handleBuyNow(e, item)}
-                        >
-                          Buy Now
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </section>
   );
 };
