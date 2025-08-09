@@ -135,7 +135,19 @@ export const BooksManager = () => {
         });
       } else {
         console.log('Creating new book');
-        await createBook(formData);
+        await createBook({
+          ...formData,
+          coins: formData.coins || '',
+          label: formData.label || '',
+          original_price: formData.original_price || null,
+          description: '',
+          dimensions: '',
+          product_type: 'book',
+          sku: null,
+          stock_quantity: 0,
+          weight: null,
+          tags: [],
+        });
         toast({
           title: "Success",
           description: "Book created successfully",

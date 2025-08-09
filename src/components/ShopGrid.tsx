@@ -87,7 +87,18 @@ const ShopGrid: React.FC<ShopGridProps> = ({ category, sectionType, searchTerm }
               <button
                 className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                 onClick={() => {
-                  addToCart({ ...product, product_type: normalizeProductType(product.product_type) });
+                  addToCart({
+                    id: product.id,
+                    title: product.title,
+                    author: product.author || undefined,
+                    price: Number(product.price),
+                    imageUrl: product.image_url,
+                    category: product.category,
+                    product_type: normalizeProductType(product.product_type),
+                    inStock: true,
+                    coins: (product as any).coins || undefined,
+                    canUnlockWithCoins: product.can_unlock_with_coins || undefined,
+                  });
                   toast.success(`${product.title} added to cart!`);
                 }}
               >

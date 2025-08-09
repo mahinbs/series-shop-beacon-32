@@ -299,14 +299,14 @@ export class AuthService {
     notes?: string;
   }): Promise<Order> {
     // Generate order number
-    const { data: orderNumber } = await supabase.rpc('generate_order_number');
+    const orderNumber = `ORD-${Date.now()}`;
     
     const { data: order, error: orderError } = await (supabase as any)
       .from('orders')
       .insert([
         {
           user_id: userId,
-          order_number: orderNumber || `ORD-${Date.now()}`,
+          order_number: orderNumber,
           ...orderData,
         },
       ])
