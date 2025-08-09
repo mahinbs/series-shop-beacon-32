@@ -46,6 +46,8 @@ import LibraryPage from "./pages/LibraryPage";
 import ChatBot from "./components/ChatBot";
 import ScrollToTop from "./components/ScrollToTop";
 import { DummyAuthProvider } from "./hooks/useDummyAuth";
+import { AuthProvider as SupabaseAuthProvider } from "./hooks/useSupabaseAuth";
+import { CartProvider } from "./hooks/useCart";
 import AuthPage from "./pages/AuthPage";
 
 const queryClient = new QueryClient();
@@ -53,56 +55,46 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <DummyAuthProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <ScrollToTop />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/comics" element={<ComicsHome />} />
-            <Route path="/comic/:id" element={<ComicDetail />} />
-            <Route path="/episode/:id/preview" element={<EpisodePreview />} />
-            <Route path="/episode/:id/read" element={<EpisodeReader />} />
-            <Route path="/buy-coins" element={<BuyCoins />} />
-            <Route path="/our-series" element={<OurSeries />} />
-            <Route path="/shop-all" element={<ShopAll />} />
-            <Route path="/announcements" element={<Announcements />} />
-            <Route path="/announcement/:id" element={<AnnouncementDetail />} />
-            <Route path="/pre-order/:productId" element={<PreOrder />} />
-            <Route path="/series/:seriesId" element={<SeriesPage />} />
-            <Route path="/product/:productId" element={<MerchandiseDetail />} />
-            <Route path="/checkout/:productId" element={<Checkout />} />
-            <Route path="/direct-checkout/:productId" element={<DirectCheckout />} />
-            <Route path="/coin-unlock/:productId" element={<CoinUnlock />} />
-            <Route path="/unlock-success" element={<UnlockSuccess />} />
-            <Route path="/payment-success" element={<PaymentSuccess />} />
-            <Route path="/about-us" element={<AboutUs />} />
-            <Route path="/contact-us" element={<ContactUs />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/wishlist" element={<Wishlist />} />
-            <Route path="/coin-purchase" element={<CoinPurchase />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/library" element={<LibraryPage />} />
-            <Route path="/affiliation-programs" element={<AffiliationPrograms />} />
-            <Route path="/readers/:seriesTitle" element={<ReadersMode />} />
-            <Route path="/readers-mode/:seriesTitle" element={<ReadersMode />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/copyright" element={<Copyright />} />
-            <Route path="/order-shipping" element={<OrderShipping />} />
-            <Route path="/terms-conditions" element={<TermsConditions />} />
-            <Route path="/faq" element={<FAQ />} />
-            <Route path="/return-exchange" element={<ReturnExchange />} />
-            <Route path="/customer-support" element={<CustomerSupport />} />
-            <Route path="/language-terms" element={<LanguageTerms />} />
-            <Route path="/admin" element={<AdminPanel />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-          <ChatBot />
-        </BrowserRouter>
-      </DummyAuthProvider>
+      <SupabaseAuthProvider>
+        <CartProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <ScrollToTop />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/comics" element={<ComicsHome />} />
+              <Route path="/comic/:id" element={<ComicDetail />} />
+              <Route path="/episode/:id/preview" element={<EpisodePreview />} />
+              <Route path="/episode/:id/read" element={<EpisodeReader />} />
+              <Route path="/buy-coins" element={<BuyCoins />} />
+              <Route path="/our-series" element={<OurSeries />} />
+              <Route path="/shop-all" element={<ShopAll />} />
+              <Route path="/announcements" element={<Announcements />} />
+              <Route path="/announcement/:id" element={<AnnouncementDetail />} />
+              <Route path="/pre-order/:productId" element={<PreOrder />} />
+              <Route path="/series/:seriesId" element={<SeriesPage />} />
+              <Route path="/product/:productId" element={<MerchandiseDetail />} />
+              <Route path="/checkout/:productId" element={<Checkout />} />
+              <Route path="/direct-checkout/:productId" element={<DirectCheckout />} />
+              <Route path="/coin-unlock/:productId" element={<CoinUnlock />} />
+              <Route path="/unlock-success" element={<UnlockSuccess />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route path="/about-us" element={<AboutUs />} />
+              <Route path="/contact-us" element={<ContactUs />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/wishlist" element={<Wishlist />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/library" element={<LibraryPage />} />
+              <Route path="/admin" element={<AdminPanel />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+            <ChatBot />
+          </BrowserRouter>
+        </CartProvider>
+      </SupabaseAuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );

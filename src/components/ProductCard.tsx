@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Unlock, ShoppingCart, Diamond } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from '@/hooks/useCart';
 
 interface ProductCardProps {
   title: string;
@@ -39,87 +40,32 @@ const ProductCard = ({
 }: ProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
+  const { addToCart } = useCart();
 
   const handleAddToCart = () => {
-    // Create a unique product ID from the title and author
-    const productId = `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`;
-    
-    console.log('🛒 Add to Cart clicked!');
-    console.log('📦 Product title:', title);
-    console.log('👤 Author:', author);
-    console.log('🆔 Generated productId:', productId);
-    console.log('💰 Price:', price);
-    
-    // Create product object that matches what Checkout expects
-    const productData = {
+    const cartItem = {
+      id: `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`,
       title,
       author,
-      volume,
       price: parseFloat(price.replace('$', '')),
       originalPrice: originalPrice ? parseFloat(originalPrice.replace('$', '')) : undefined,
-      coins,
       imageUrl,
-      hoverImageUrl,
-      isNew,
-      isOnSale,
-      canUnlockWithCoins,
-      label,
-      tagIcon,
-      tagText
+      category: 'General',
+      product_type: 'book' as const,
+      inStock: true,
+      coins,
+      canUnlockWithCoins
     };
     
-    console.log('📋 Product data being passed:', productData);
-    
-    const stateData = {
-      product: productData,
-      quantity: 1,
-      totalPrice: parseFloat(price.replace('$', ''))
-    };
-    
-    console.log('🚀 Navigation state:', stateData);
-    console.log('🔗 Navigating to:', `/checkout/${productId}`);
-    
-    // Navigate to checkout page with product data in the format Checkout expects
-    navigate(`/checkout/${productId}`, {
-      state: stateData
-    });
+    addToCart(cartItem);
   };
 
   const handleBuyNow = () => {
-    // Create a unique product ID from the title and author
-    const productId = `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`;
+    // First add to cart
+    handleAddToCart();
     
-    console.log('🚀 Buy Now clicked!');
-    console.log('📦 Product title:', title);
-    console.log('👤 Author:', author);
-    console.log('🆔 Generated productId:', productId);
-    
-    // Create product object for direct checkout
-    const productData = {
-      title,
-      author,
-      volume,
-      price: parseFloat(price.replace('$', '')),
-      originalPrice: originalPrice ? parseFloat(originalPrice.replace('$', '')) : undefined,
-      coins,
-      imageUrl,
-      hoverImageUrl,
-      isNew,
-      isOnSale,
-      canUnlockWithCoins,
-      label,
-      tagIcon,
-      tagText
-    };
-    
-    // Navigate to direct checkout page
-    navigate(`/direct-checkout/${productId}`, {
-      state: {
-        product: productData,
-        quantity: 1,
-        totalPrice: parseFloat(price.replace('$', ''))
-      }
-    });
+    // Then navigate to cart
+    navigate('/cart');
   };
 
   const handleUnlockWithCoins = () => {

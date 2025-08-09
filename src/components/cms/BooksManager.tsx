@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useBooks } from '@/hooks/useBooks';
+import { testDatabaseConnection } from '@/services/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, Save, Edit, Upload, BookOpen } from 'lucide-react';
+import { Trash2, Plus, Save, Edit, Upload, BookOpen, Database } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BookForm {
@@ -20,7 +21,7 @@ interface BookForm {
   image_url: string;
   hover_image_url: string;
   can_unlock_with_coins: boolean;
-  section_type: 'new-releases' | 'best-sellers' | 'leaving-soon';
+  section_type: 'new-releases' | 'best-sellers' | 'leaving-soon' | 'featured' | 'trending';
   label?: string;
   is_new: boolean;
   is_on_sale: boolean;
@@ -36,6 +37,8 @@ export const BooksManager = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [formData, setFormData] = useState<BookForm>({
     title: '',
     author: '',
@@ -76,10 +79,53 @@ export const BooksManager = () => {
     setShowAddForm(false);
   };
 
+  const testDatabase = async () => {
+    setTesting(true);
+    try {
+      const result = await testDatabaseConnection();
+      if (result.success) {
+        toast({
+          title: "Database Test Successful",
+          description: "Database connection is working properly",
+        });
+      } else {
+        toast({
+          title: "Database Test Failed",
+          description: `Error: ${result.error}. Please run the database setup script.`,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Database Test Failed",
+        description: "Failed to test database connection",
+        variant: "destructive",
+      });
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
     console.log('Submitting book data:', formData);
+    
     try {
+      // Validate required fields
+      if (!formData.title.trim()) {
+        throw new Error('Title is required');
+      }
+      if (!formData.category.trim()) {
+        throw new Error('Category is required');
+      }
+      if (formData.price <= 0) {
+        throw new Error('Price must be greater than 0');
+      }
+      if (!formData.image_url.trim()) {
+        throw new Error('Image URL is required');
+      }
+
       if (editingId) {
         console.log('Updating book with ID:', editingId);
         await updateBook(editingId, formData);
@@ -99,31 +145,41 @@ export const BooksManager = () => {
       await loadBooks();
     } catch (error) {
       console.error('Error saving book:', error);
+      let errorMessage = 'Failed to save book';
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+      
       toast({
         title: "Error",
-        description: "Failed to save book",
+        description: errorMessage,
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleEdit = (book: any) => {
     setFormData({
-      title: book.title,
-      author: book.author,
-      category: book.category,
-      price: book.price,
+      title: book.title || '',
+      author: book.author || '',
+      category: book.category || '',
+      price: book.price || 0,
       original_price: book.original_price,
       coins: book.coins || '',
-      image_url: book.image_url,
-      hover_image_url: book.hover_image_url,
-      can_unlock_with_coins: book.can_unlock_with_coins,
-      section_type: book.section_type,
+      image_url: book.image_url || '',
+      hover_image_url: book.hover_image_url || '',
+      can_unlock_with_coins: book.can_unlock_with_coins || false,
+      section_type: book.section_type || 'new-releases',
       label: book.label || '',
-      is_new: book.is_new,
-      is_on_sale: book.is_on_sale,
-      display_order: book.display_order,
-      is_active: book.is_active,
+      is_new: book.is_new || false,
+      is_on_sale: book.is_on_sale || false,
+      display_order: book.display_order || 0,
+      is_active: book.is_active !== undefined ? book.is_active : true,
     });
     setEditingId(book.id);
     setShowAddForm(true);
@@ -139,9 +195,18 @@ export const BooksManager = () => {
         });
         await loadBooks();
       } catch (error) {
+        console.error('Error deleting book:', error);
+        let errorMessage = 'Failed to delete book';
+        
+        if (error instanceof Error) {
+          errorMessage = error.message;
+        } else if (typeof error === 'string') {
+          errorMessage = error;
+        }
+        
         toast({
           title: "Error",
-          description: "Failed to delete book",
+          description: errorMessage,
           variant: "destructive",
         });
       }
@@ -189,7 +254,14 @@ export const BooksManager = () => {
   };
 
   if (isLoading) {
-    return <div className="p-4">Loading books...</div>;
+    return (
+      <div className="p-4">
+        <div className="flex items-center justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <span className="ml-2">Loading books...</span>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -205,13 +277,26 @@ export const BooksManager = () => {
               Manage books that appear in the sections below the hero banner
             </p>
           </div>
-          <Button 
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Book
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              onClick={testDatabase}
+              variant="outline"
+              size="sm"
+              disabled={testing}
+              className="flex items-center gap-2"
+            >
+              <Database className="h-4 w-4" />
+              {testing ? 'Testing...' : 'Test DB'}
+            </Button>
+            <Button 
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center gap-2"
+              disabled={submitting}
+            >
+              <Plus className="h-4 w-4" />
+              Add Book
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {books.length === 0 ? (
@@ -224,54 +309,47 @@ export const BooksManager = () => {
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="grid gap-4">
               {books.map((book) => (
-                <Card key={book.id} className="border">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex gap-4">
-                        <div className="flex gap-2">
-                          <img 
-                            src={book.image_url} 
-                            alt={book.title}
-                            className="w-16 h-20 object-cover rounded border"
-                          />
-                          <img 
-                            src={book.hover_image_url} 
-                            alt={`${book.title} hover`}
-                            className="w-16 h-20 object-cover rounded border opacity-70"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold">{book.title}</h4>
-                          <p className="text-sm text-muted-foreground">by {book.author}</p>
-                          <p className="text-sm text-muted-foreground">{book.category} • ${book.price}</p>
-                          <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                            <span>Section: {book.section_type}</span>
-                            <span>Order: {book.display_order}</span>
-                            <span>Status: {book.is_active ? 'Active' : 'Inactive'}</span>
-                            {book.can_unlock_with_coins && <span>🪙 Unlockable</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleEdit(book)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
-                          onClick={() => handleDelete(book.id)}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                <Card key={book.id} className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      {book.image_url && (
+                        <img
+                          src={book.image_url}
+                          alt={book.title}
+                          className="w-16 h-20 object-cover rounded"
+                        />
+                      )}
+                      <div>
+                        <h3 className="font-semibold">{book.title}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {book.author} • {book.category} • ${book.price}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Section: {book.section_type} • Order: {book.display_order}
+                        </p>
                       </div>
                     </div>
-                  </CardContent>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleEdit(book)}
+                        disabled={submitting}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleDelete(book.id)}
+                        disabled={submitting}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
                 </Card>
               ))}
             </div>
@@ -288,12 +366,13 @@ export const BooksManager = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="title">Title</Label>
+                  <Label htmlFor="title">Title *</Label>
                   <Input
                     id="title"
                     value={formData.title}
                     onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                     required
+                    disabled={submitting}
                   />
                 </div>
                 
@@ -303,51 +382,45 @@ export const BooksManager = () => {
                     id="author"
                     value={formData.author}
                     onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <Label htmlFor="category">Category</Label>
-                  <Input
-                    id="category"
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    placeholder="e.g., Adventure, Action, Horror"
-                    required
-                  />
-                </div>
-                
-                <div>
-                  <Label htmlFor="price">Price ($)</Label>
-                  <Input
-                    id="price"
-                    type="number"
-                    step="0.01"
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) })}
-                    required
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="original_price">Original Price ($) (Optional)</Label>
-                  <Input
-                    id="original_price"
-                    type="number"
-                    step="0.01"
-                    value={formData.original_price || ''}
-                    onChange={(e) => setFormData({ ...formData, original_price: e.target.value ? parseFloat(e.target.value) : undefined })}
+                    disabled={submitting}
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="section_type">Section</Label>
-                  <Select value={formData.section_type} onValueChange={(value: any) => setFormData({ ...formData, section_type: value })}>
+                  <Label htmlFor="category">Category *</Label>
+                  <Input
+                    id="category"
+                    value={formData.category}
+                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
+                    required
+                    disabled={submitting}
+                  />
+                </div>
+                
+                <div>
+                  <Label htmlFor="price">Price *</Label>
+                  <Input
+                    id="price"
+                    type="number"
+                    step="0.01"
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                    required
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="section_type">Section Type</Label>
+                  <Select
+                    value={formData.section_type}
+                    onValueChange={(value: any) => setFormData({ ...formData, section_type: value })}
+                    disabled={submitting}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -355,164 +428,104 @@ export const BooksManager = () => {
                       <SelectItem value="new-releases">New Releases</SelectItem>
                       <SelectItem value="best-sellers">Best Sellers</SelectItem>
                       <SelectItem value="leaving-soon">Leaving Soon</SelectItem>
+                      <SelectItem value="featured">Featured</SelectItem>
+                      <SelectItem value="trending">Trending</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-
+                
                 <div>
                   <Label htmlFor="display_order">Display Order</Label>
                   <Input
                     id="display_order"
                     type="number"
                     value={formData.display_order}
-                    onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+                    disabled={submitting}
                   />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="coins">Coins (Optional)</Label>
-                <Input
-                  id="coins"
-                  value={formData.coins}
-                  onChange={(e) => setFormData({ ...formData, coins: e.target.value })}
-                  placeholder="e.g., 1199 coins"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="label">Label (Optional)</Label>
-                <Input
-                  id="label"
-                  value={formData.label}
-                  onChange={(e) => setFormData({ ...formData, label: e.target.value })}
-                  placeholder="e.g., Vol 98 out now, Limited time offer"
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="image_url">Book Image</Label>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      id="image_url"
-                      value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-                      placeholder="Enter image URL or upload an image"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="flex items-center gap-2"
-                    >
-                      <Upload className="h-4 w-4" />
-                      Upload
-                    </Button>
-                  </div>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileSelect(e, false)}
-                    className="hidden"
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="image_url">Image URL *</Label>
+                  <Input
+                    id="image_url"
+                    value={formData.image_url}
+                    onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                    required
+                    disabled={submitting}
                   />
-                  {formData.image_url && (
-                    <img 
-                      src={formData.image_url} 
-                      alt="Book preview" 
-                      className="w-24 h-32 object-cover rounded border"
-                    />
-                  )}
+                </div>
+                
+                <div>
+                  <Label htmlFor="hover_image_url">Hover Image URL</Label>
+                  <Input
+                    id="hover_image_url"
+                    value={formData.hover_image_url}
+                    onChange={(e) => setFormData({ ...formData, hover_image_url: e.target.value })}
+                    disabled={submitting}
+                  />
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="hover_image_url">Hover Image</Label>
-                <div className="space-y-2">
-                  <div className="flex gap-2">
-                    <Input
-                      id="hover_image_url"
-                      value={formData.hover_image_url}
-                      onChange={(e) => setFormData({ ...formData, hover_image_url: e.target.value })}
-                      placeholder="Enter hover image URL or upload an image"
-                      required
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => hoverFileInputRef.current?.click()}
-                      disabled={uploading}
-                      className="flex items-center gap-2"
-                    >
-                      <Upload className="h-4 w-4" />
-                      Upload
-                    </Button>
-                  </div>
-                  <input
-                    ref={hoverFileInputRef}
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => handleFileSelect(e, true)}
-                    className="hidden"
-                  />
-                  {formData.hover_image_url && (
-                    <img 
-                      src={formData.hover_image_url} 
-                      alt="Hover preview" 
-                      className="w-24 h-32 object-cover rounded border"
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-4">
-                <div className="flex items-center space-x-2">
-                  <Switch
-                    id="can_unlock_with_coins"
-                    checked={formData.can_unlock_with_coins}
-                    onCheckedChange={(checked) => setFormData({ ...formData, can_unlock_with_coins: checked })}
-                  />
-                  <Label htmlFor="can_unlock_with_coins">Can Unlock with Coins</Label>
-                </div>
-
+              <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="is_new"
                     checked={formData.is_new}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_new: checked })}
+                    disabled={submitting}
                   />
-                  <Label htmlFor="is_new">Is New</Label>
+                  <Label htmlFor="is_new">New</Label>
                 </div>
-
+                
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="is_on_sale"
                     checked={formData.is_on_sale}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_on_sale: checked })}
+                    disabled={submitting}
                   />
-                  <Label htmlFor="is_on_sale">Is On Sale</Label>
+                  <Label htmlFor="is_on_sale">On Sale</Label>
                 </div>
-
+                
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="is_active"
                     checked={formData.is_active}
                     onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                    disabled={submitting}
                   />
                   <Label htmlFor="is_active">Active</Label>
                 </div>
               </div>
-              
-              <div className="flex gap-2">
-                <Button type="submit" className="flex items-center gap-2">
-                  <Save className="h-4 w-4" />
-                  {editingId ? 'Update' : 'Create'} Book
-                </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
+
+              <div className="flex justify-end space-x-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={resetForm}
+                  disabled={submitting}
+                >
                   Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex items-center gap-2"
+                >
+                  {submitting ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      {editingId ? 'Updating...' : 'Creating...'}
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      {editingId ? 'Update Book' : 'Create Book'}
+                    </>
+                  )}
                 </Button>
               </div>
             </form>

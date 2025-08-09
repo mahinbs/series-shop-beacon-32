@@ -9,79 +9,27 @@ import { Separator } from '@/components/ui/separator';
 import { ShoppingCart, Plus, Minus, Trash2, ArrowLeft, CreditCard, Heart, Tag } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { useCart } from '@/hooks/useCart';
 
 const CartPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Mock cart items data
-  const [cartItems, setCartItems] = useState([
-    {
-      id: 1,
-      title: "Demon Slayer: Kimetsu no Yaiba Volume 23",
-      author: "Koyoharu Gotouge",
-      price: 9.99,
-      originalPrice: null,
-      image: "/lovable-uploads/26efc76c-fa83-4369-8d8d-354eab1433e6.png",
-      category: "Manga",
-      quantity: 2,
-      inStock: true,
-      shippingWeight: 0.5
-    },
-    {
-      id: 2,
-      title: "One Piece Box Set: East Blue and Baroque Works",
-      author: "Eiichiro Oda",
-      price: 299.99,
-      originalPrice: 349.99,
-      image: "/lovable-uploads/503cc23b-a28f-4564-86f9-53896fa75f10.png",
-      category: "Manga",
-      quantity: 1,
-      inStock: true,
-      shippingWeight: 5.2
-    },
-    {
-      id: 3,
-      title: "Attack on Titan Figure - Eren Yeager",
-      author: "Good Smile Company",
-      price: 89.99,
-      originalPrice: 99.99,
-      image: "/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png",
-      category: "Merchandise",
-      quantity: 1,
-      inStock: false,
-      shippingWeight: 1.2
-    }
-  ]);
+  const { cartItems, removeFromCart, updateQuantity, getCartTotal, getCartItemCount } = useCart();
 
   const [promoCode, setPromoCode] = useState('');
   const [discount, setDiscount] = useState(0);
 
-  const updateQuantity = (id: number, newQuantity: number) => {
-    if (newQuantity < 1) {
-      removeItem(id);
-      return;
-    }
-    
-    setCartItems(items =>
-      items.map(item =>
-        item.id === id ? { ...item, quantity: newQuantity } : item
-      )
-    );
+  const handleRemoveItem = (itemId: string) => {
+    removeFromCart(itemId);
   };
 
-  const removeItem = (id: number) => {
-    const item = cartItems.find(item => item.id === id);
-    setCartItems(items => items.filter(item => item.id !== id));
-    toast({
-      title: "Item removed",
-      description: `${item?.title} has been removed from your cart.`,
-    });
+  const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
+    updateQuantity(itemId, newQuantity);
   };
 
-  const moveToWishlist = (id: number) => {
-    const item = cartItems.find(item => item.id === id);
-    removeItem(id);
+  const handleMoveToWishlist = (itemId: string) => {
+    const item = cartItems.find(item => item.id === itemId);
+    removeFromCart(itemId);
     toast({
       title: "Moved to wishlist",
       description: `${item?.title} has been moved to your wishlist.`,
@@ -111,7 +59,7 @@ const CartPage = () => {
     }
   };
 
-  const subtotal = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const subtotal = getCartTotal();
   const discountAmount = (subtotal * discount) / 100;
   const shipping = subtotal > 50 ? 0 : 7.99;
   const tax = (subtotal - discountAmount) * 0.08; // 8% tax
@@ -186,7 +134,7 @@ const CartPage = () => {
                 Shopping Cart
               </h1>
               <p className="text-muted-foreground">
-                {cartItems.length} {cartItems.length === 1 ? 'item' : 'items'} in your cart
+                {getCartItemCount()} {getCartItemCount() === 1 ? 'item' : 'items'} in your cart
               </p>
             </div>
           </div>
@@ -218,43 +166,48 @@ const CartPage = () => {
                   <CardContent className="p-6">
                     <div className="flex gap-4">
                       <div className="relative">
-                        <img 
-                          src={item.image} 
+                        <img
+                          src={item.imageUrl}
                           alt={item.title}
-                          className="w-20 h-28 object-cover rounded"
+                          className="w-20 h-24 object-cover rounded-lg"
                         />
                         {!item.inStock && (
-                          <div className="absolute inset-0 bg-black/50 rounded flex items-center justify-center">
-                            <Badge variant="destructive" className="text-xs">
-                              Out of Stock
-                            </Badge>
-                          </div>
+                          <Badge variant="destructive" className="absolute -top-2 -right-2 text-xs">
+                            Out of Stock
+                          </Badge>
                         )}
                       </div>
                       
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="font-semibold text-foreground line-clamp-2">{item.title}</h3>
-                            <p className="text-sm text-muted-foreground">{item.author}</p>
-                            <Badge variant="outline" className="mt-1">{item.category}</Badge>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-semibold text-foreground truncate">{item.title}</h3>
+                            {item.author && (
+                              <p className="text-sm text-muted-foreground">{item.author}</p>
+                            )}
+                            {item.category && (
+                              <Badge variant="secondary" className="text-xs mt-1">
+                                {item.category}
+                              </Badge>
+                            )}
                           </div>
+                          
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => removeItem(item.id)}
+                            onClick={() => handleRemoveItem(item.id)}
                             className="text-destructive hover:text-destructive"
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
-
+                        
                         <div className="flex items-center justify-between mt-4">
                           <div className="flex items-center gap-2">
-                            <span className="font-bold text-foreground">${item.price}</span>
+                            <span className="font-bold text-foreground">${item.price.toFixed(2)}</span>
                             {item.originalPrice && (
                               <span className="text-sm text-muted-foreground line-through">
-                                ${item.originalPrice}
+                                ${item.originalPrice.toFixed(2)}
                               </span>
                             )}
                           </div>
@@ -265,7 +218,7 @@ const CartPage = () => {
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
                                 disabled={!item.inStock}
                               >
                                 <Minus className="w-3 h-3" />
@@ -275,7 +228,7 @@ const CartPage = () => {
                                 variant="outline"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
                                 disabled={!item.inStock}
                               >
                                 <Plus className="w-3 h-3" />
@@ -285,19 +238,13 @@ const CartPage = () => {
                             <Button
                               variant="ghost"
                               size="sm"
-                              onClick={() => moveToWishlist(item.id)}
+                              onClick={() => handleMoveToWishlist(item.id)}
                               className="text-muted-foreground hover:text-foreground"
                             >
                               <Heart className="w-4 h-4 mr-1" />
-                              Save
+                              Move to Wishlist
                             </Button>
                           </div>
-                        </div>
-                        
-                        <div className="mt-2 text-right">
-                          <span className="font-semibold text-foreground">
-                            Total: ${(item.price * item.quantity).toFixed(2)}
-                          </span>
                         </div>
                       </div>
                     </div>
@@ -338,7 +285,7 @@ const CartPage = () => {
                   {/* Pricing Breakdown */}
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span>Subtotal ({cartItems.reduce((sum, item) => sum + item.quantity, 0)} items)</span>
+                      <span>Subtotal ({getCartItemCount()} items)</span>
                       <span>${subtotal.toFixed(2)}</span>
                     </div>
                     

@@ -5,11 +5,11 @@ import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { Edit2, Loader2, User, Mail, Camera } from 'lucide-react';
-import { useDummyAuth } from '@/hooks/useDummyAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
 
 const EditProfileModal = () => {
-  const { user, updateProfile, isLoading } = useDummyAuth();
+  const { user, updateProfile, isLoading } = useSupabaseAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({

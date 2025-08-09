@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useDummyAuth } from './useDummyAuth';
+import { useSupabaseAuth } from './useSupabaseAuth';
+import { useBooks } from './useBooks';
 
 interface RecommendedProduct {
   id: string;
@@ -15,133 +16,88 @@ interface RecommendedProduct {
 }
 
 export const useRecommendations = () => {
-  const { user } = useDummyAuth();
+  const { user } = useSupabaseAuth();
+  const { books, isLoading: booksLoading } = useBooks();
   const [recommendations, setRecommendations] = useState<RecommendedProduct[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Default recommendations for non-logged-in users
-  const defaultRecommendations: RecommendedProduct[] = [
-    {
-      id: "1",
-      title: "Tokyo Ghoul Vol. 14",
-      author: "Sui Ishida",
-      price: "$12.99",
-      coins: "1299 coins",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      genre: ["horror", "action"],
-      rating: 5,
-      type: "Digital"
-    },
-    {
-      id: "2",
-      title: "Demon Slayer Tanjiro Figure",
-      author: "Koyoharu Gotouge",
-      price: "$49.99",
-      coins: "4999 coins",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      genre: ["action", "supernatural"],
-      rating: 5,
-      type: "Merchandise"
-    },
-    {
-      id: "3",
-      title: "Naruto Vol. 72",
-      author: "Masashi Kishimoto",
-      price: "$9.99",
-      coins: "999 coins",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      genre: ["action", "adventure"],
-      rating: 4,
-      type: "Digital"
-    },
-    {
-      id: "4",
-      title: "My Hero Academia Vol. 35",
-      author: "Kohei Horikoshi",
-      price: "$11.99",
-      coins: "1199 coins",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      genre: ["action", "superhero"],
-      rating: 5,
-      type: "Digital"
-    },
-    {
-      id: "5",
-      title: "Attack on Titan Complete Set",
-      author: "Hajime Isayama",
-      price: "$199.99",
-      coins: "19999 coins",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      genre: ["action", "drama"],
-      rating: 5,
-      type: "Bundle"
-    },
-    {
-      id: "6",
-      title: "One Piece Vol. 105",
-      author: "Eiichiro Oda",
-      price: "$13.99",
-      coins: "1399 coins",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      genre: ["adventure", "comedy"],
-      rating: 5,
-      type: "Digital"
-    },
-    {
-      id: "7",
-      title: "Jujutsu Kaisen Vol. 20",
-      author: "Gege Akutami",
-      price: "$10.99",
-      coins: "1099 coins",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      genre: ["supernatural", "action"],
-      rating: 5,
-      type: "Digital"
-    },
-    {
-      id: "8",
-      title: "Chainsaw Man Vol. 12",
-      author: "Tatsuki Fujimoto",
-      price: "$12.99",
-      coins: "1299 coins",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      genre: ["horror", "action"],
-      rating: 4,
-      type: "Digital"
-    }
-  ];
+  // Transform books data to recommended products format
+  const transformBooksToRecommendations = (booksData: any[]): RecommendedProduct[] => {
+    if (!booksData || booksData.length === 0) return [];
+
+    return booksData
+      .filter(book => book.is_active) // Only show active products
+      .sort((a, b) => {
+        // Sort by display_order if available, otherwise by title
+        if (a.display_order !== undefined && b.display_order !== undefined) {
+          return a.display_order - b.display_order;
+        }
+        return a.title.localeCompare(b.title);
+      })
+      .map(book => ({
+        id: book.id,
+        title: book.title,
+        author: book.author || 'Unknown Author',
+        price: `$${Number(book.price).toFixed(2)}`,
+        coins: book.coins || `${Math.round(Number(book.price) * 100)} coins`,
+        imageUrl: book.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png',
+        genre: [book.category || 'General'],
+        rating: 5, // Default rating
+        type: book.product_type === 'book' ? 'Digital' : 
+              book.product_type === 'merchandise' ? 'Merchandise' : 
+              book.product_type === 'digital' ? 'Digital' : 'Other',
+        isPersonalized: !!user
+      }))
+      .slice(0, 8); // Limit to 8 recommendations
+  };
 
   // Generate personalized recommendations based on user data
-  const generatePersonalizedRecommendations = (): RecommendedProduct[] => {
-    if (!user) return defaultRecommendations;
+  const generatePersonalizedRecommendations = (booksData: any[]): RecommendedProduct[] => {
+    if (!booksData || booksData.length === 0) return [];
 
-    // For now, just return default recommendations with personalized flag
+    // For now, just return the first 8 active products with personalized flag
     // In a real app, this would use user data from Supabase to personalize
-    return defaultRecommendations.map(item => ({
+    return transformBooksToRecommendations(booksData).map(item => ({
       ...item,
       isPersonalized: true
     }));
   };
 
   useEffect(() => {
+    if (booksLoading) {
+      setLoading(true);
+      return;
+    }
+
     setLoading(true);
     
-    // Simulate API call delay
+    // Simulate API call delay for better UX
     const timer = setTimeout(() => {
-      if (user) {
-        setRecommendations(generatePersonalizedRecommendations());
-      } else {
-        setRecommendations(defaultRecommendations);
+      try {
+        if (books && books.length > 0) {
+          if (user) {
+            setRecommendations(generatePersonalizedRecommendations(books));
+          } else {
+            setRecommendations(transformBooksToRecommendations(books));
+          }
+        } else {
+          // Fallback to empty array if no books
+          setRecommendations([]);
+        }
+      } catch (error) {
+        console.error('Error transforming recommendations:', error);
+        setRecommendations([]);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
-    }, 500);
+    }, 300);
 
     return () => clearTimeout(timer);
-  }, [user]);
+  }, [books, booksLoading, user]);
 
   return {
     recommendations,
-    loading,
+    loading: loading || booksLoading,
     isPersonalized: !!user
   };
 };

@@ -1,13 +1,13 @@
 import { Facebook, Instagram, Twitter, Youtube, Settings, LogIn } from 'lucide-react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useCMS } from '@/hooks/useCMS';
-import { useDummyAuth } from '@/hooks/useDummyAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
   const { elementRef, isVisible } = useScrollAnimation(0.2);
   const { getSectionContent } = useCMS();
-  const { user } = useDummyAuth();
+  const { user, isAdmin } = useSupabaseAuth();
 
   // Get footer content from CMS or use defaults
   const footerContent = getSectionContent('footer', 'main_content');
@@ -189,7 +189,7 @@ const Footer = () => {
               <a href="https://www.youtube.com/channel/UCml272d_SV3kHboiO_taiaQ" className="text-gray-400 hover:text-white transition-all duration-200 transform hover:scale-110">
                 <Youtube className="w-5 h-5" />
               </a>
-              {user && (
+              {user && isAdmin && (
                 <Link 
                   to="/admin" 
                   className="text-gray-400 hover:text-red-500 transition-all duration-200 transform hover:scale-110 flex items-center gap-1 text-xs"

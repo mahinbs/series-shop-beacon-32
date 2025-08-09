@@ -4,13 +4,15 @@ import { Menu, X, Search, ShoppingCart, User, Heart, Building2, Settings, LogOut
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 import { CoinDisplay } from '@/components/CoinDisplay';
-import { useDummyAuth } from '@/hooks/useDummyAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useCart } from '@/hooks/useCart';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, isAuthenticated, logout, isLoading } = useDummyAuth();
+  const { user, isAuthenticated, logout, isLoading } = useSupabaseAuth();
+  const { getCartItemCount } = useCart();
 
   const scrollToFeaturedSeries = () => {
     const element = document.getElementById('featured-series');
@@ -108,8 +110,13 @@ const Header = () => {
               </Button>
             </Link>
             <Link to="/cart">
-              <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+              <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white relative">
                 <ShoppingCart className="h-5 w-5" />
+                {getCartItemCount() > 0 && (
+                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                    {getCartItemCount() > 99 ? '99+' : getCartItemCount()}
+                  </span>
+                )}
               </Button>
             </Link>
             

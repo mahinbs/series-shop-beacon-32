@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Diamond, ShoppingCart, Star, Eye } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useCart } from '@/hooks/useCart';
 
 const ShopGrid = () => {
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [hoveredProduct, setHoveredProduct] = useState<number | null>(null);
 
   const products = [
@@ -89,12 +91,24 @@ const ShopGrid = () => {
     navigate(`/pre-order/${productId}`);
   };
 
-  const handleAddToCart = (e: React.MouseEvent, productId: number) => {
+  const handleAddToCart = (e: React.MouseEvent, product: any) => {
     e.stopPropagation();
-    console.log('🛒 Add to Cart clicked for product:', productId);
-    console.log('📍 Current location:', window.location.pathname);
-    console.log('🚀 Navigating to pre-order page:', `/pre-order/${productId}`);
-    navigate(`/pre-order/${productId}`);
+    
+    const cartItem = {
+      id: product.id.toString(),
+      title: product.title,
+      author: product.author || 'Unknown Author',
+      price: typeof product.price === 'string' ? parseFloat(product.price.replace('$', '')) : product.price,
+      originalPrice: product.originalPrice ? (typeof product.originalPrice === 'string' ? parseFloat(product.originalPrice.replace('$', '')) : product.originalPrice) : undefined,
+      imageUrl: product.imageUrl || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png',
+      category: product.category || 'General',
+      product_type: product.category === 'Merchandise' || product.category === 'Collectibles' ? 'merchandise' : 'book',
+      inStock: product.inStock !== false,
+      coins: product.coins,
+      canUnlockWithCoins: false
+    };
+    
+    addToCart(cartItem);
   };
 
   return (
@@ -216,7 +230,7 @@ const ShopGrid = () => {
                   <Button 
                     size="sm" 
                     className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25"
-                    onClick={(e) => handleAddToCart(e, product.id)}
+                    onClick={(e) => handleAddToCart(e, product)}
                   >
                     <ShoppingCart className="w-3 h-3 mr-1" />
                     Add to Cart
@@ -227,7 +241,8 @@ const ShopGrid = () => {
                     className="w-full bg-white border-gray-600 text-black hover:bg-gray-100 hover:text-black text-xs transform hover:scale-105 transition-all duration-300"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/checkout/${product.id}`);
+                      handleAddToCart(e, product);
+                      navigate('/cart');
                     }}
                   >
                     Buy Now

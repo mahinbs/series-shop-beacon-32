@@ -2,20 +2,45 @@ import { Button } from '@/components/ui/button';
 import { Diamond, ShoppingCart, Sword, Sparkles, Zap, Ghost, Laugh, Crown, ChevronLeft, ChevronRight, Eye } from 'lucide-react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useNavigate } from 'react-router-dom';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRecommendations } from '@/hooks/useRecommendations';
+import { useCart } from '@/hooks/useCart';
 
 const RecommendedSection = () => {
   const { elementRef, isVisible } = useScrollAnimation(0.1);
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const [showGenres, setShowGenres] = useState(false);
   const [activeSection, setActiveSection] = useState<'recommended' | 'genres'>('recommended');
   const [currentPage, setCurrentPage] = useState(0);
+  const [activeFilter, setActiveFilter] = useState<'digital' | 'merchandise'>('digital');
   const { recommendations, loading, isPersonalized } = useRecommendations();
   
   const itemsPerPage = 4;
-  const totalPages = Math.ceil(recommendations.length / itemsPerPage);
-  const currentItems = recommendations.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
+  
+  // Filter recommendations based on active filter
+  const filteredRecommendations = recommendations.filter(item => {
+    const matches = (() => {
+      switch (activeFilter) {
+        case 'digital':
+          return item.type === 'Digital';
+        case 'merchandise':
+          return item.type === 'Merchandise';
+        default:
+          return true;
+      }
+    })();
+    
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log(`Filtering item: ${item.title} (type: ${item.type}) for filter: ${activeFilter} - matches: ${matches}`);
+    }
+    
+    return matches;
+  });
+  
+  const totalPages = Math.ceil(filteredRecommendations.length / itemsPerPage);
+  const currentItems = filteredRecommendations.slice(currentPage * itemsPerPage, (currentPage + 1) * itemsPerPage);
 
   const genres = [
     { name: 'SLICE OF LIFE', imageUrl: '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png', filter: 'slice-of-life' },
@@ -42,43 +67,42 @@ const RecommendedSection = () => {
   };
 
   const viewAll = () => {
-    navigate('/shop-all?recommended=true');
+    navigate(`/shop-all?recommended=true&filter=${activeFilter}`);
   };
+
+  // Reset current page when filter changes
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [activeFilter]);
 
   const handleAddToCart = (e: React.MouseEvent, item: any) => {
     e.stopPropagation();
-    console.log('🛒 Add to Cart clicked for product:', item.id);
-    console.log('📍 Current location:', window.location.pathname);
-    console.log('🚀 Navigating to pre-order page:', `/pre-order/${item.id}`);
-    navigate(`/pre-order/${item.id}`);
+    
+    const cartItem = {
+      id: item.id,
+      title: item.title,
+      author: item.author || 'Unknown Author',
+      price: typeof item.price === 'string' ? parseFloat(item.price.replace('$', '')) : item.price,
+      originalPrice: item.originalPrice ? (typeof item.originalPrice === 'string' ? parseFloat(item.originalPrice.replace('$', '')) : item.originalPrice) : undefined,
+      imageUrl: item.imageUrl || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png',
+      category: item.genre?.[0] || 'General',
+      product_type: item.type === 'Digital' ? 'book' : item.type === 'Merchandise' ? 'merchandise' : 'book',
+      inStock: true,
+      coins: item.coins,
+      canUnlockWithCoins: false
+    };
+    
+    addToCart(cartItem);
   };
 
   const handleBuyNow = (e: React.MouseEvent, item: any) => {
     e.stopPropagation();
-    console.log('🚀 BUY NOW CLICKED!');
-    console.log('📦 Item:', item);
-    console.log('🆔 Item ID:', item.id);
-    console.log('💰 Item price:', item.price);
-    console.log('📍 Current location:', window.location.pathname);
     
-    const productId = item.id;
-    const targetUrl = `/direct-checkout/${productId}`;
+    // First add to cart
+    handleAddToCart(e, item);
     
-    console.log('🔗 Target URL:', targetUrl);
-    console.log('🚀 About to navigate...');
-    
-    try {
-      navigate(targetUrl, {
-        state: {
-          product: item,
-          quantity: 1,
-          totalPrice: parseFloat(item.price.replace('$', ''))
-        }
-      });
-      console.log('✅ Navigation successful');
-    } catch (error) {
-      console.error('❌ Navigation error:', error);
-    }
+    // Then navigate to cart
+    navigate('/cart');
   };
 
   return (
@@ -140,14 +164,25 @@ const RecommendedSection = () => {
               </div>
           </div>
           <div className="flex space-x-4">
-            <button className="group bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-3 rounded-lg text-sm font-semibold hover:from-red-700 hover:to-red-800 shadow-lg hover:shadow-red-500/25">
+            <button 
+              onClick={() => setActiveFilter('digital')}
+              className={`group px-6 py-3 rounded-lg text-sm font-semibold shadow-lg transition-all duration-300 ${
+                activeFilter === 'digital'
+                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 hover:shadow-red-500/25'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+              }`}
+            >
               <span className="relative z-10">Digital</span>
             </button>
-            <button className="group bg-gray-700 text-gray-300 px-6 py-3 rounded-lg text-sm font-semibold hover:bg-gray-600 hover:text-white shadow-lg">
-              Print
-            </button>
-            <button className="group bg-gray-700 text-gray-300 px-6 py-3 rounded-lg text-sm font-semibold hover:bg-gray-600 hover:text-white shadow-lg">
-              Merchandise
+            <button 
+              onClick={() => setActiveFilter('merchandise')}
+              className={`group px-6 py-3 rounded-lg text-sm font-semibold shadow-lg transition-all duration-300 ${
+                activeFilter === 'merchandise'
+                  ? 'bg-gradient-to-r from-red-600 to-red-700 text-white hover:from-red-700 hover:to-red-800 hover:shadow-red-500/25'
+                  : 'bg-gray-700 text-gray-300 hover:bg-gray-600 hover:text-white'
+              }`}
+            >
+              <span className="relative z-10">Merchandise</span>
             </button>
           </div>
         </div>
@@ -231,12 +266,12 @@ const RecommendedSection = () => {
                   </div>
                 )}
               </div>
-              {recommendations.length > itemsPerPage && (
+              {filteredRecommendations.length > itemsPerPage && (
                 <Button
                   onClick={viewAll}
                   className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white"
                 >
-                  View All ({recommendations.length})
+                  View All ({filteredRecommendations.length})
                 </Button>
               )}
             </div>
@@ -247,6 +282,15 @@ const RecommendedSection = () => {
                 [...Array(4)].map((_, index) => (
                   <div key={index} className="bg-gray-800 rounded-xl animate-pulse h-80"></div>
                 ))
+              ) : filteredRecommendations.length === 0 ? (
+                <div className="col-span-full text-center py-12">
+                  <div className="text-gray-400 text-lg mb-4">
+                    No {activeFilter} items found
+                  </div>
+                  <p className="text-gray-500">
+                    Try selecting a different filter or check back later for new items.
+                  </p>
+                </div>
               ) : (
                 currentItems.map((item, index) => (
                   <div 

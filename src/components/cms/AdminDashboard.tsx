@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useDummyAuth } from '@/hooks/useDummyAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useCMS } from '@/hooks/useCMS';
 import { AdminSidebar } from './AdminSidebar';
 import { PageEditor } from './PageEditor';
@@ -9,7 +9,7 @@ import { Shield } from 'lucide-react';
 
 export const AdminDashboard = () => {
   const { isLoading } = useCMS();
-  const { user } = useDummyAuth();
+  const { user, isAdmin } = useSupabaseAuth();
   const [selectedPage, setSelectedPage] = useState('home-page');
   const [loadingTimeout, setLoadingTimeout] = useState(false);
 
@@ -28,7 +28,7 @@ export const AdminDashboard = () => {
 
   console.log('AdminDashboard render:', { user, isLoading, loadingTimeout, selectedPage });
 
-  if (!user) {
+  if (!user || !isAdmin) {
     console.log('AdminDashboard: No user, showing access denied');
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -77,7 +77,7 @@ export const AdminDashboard = () => {
                 <h1 className="text-sm font-medium">CMS Admin Dashboard</h1>
               </div>
               <div className="ml-auto text-sm text-muted-foreground">
-                Welcome, {user.email}
+                Welcome, {user?.email}
               </div>
             </div>
           </header>

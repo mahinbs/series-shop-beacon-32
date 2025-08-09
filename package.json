@@ -8,7 +8,8 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "setup": "echo '🚀 Setting up Series Shop Beacon 32...' && echo '📋 Please follow these steps:' && echo '1. Start the development server: npm run dev' && echo '2. Open http://localhost:8080/admin' && echo '3. Login with: admin@series-shop.com / Admin@2024!' && echo '4. Run the database setup script in Supabase SQL Editor' && echo '5. Copy the contents of scripts/setup-database.sql' && echo '6. Paste and run in Supabase SQL Editor' && echo '✅ Admin panel will be fully functional!'"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

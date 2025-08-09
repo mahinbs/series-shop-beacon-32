@@ -7,11 +7,11 @@ import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, Lock, Bell, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { useDummyAuth } from '@/hooks/useDummyAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { toast } from 'sonner';
 
 const AccountSettingsModal = () => {
-  const { user, isLoading } = useDummyAuth();
+  const { user, isLoading } = useSupabaseAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);

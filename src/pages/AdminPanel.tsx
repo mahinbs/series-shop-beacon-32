@@ -1,25 +1,25 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminDashboard } from '@/components/cms/AdminDashboard';
-import { useDummyAuth } from '@/hooks/useDummyAuth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Card, CardContent } from '@/components/ui/card';
 import { Shield, LogOut, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 const AdminPanel = () => {
-  const { user, logout } = useDummyAuth();
+  const { user, signOut, isAdmin } = useSupabaseAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     // Redirect non-admin users to auth page
-    if (!user) {
+    if (!user || !isAdmin) {
       navigate('/auth', { state: { from: '/admin' } });
     }
   }, [user, navigate]);
 
   const handleSignOut = async () => {
-    logout();
+    await signOut();
     navigate('/');
   };
 
@@ -44,7 +44,7 @@ const AdminPanel = () => {
   }
 
   // Check if user is admin
-  const isAdmin = user.role === 'admin';
+  // Supabase role is determined by `isAdmin`
 
   return (
     <div className="min-h-screen bg-background">
