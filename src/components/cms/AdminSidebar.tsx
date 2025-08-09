@@ -99,8 +99,15 @@ export function AdminSidebar({ selectedPage, onPageSelect }: AdminSidebarProps) 
       : "hover:bg-muted/80 text-muted-foreground hover:text-foreground";
 
   return (
-    <Sidebar className={`${collapsed ? "w-16" : "w-72"} border-r bg-gradient-to-b from-background to-muted/20 transition-all duration-300`} collapsible="icon">
-      <SidebarTrigger className="m-3 hover:bg-accent/50 transition-colors duration-200" />
+    <Sidebar 
+      className={`
+        ${collapsed ? "w-16" : "w-72"} 
+        border-r bg-gradient-to-b from-background to-muted/20 
+        transition-all duration-300 ease-in-out
+        flex-shrink-0
+      `} 
+      collapsible="icon"
+    >
       
       <SidebarContent className="px-2">
         <SidebarGroup className="py-4">

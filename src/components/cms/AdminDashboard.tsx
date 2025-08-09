@@ -60,36 +60,40 @@ export const AdminDashboard = () => {
 
   console.log('AdminDashboard: Rendering main dashboard');
   return (
-    <SidebarProvider defaultOpen={true}>
-      {/* Sidebar */}
-      <AdminSidebar 
-        selectedPage={selectedPage} 
-        onPageSelect={setSelectedPage} 
-      />
+    <div className="min-h-screen w-full bg-background">
+      <SidebarProvider defaultOpen={true}>
+        <div className="flex min-h-screen w-full">
+          {/* Sidebar */}
+          <AdminSidebar 
+            selectedPage={selectedPage} 
+            onPageSelect={setSelectedPage} 
+          />
 
-      {/* Main content area that automatically accounts for the sidebar width and avoids overlap */}
-      <SidebarInset>
-        {/* Header */}
-        <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
-          <div className="flex items-center h-full px-4 gap-4">
-            <SidebarTrigger className="ml-0" />
-            <div className="flex items-center gap-2">
-              <Shield className="h-5 w-5 text-primary" />
-              <h1 className="text-sm font-medium">CMS Admin Dashboard</h1>
-            </div>
-            <div className="ml-auto text-sm text-muted-foreground">
-              Welcome, {user?.email}
-            </div>
-          </div>
-        </header>
+          {/* Main content area */}
+          <SidebarInset className="flex-1 flex flex-col">
+            {/* Header */}
+            <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40 flex-shrink-0">
+              <div className="flex items-center h-full px-6 gap-4">
+                <SidebarTrigger />
+                <div className="flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-primary" />
+                  <h1 className="text-lg font-semibold">CMS Admin Dashboard</h1>
+                </div>
+                <div className="ml-auto text-sm text-muted-foreground">
+                  Welcome, {user?.email}
+                </div>
+              </div>
+            </header>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="container mx-auto p-6 max-w-6xl">
-            <PageEditor selectedPage={selectedPage} />
-          </div>
+            {/* Content */}
+            <main className="flex-1 overflow-y-auto bg-muted/20">
+              <div className="container mx-auto p-6 max-w-7xl">
+                <PageEditor selectedPage={selectedPage} />
+              </div>
+            </main>
+          </SidebarInset>
         </div>
-      </SidebarInset>
-    </SidebarProvider>
+      </SidebarProvider>
+    </div>
   );
 };
