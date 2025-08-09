@@ -110,24 +110,28 @@ export function AdminSidebar({ selectedPage, onPageSelect }: AdminSidebarProps) 
           
           <SidebarGroupContent>
             <SidebarMenu className="space-y-1">
-              {adminPages.map((page) => (
-                <SidebarMenuItem key={page.id}>
-                  <SidebarMenuButton 
-                    asChild 
-                    className={`
-                      ${getNavClass(page.id)} 
-                      rounded px-3 py-2
-                    `}
-                  >
-                    <button
-                      onClick={() => onPageSelect(page.id)}
-                      className="w-full text-left"
+              {adminPages.map((page) => {
+                const Icon = page.icon;
+                return (
+                  <SidebarMenuItem key={page.id}>
+                    <SidebarMenuButton 
+                      asChild 
+                      className={`
+                        ${getNavClass(page.id)} 
+                        rounded px-3 py-2
+                      `}
                     >
-                      {page.title}
-                    </button>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+                      <button
+                        onClick={() => onPageSelect(page.id)}
+                        className="w-full text-left flex items-center gap-3"
+                      >
+                        <Icon className="h-4 w-4" />
+                        {!collapsed && <span className="truncate">{page.title}</span>}
+                      </button>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

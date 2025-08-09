@@ -3,7 +3,7 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useCMS } from '@/hooks/useCMS';
 import { AdminSidebar } from './AdminSidebar';
 import { PageEditor } from './PageEditor';
-import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { SidebarProvider, SidebarTrigger, SidebarInset } from '@/components/ui/sidebar';
 import { Card, CardContent } from '@/components/ui/card';
 import { Shield } from 'lucide-react';
 
@@ -61,35 +61,35 @@ export const AdminDashboard = () => {
   console.log('AdminDashboard: Rendering main dashboard');
   return (
     <SidebarProvider defaultOpen={true}>
-      <div className="min-h-screen flex w-full bg-background">
-        <AdminSidebar 
-          selectedPage={selectedPage} 
-          onPageSelect={setSelectedPage} 
-        />
-        
-        <main className="flex-1 flex flex-col">
-          {/* Header */}
-          <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
-            <div className="flex items-center h-full px-4 gap-4">
-              <SidebarTrigger className="ml-0" />
-              <div className="flex items-center gap-2">
-                <Shield className="h-5 w-5 text-primary" />
-                <h1 className="text-sm font-medium">CMS Admin Dashboard</h1>
-              </div>
-              <div className="ml-auto text-sm text-muted-foreground">
-                Welcome, {user?.email}
-              </div>
-            </div>
-          </header>
+      {/* Sidebar */}
+      <AdminSidebar 
+        selectedPage={selectedPage} 
+        onPageSelect={setSelectedPage} 
+      />
 
-          {/* Content Area */}
-          <div className="flex-1 overflow-y-auto">
-            <div className="container mx-auto p-6 max-w-6xl">
-              <PageEditor selectedPage={selectedPage} />
+      {/* Main content area that automatically accounts for the sidebar width and avoids overlap */}
+      <SidebarInset>
+        {/* Header */}
+        <header className="h-14 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-40">
+          <div className="flex items-center h-full px-4 gap-4">
+            <SidebarTrigger className="ml-0" />
+            <div className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-primary" />
+              <h1 className="text-sm font-medium">CMS Admin Dashboard</h1>
+            </div>
+            <div className="ml-auto text-sm text-muted-foreground">
+              Welcome, {user?.email}
             </div>
           </div>
-        </main>
-      </div>
+        </header>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="container mx-auto p-6 max-w-6xl">
+            <PageEditor selectedPage={selectedPage} />
+          </div>
+        </div>
+      </SidebarInset>
     </SidebarProvider>
   );
 };
