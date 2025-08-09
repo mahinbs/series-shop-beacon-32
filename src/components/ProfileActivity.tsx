@@ -1,41 +1,95 @@
 
-import { ShoppingBag, Heart, Trophy, Target } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ShoppingBag, Heart, Trophy, Target, Loader2, Activity } from 'lucide-react';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 const ProfileActivity = () => {
-  const activities = [
-    {
-      icon: ShoppingBag,
-      iconColor: 'text-red-500',
-      bgColor: 'bg-red-500/10',
-      title: 'Purchased Jujutsu Kaisen Vol. 15',
-      date: 'June 10, 2025',
-      type: 'purchase'
-    },
-    {
-      icon: Heart,
-      iconColor: 'text-pink-500',
-      bgColor: 'bg-pink-500/10',
-      title: 'Added One Piece Box Set to Wishlist',
-      date: 'May 28, 2025',
-      type: 'wishlist'
-    },
-    {
-      icon: Target,
-      iconColor: 'text-blue-500',
-      bgColor: 'bg-blue-500/10',
-      title: 'Reached Level 42',
-      date: 'May 20, 2025',
-      type: 'achievement'
-    },
-    {
-      icon: Trophy,
-      iconColor: 'text-yellow-500',
-      bgColor: 'bg-yellow-500/10',
-      title: 'Earned Collector Badge',
-      date: 'May 15, 2025',
-      type: 'badge'
-    }
-  ];
+  const { user, isAuthenticated } = useSupabaseAuth();
+  const [activities, setActivities] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchActivities = async () => {
+      if (!user || !isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        // Note: You'll need to create an activity tracking system in your database
+        // For now, this shows an empty state
+        setActivities([]);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching activities:', err);
+        setError('Failed to load activities. Please try again later.');
+        setActivities([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivities();
+  }, [user, isAuthenticated]);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-white">Recent Activity</h3>
+        </div>
+        <div className="text-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-400 mx-auto mb-4" />
+          <p className="text-gray-400">Loading activities...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-white">Recent Activity</h3>
+        </div>
+        <div className="text-center py-8">
+          <Activity className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+          <p className="text-blue-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-white">Recent Activity</h3>
+        </div>
+        <div className="text-center py-8">
+          <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-400">Please sign in to view your activity.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (activities.length === 0) {
+    return (
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-white">Recent Activity</h3>
+        </div>
+        <div className="text-center py-8">
+          <Activity className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-400">No recent activity.</p>
+          <p className="text-gray-500 text-sm mt-2">Start shopping to see your activity here!</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">

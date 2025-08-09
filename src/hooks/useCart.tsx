@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { useToast } from './use-toast';
 import { AuthService, type CartItemWithProduct } from '@/services/auth';
 import { useSupabaseAuth } from './useSupabaseAuth';
@@ -30,6 +30,7 @@ interface CartContextType {
   isInCart: (itemId: string) => boolean;
   isLoading: boolean;
   syncCartWithBackend: () => Promise<void>;
+  mergeAnonymousCart: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -49,19 +50,20 @@ interface CartProviderProps {
 export const CartProvider = ({ children }: CartProviderProps) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [hasMergedCart, setHasMergedCart] = useState(false);
   const { toast } = useToast();
-  const { user } = useSupabaseAuth();
+  const { user, isAuthenticated } = useSupabaseAuth();
 
   // Load cart from backend or localStorage
   useEffect(() => {
     const loadCart = async () => {
       setIsLoading(true);
       try {
-        if (user) {
+        if (isAuthenticated && user) {
           // Load from backend for authenticated users
           const backendCartItems = await AuthService.getCartItems(user.id);
           const transformedItems: CartItem[] = backendCartItems.map(item => ({
-            id: item.id,
+            id: item.product.id,
             title: item.product.title,
             author: item.product.author || undefined,
             price: item.product.price,
@@ -73,13 +75,15 @@ export const CartProvider = ({ children }: CartProviderProps) => {
           setCartItems(transformedItems);
         } else {
           // Load from localStorage for anonymous users
-          const savedCart = localStorage.getItem('cart');
+          const savedCart = localStorage.getItem('anonymous_cart');
           if (savedCart) {
             try {
               const parsedCart = JSON.parse(savedCart);
               setCartItems(parsedCart);
             } catch (error) {
               console.error('Error loading cart from localStorage:', error);
+              // Clear corrupted cart data
+              localStorage.removeItem('anonymous_cart');
             }
           }
         }
@@ -96,18 +100,70 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     };
 
     loadCart();
-  }, [user]);
+  }, [user, isAuthenticated]);
 
-  // Save cart to localStorage for anonymous users
+  // Save anonymous cart to localStorage
   useEffect(() => {
-    if (!user && cartItems.length > 0) {
-      localStorage.setItem('cart', JSON.stringify(cartItems));
+    if (!isAuthenticated && cartItems.length > 0) {
+      localStorage.setItem('anonymous_cart', JSON.stringify(cartItems));
     }
-  }, [cartItems, user]);
+  }, [cartItems, isAuthenticated]);
+
+  // Merge anonymous cart when user logs in
+  const mergeAnonymousCart = useCallback(async () => {
+    if (!user || !isAuthenticated || hasMergedCart) return;
+
+    try {
+      const savedCart = localStorage.getItem('anonymous_cart');
+      if (savedCart) {
+        const anonymousCart = JSON.parse(savedCart);
+        
+        if (anonymousCart.length > 0) {
+          // Merge anonymous cart items with backend
+          for (const item of anonymousCart) {
+            try {
+              await AuthService.addToCart(user.id, item.id, item.quantity);
+            } catch (error) {
+              console.error('Error merging cart item:', error);
+            }
+          }
+
+          // Clear anonymous cart
+          localStorage.removeItem('anonymous_cart');
+          
+          // Refresh cart from backend
+          await syncCartWithBackend();
+          
+          setHasMergedCart(true);
+          
+          toast({
+            title: "Cart merged",
+            description: "Your cart items have been merged with your account.",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error merging anonymous cart:', error);
+    }
+  }, [user, isAuthenticated, hasMergedCart]);
+
+  // Auto-merge cart when user authenticates
+  useEffect(() => {
+    if (isAuthenticated && user && !hasMergedCart) {
+      mergeAnonymousCart();
+    }
+  }, [isAuthenticated, user, hasMergedCart, mergeAnonymousCart]);
+
+  // Reset merge flag when user logs out
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setHasMergedCart(false);
+    }
+  }, [isAuthenticated]);
 
   const addToCart = async (item: Omit<CartItem, 'quantity'>) => {
     try {
-      if (user) {
+      if (isAuthenticated && user) {
         // Add to backend for authenticated users
         await AuthService.addToCart(user.id, item.id, 1);
         
@@ -172,7 +228,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
   const removeFromCart = async (itemId: string) => {
     try {
-      if (user) {
+      if (isAuthenticated && user) {
         // Remove from backend for authenticated users
         await AuthService.removeFromCart(user.id, itemId);
       }
@@ -203,7 +259,7 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         return;
       }
 
-      if (user) {
+      if (isAuthenticated && user) {
         // Update in backend for authenticated users
         await AuthService.updateCartItemQuantity(user.id, itemId, quantity);
       }
@@ -225,12 +281,18 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
   const clearCart = async () => {
     try {
-      if (user) {
+      if (isAuthenticated && user) {
         // Clear from backend for authenticated users
         await AuthService.clearCart(user.id);
       }
 
       setCartItems([]);
+      
+      // Clear localStorage for anonymous users
+      if (!isAuthenticated) {
+        localStorage.removeItem('anonymous_cart');
+      }
+      
       toast({
         title: "Cart cleared",
         description: "All items have been removed from your cart.",
@@ -258,13 +320,13 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   };
 
   const syncCartWithBackend = async () => {
-    if (!user) return;
+    if (!isAuthenticated || !user) return;
 
     try {
       setIsLoading(true);
       const backendCartItems = await AuthService.getCartItems(user.id);
       const transformedItems: CartItem[] = backendCartItems.map(item => ({
-        id: item.id,
+        id: item.product.id,
         title: item.product.title,
         author: item.product.author || undefined,
         price: item.product.price,
@@ -297,7 +359,8 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       getCartItemCount,
       isInCart,
       isLoading,
-      syncCartWithBackend
+      syncCartWithBackend,
+      mergeAnonymousCart
     }}>
       {children}
     </CartContext.Provider>

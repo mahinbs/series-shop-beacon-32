@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 
 interface ProductCardProps {
+  id?: string; // Make id optional to handle cases where it might be missing
   title: string;
   author: string;
   volume: string;
@@ -23,6 +24,7 @@ interface ProductCardProps {
 }
 
 const ProductCard = ({ 
+  id, 
   title, 
   author, 
   volume, 
@@ -44,7 +46,7 @@ const ProductCard = ({
 
   const handleAddToCart = () => {
     const cartItem = {
-      id: `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`,
+      id: id || `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`, // Use provided id or fall back to generated one
       title,
       author,
       price: parseFloat(price.replace('$', '')),
@@ -72,12 +74,12 @@ const ProductCard = ({
     console.log('🪙 UNLOCK WITH COINS CLICKED!');
     
     try {
-      // Create a unique product ID from the title and author
-      const productId = `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`;
+      // Use the provided id or fall back to generated one
+      const productId = id || `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`;
       
       console.log('📦 Product title:', title);
       console.log('👤 Author:', author);
-      console.log('🆔 Generated productId:', productId);
+      console.log('🆔 Using productId:', productId);
       console.log('🪙 Coins required:', coins);
       
       // Create product object for coin unlock

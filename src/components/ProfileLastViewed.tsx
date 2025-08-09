@@ -1,31 +1,108 @@
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Eye, Clock } from 'lucide-react';
+import { Eye, Clock, Loader2, BookOpen } from 'lucide-react';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 const ProfileLastViewed = () => {
-  const lastViewed = [
-    {
-      title: 'Attack on Titan Vol. 34',
-      author: 'Hajime Isayama',
-      imageUrl: '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png',
-      viewedAt: '2 hours ago',
-      progress: 75
-    },
-    {
-      title: 'Demon Slayer Vol. 23',
-      author: 'Koyoharu Gotouge',
-      imageUrl: '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png',
-      viewedAt: '1 day ago',
-      progress: 45
-    },
-    {
-      title: 'One Piece Vol. 105',
-      author: 'Eiichiro Oda',
-      imageUrl: '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png',
-      viewedAt: '3 days ago',
-      progress: 90
-    }
-  ];
+  const { user, isAuthenticated } = useSupabaseAuth();
+  const [lastViewed, setLastViewed] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchLastViewed = async () => {
+      if (!user || !isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        // Note: You'll need to create a last viewed tracking system in your database
+        // For now, this shows an empty state
+        setLastViewed([]);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching last viewed:', err);
+        setError('Failed to load last viewed items. Please try again later.');
+        setLastViewed([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchLastViewed();
+  }, [user, isAuthenticated]);
+
+  if (loading) {
+    return (
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 mt-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+            <Eye className="w-5 h-5 text-blue-400" />
+            Last Viewed
+          </h3>
+        </div>
+        <div className="text-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-400 mx-auto mb-4" />
+          <p className="text-gray-400">Loading last viewed...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 mt-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+            <Eye className="w-5 h-5 text-blue-400" />
+            Last Viewed
+          </h3>
+        </div>
+        <div className="text-center py-8">
+          <BookOpen className="h-12 w-12 text-blue-400 mx-auto mb-4" />
+          <p className="text-blue-400">{error}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 mt-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+            <Eye className="w-5 h-5 text-blue-400" />
+            Last Viewed
+          </h3>
+        </div>
+        <div className="text-center py-8">
+          <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-400">Please sign in to view your last viewed items.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (lastViewed.length === 0) {
+    return (
+      <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 mt-8">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-semibold text-white flex items-center gap-2">
+            <Eye className="w-5 h-5 text-blue-400" />
+            Last Viewed
+          </h3>
+        </div>
+        <div className="text-center py-8">
+          <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-400">No recently viewed items.</p>
+          <p className="text-gray-500 text-sm mt-2">Start browsing to see your last viewed items here!</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-gray-900 rounded-xl p-6 border border-gray-800 mt-8">

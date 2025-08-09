@@ -9,6 +9,12 @@ interface Profile {
   email: string | null;
   full_name: string | null;
   avatar_url: string | null;
+  phone?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  zip_code?: string;
+  country?: string;
 }
 
 interface AuthContextType {
@@ -25,6 +31,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   // Accept legacy name/avatar keys and map them internally
   updateProfile: (updates: Partial<Profile> & { name?: string; avatar?: string }) => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -47,16 +54,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   useEffect(() => {
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      async (event, session) => {
         console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
         if (session?.user) {
           // Use setTimeout to prevent deadlock
-          setTimeout(() => {
-            loadUserProfile(session.user.id);
-            checkAdminRole(session.user.id);
+          setTimeout(async () => {
+            await Promise.all([
+              loadUserProfile(session.user.id),
+              checkAdminRole(session.user.id)
+            ]);
           }, 0);
         } else {
           setProfile(null);
@@ -67,13 +76,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       console.log('Initial session:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        loadUserProfile(session.user.id);
-        checkAdminRole(session.user.id);
+        await Promise.all([
+          loadUserProfile(session.user.id),
+          checkAdminRole(session.user.id)
+        ]);
       } else {
         setIsLoading(false);
       }
@@ -181,29 +192,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     if (error) throw error;
   };
 
+  const logout = async () => {
+    const { error } = await supabase.auth.signOut();
+    if (error) throw error;
+  };
+
   const updateProfile = async (updates: Partial<Profile> & { name?: string; avatar?: string }) => {
     if (!user || !profile) throw new Error('No user logged in');
 
-    // Map legacy keys to current schema
-    const mapped: Partial<Profile> = { ...updates };
-    if (Object.prototype.hasOwnProperty.call(updates, 'name')) {
-      (mapped as any).full_name = updates.name ?? null;
-      delete (mapped as any).name;
+    // Map legacy fields to new structure
+    const profileUpdates = { ...updates };
+    if (updates.name) {
+      profileUpdates.full_name = updates.name;
+      delete profileUpdates.name;
     }
-    if (Object.prototype.hasOwnProperty.call(updates, 'avatar')) {
-      (mapped as any).avatar_url = updates.avatar ?? null;
-      delete (mapped as any).avatar;
+    if (updates.avatar) {
+      profileUpdates.avatar_url = updates.avatar;
+      delete profileUpdates.avatar;
     }
 
     const { error } = await supabase
       .from('profiles')
-      .update(mapped)
+      .update(profileUpdates)
       .eq('user_id', user.id);
 
     if (error) throw error;
 
-    // Update local state
-    setProfile({ ...profile, ...mapped });
+    setProfile({ ...profile, ...profileUpdates });
+  };
+
+  const refreshProfile = async () => {
+    if (!user) return;
+    await loadUserProfile(user.id);
   };
 
   return (
@@ -214,11 +234,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isLoading,
       isAdmin,
       isAuthenticated: !!user,
-      logout: signOut,
       signUp,
       signIn,
       signOut,
+      logout,
       updateProfile,
+      refreshProfile,
     }}>
       {children}
     </AuthContext.Provider>

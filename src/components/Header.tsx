@@ -7,11 +7,12 @@ import { CoinDisplay } from '@/components/CoinDisplay';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useCart } from '@/hooks/useCart';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, isAuthenticated, logout, isLoading } = useSupabaseAuth();
+  const { user, isAuthenticated, logout, isLoading, profile } = useSupabaseAuth();
   const { getCartItemCount } = useCart();
 
   const scrollToFeaturedSeries = () => {
@@ -124,11 +125,19 @@ const Header = () => {
             {isAuthenticated ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white relative">
                     <UserCircle className="h-5 w-5" />
+                    {profile?.full_name && (
+                      <Badge variant="secondary" className="absolute -bottom-1 -right-1 h-4 w-4 p-0 text-xs">
+                        {profile.full_name.charAt(0).toUpperCase()}
+                      </Badge>
+                    )}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56 bg-background border border-border shadow-lg z-50">
+                  <div className="px-2 py-1.5 text-sm font-medium border-b border-border">
+                    {profile?.full_name || user?.email}
+                  </div>
                   <DropdownMenuItem asChild>
                     <Link to="/profile" className="flex items-center gap-2">
                       <User className="h-4 w-4" />
@@ -171,8 +180,9 @@ const Header = () => {
               </DropdownMenu>
             ) : (
               <Link to="/auth">
-                <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                  <LogIn className="h-5 w-5" />
+                <Button variant="outline" size="sm" className="text-gray-300 border-gray-600 hover:border-red-400 hover:text-red-400">
+                  <LogIn className="h-4 w-4 mr-2" />
+                  Sign In
                 </Button>
               </Link>
             )}
@@ -214,38 +224,71 @@ const Header = () => {
               ))}
               {isAuthenticated ? (
                 <>
+                  <div className="px-3 py-2 border-b border-gray-700">
+                    <div className="text-sm font-medium text-gray-300">
+                      {profile?.full_name || user?.email}
+                    </div>
+                  </div>
                   <Link
                     to="/profile"
-                    className="text-gray-300 hover:text-white hover:bg-gray-800 text-sm font-medium px-3 py-2 rounded-md"
+                    className="text-gray-300 hover:text-white hover:bg-gray-800 text-sm font-medium px-3 py-2 rounded-md flex items-center gap-2"
                     onClick={() => setIsMenuOpen(false)}
                   >
+                    <User className="h-4 w-4" />
                     Profile
+                  </Link>
+                  <Link
+                    to="/profile?tab=orders"
+                    className="text-gray-300 hover:text-white hover:bg-gray-800 text-sm font-medium px-3 py-2 rounded-md flex items-center gap-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <History className="h-4 w-4" />
+                    Order History
+                  </Link>
+                  <Link
+                    to="/wishlist"
+                    className="text-gray-300 hover:text-white hover:bg-gray-800 text-sm font-medium px-3 py-2 rounded-md flex items-center gap-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    <Heart className="h-4 w-4" />
+                    Wishlist
                   </Link>
                   <Button
                     variant="ghost"
                     onClick={logout}
-                    className="text-gray-300 hover:text-white hover:bg-gray-800 text-sm font-medium px-3 py-2 rounded-md w-full justify-start"
+                    className="text-gray-300 hover:text-white hover:bg-gray-800 text-sm font-medium px-3 py-2 rounded-md w-full justify-start flex items-center gap-2 text-destructive"
                   >
+                    <LogOut className="h-4 w-4" />
                     Sign Out
                   </Button>
                 </>
               ) : (
                 <Link
                   to="/auth"
-                  className="text-gray-300 hover:text-white hover:bg-gray-800 text-sm font-medium px-3 py-2 rounded-md"
+                  className="text-gray-300 hover:text-white hover:bg-gray-800 text-sm font-medium px-3 py-2 rounded-md flex items-center gap-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
+                  <LogIn className="h-4 w-4" />
                   Sign In
                 </Link>
               )}
               <div className="flex items-center justify-center space-x-4 px-3 pt-4 border-t border-gray-800">
                 <CoinDisplay />
-                <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                  <Search className="h-5 w-5" />
-                </Button>
-                <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                  <ShoppingCart className="h-5 w-5" />
-                </Button>
+                <Link to="/search">
+                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+                    <Search className="h-5 w-5" />
+                  </Button>
+                </Link>
+                <Link to="/cart">
+                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white relative">
+                    <ShoppingCart className="h-5 w-5" />
+                    {getCartItemCount() > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                        {getCartItemCount() > 99 ? '99+' : getCartItemCount()}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
               </div>
             </nav>
           </div>

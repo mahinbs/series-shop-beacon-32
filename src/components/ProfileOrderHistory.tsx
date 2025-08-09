@@ -1,78 +1,74 @@
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Package, Search, Eye, Download, Filter } from 'lucide-react';
+import { Package, Search, Eye, Download, Filter, Truck, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { AuthService } from '@/services/auth';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 const ProfileOrderHistory = () => {
+  const { user, isAuthenticated } = useSupabaseAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  const [orders, setOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Dummy order data
-  const orders = [
-    {
-      id: '#ORD-7829',
-      date: '2025-06-10',
-      items: [
-        { name: 'Mystical Adventures Vol. 1', price: 19.99, quantity: 1 },
-        { name: 'Dragon Tales Complete Series', price: 15.99, quantity: 2 }
-      ],
-      total: 51.97,
-      status: 'Delivered',
-      trackingNumber: 'TRK789012345',
-      shippingAddress: '123 Main St, Anytown, ST 12345'
-    },
-    {
-      id: '#ORD-7645',
-      date: '2025-05-22',
-      items: [
-        { name: 'Fantasy Legends Collection', price: 19.99, quantity: 1 }
-      ],
-      total: 19.99,
-      status: 'Delivered',
-      trackingNumber: 'TRK456789012',
-      shippingAddress: '123 Main St, Anytown, ST 12345'
-    },
-    {
-      id: '#ORD-7432',
-      date: '2025-05-08',
-      items: [
-        { name: 'Adventure Comics Set', price: 29.99, quantity: 1 },
-        { name: 'Hero Chronicles Vol. 3', price: 16.99, quantity: 1 }
-      ],
-      total: 46.98,
-      status: 'Shipped',
-      trackingNumber: 'TRK234567890',
-      shippingAddress: '123 Main St, Anytown, ST 12345'
-    },
-    {
-      id: '#ORD-7201',
-      date: '2025-04-15',
-      items: [
-        { name: 'Magic Realm Chronicles', price: 24.99, quantity: 1 }
-      ],
-      total: 24.99,
-      status: 'Processing',
-      trackingNumber: null,
-      shippingAddress: '123 Main St, Anytown, ST 12345'
-    },
-    {
-      id: '#ORD-6998',
-      date: '2025-03-28',
-      items: [
-        { name: 'Warrior Tales Bundle', price: 39.99, quantity: 1 },
-        { name: 'Mystic Powers Vol. 2', price: 18.99, quantity: 1 }
-      ],
-      total: 58.98,
-      status: 'Cancelled',
-      trackingNumber: null,
-      shippingAddress: '123 Main St, Anytown, ST 12345'
-    }
-  ];
+  useEffect(() => {
+    const fetchOrders = async () => {
+      if (!user || !isAuthenticated) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        const userOrders = await AuthService.getOrders(user.id);
+        
+        // Fetch order details for each order
+        const ordersWithDetails = await Promise.all(
+          userOrders.map(async (order) => {
+            try {
+              const details = await AuthService.getOrderDetails(order.id, user.id);
+              return {
+                ...order,
+                items: details.items,
+                date: order.created_at ? new Date(order.created_at).toISOString().split('T')[0] : '',
+                status: order.status || 'Processing',
+                trackingNumber: null, // This would need to be added to the orders table if needed
+                shippingAddress: 'Address from order data' // This would need to be added to the orders table if needed
+              };
+            } catch (error) {
+              console.error('Error fetching order details:', error);
+              return {
+                ...order,
+                items: [],
+                date: order.created_at ? new Date(order.created_at).toISOString().split('T')[0] : '',
+                status: order.status || 'Processing',
+                trackingNumber: null,
+                shippingAddress: 'Address from order data'
+              };
+            }
+          })
+        );
+        
+        setOrders(ordersWithDetails);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching orders:', err);
+        setError('Failed to load orders. Please try again later.');
+        setOrders([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrders();
+  }, [user, isAuthenticated]);
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
@@ -89,13 +85,28 @@ const ProfileOrderHistory = () => {
     }
   };
 
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'delivered':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'shipped':
+        return <Truck className="h-4 w-4" />;
+      case 'processing':
+        return <Clock className="h-4 w-4" />;
+      case 'cancelled':
+        return <XCircle className="h-4 w-4" />;
+      default:
+        return <Package className="h-4 w-4" />;
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
-    const matchesSearch = order.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         order.items.some(item => item.name.toLowerCase().includes(searchTerm.toLowerCase()));
+    const matchesSearch = order.order_number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         order.items.some((item: any) => item.product_title?.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesStatus = statusFilter === 'all' || order.status.toLowerCase() === statusFilter.toLowerCase();
     
     let matchesDate = true;
-    if (dateFilter !== 'all') {
+    if (dateFilter !== 'all' && order.date) {
       const orderDate = new Date(order.date);
       const now = new Date();
       const daysAgo = Math.floor((now.getTime() - orderDate.getTime()) / (1000 * 3600 * 24));
@@ -107,6 +118,9 @@ const ProfileOrderHistory = () => {
         case '90':
           matchesDate = daysAgo <= 90;
           break;
+        case '180':
+          matchesDate = daysAgo <= 180;
+          break;
         case '365':
           matchesDate = daysAgo <= 365;
           break;
@@ -115,6 +129,74 @@ const ProfileOrderHistory = () => {
     
     return matchesSearch && matchesStatus && matchesDate;
   });
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Order History</h2>
+        </div>
+        <div className="text-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-2 text-gray-600">Loading orders...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Order History</h2>
+        </div>
+        <div className="text-center py-8">
+          <XCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <p className="text-red-600">{error}</p>
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-4"
+            variant="outline"
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated || !user) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Order History</h2>
+        </div>
+        <div className="text-center py-8">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">Please sign in to view your order history.</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (filteredOrders.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold">Order History</h2>
+        </div>
+        <div className="text-center py-8">
+          <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+          <p className="text-gray-600">No orders found.</p>
+          {searchTerm || statusFilter !== 'all' || dateFilter !== 'all' ? (
+            <p className="text-sm text-gray-500 mt-2">Try adjusting your filters.</p>
+          ) : (
+            <p className="text-sm text-gray-500 mt-2">Start shopping to see your orders here!</p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -197,19 +279,19 @@ const ProfileOrderHistory = () => {
             <TableBody>
               {filteredOrders.map((order, index) => (
                 <TableRow key={index} className="border-gray-800 hover:bg-gray-800/30">
-                  <TableCell className="font-medium text-white">{order.id}</TableCell>
+                  <TableCell className="font-medium text-white">{order.order_number}</TableCell>
                   <TableCell className="text-gray-300">
-                    {new Date(order.date).toLocaleDateString('en-US', {
+                    {order.date ? new Date(order.date).toLocaleDateString('en-US', {
                       year: 'numeric',
                       month: 'short',
                       day: 'numeric'
-                    })}
+                    }) : 'N/A'}
                   </TableCell>
                   <TableCell>
                     <div className="space-y-1">
-                      {order.items.map((item, itemIndex) => (
+                      {order.items.map((item: any, itemIndex: number) => (
                         <div key={itemIndex} className="text-sm">
-                          <div className="text-gray-300">{item.name}</div>
+                          <div className="text-gray-300">{item.product_title}</div>
                           <div className="text-gray-500">Qty: {item.quantity} • ${item.price}</div>
                         </div>
                       ))}
@@ -218,7 +300,10 @@ const ProfileOrderHistory = () => {
                   <TableCell className="font-semibold text-white">${order.total}</TableCell>
                   <TableCell>
                     <Badge className={getStatusColor(order.status)}>
-                      {order.status}
+                      <div className="flex items-center gap-1">
+                        {getStatusIcon(order.status)}
+                        {order.status}
+                      </div>
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -239,24 +324,6 @@ const ProfileOrderHistory = () => {
           </Table>
         </CardContent>
       </Card>
-
-      {/* Empty State */}
-      {filteredOrders.length === 0 && (
-        <Card className="bg-gray-900 border-gray-800">
-          <CardContent className="p-12 text-center">
-            <Package className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-white mb-2">No orders found</h3>
-            <p className="text-gray-400 mb-4">Try adjusting your search or filter criteria</p>
-            <Button variant="outline" onClick={() => {
-              setSearchTerm('');
-              setStatusFilter('all');
-              setDateFilter('all');
-            }}>
-              Clear Filters
-            </Button>
-          </CardContent>
-        </Card>
-      )}
     </div>
   );
 };

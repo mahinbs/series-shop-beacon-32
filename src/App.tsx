@@ -45,7 +45,6 @@ import CartPage from "./pages/CartPage";
 import LibraryPage from "./pages/LibraryPage";
 import ChatBot from "./components/ChatBot";
 import ScrollToTop from "./components/ScrollToTop";
-import { DummyAuthProvider } from "./hooks/useDummyAuth";
 import { AuthProvider as SupabaseAuthProvider } from "./hooks/useSupabaseAuth";
 import { CartProvider } from "./hooks/useCart";
 import AuthPage from "./pages/AuthPage";

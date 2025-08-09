@@ -21,6 +21,7 @@ const ProductGrid = () => {
   // Transform books data to match ProductCard interface
   const transformBooksToProducts = (booksList: any[]) => {
     return booksList.map(book => ({
+      id: book.id, // Add the missing id field
       title: book.title,
       author: book.author,
       volume: book.category,
