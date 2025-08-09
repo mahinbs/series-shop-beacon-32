@@ -1,0 +1,22 @@
+
+{
+  "rewrites": [
+    { "source": "/", "destination": "/index.html" },
+    { "source": "/our-series", "destination": "/index.html" },
+    { "source": "/shop-all", "destination": "/index.html" },
+    { "source": "/announcements", "destination": "/index.html" },
+    { "source": "/pre-order/:productId", "destination": "/index.html" },
+    { "source": "/checkout/:productId", "destination": "/index.html" },
+    { "source": "/payment-success", "destination": "/index.html" },
+    { "source": "/about-us", "destination": "/index.html" },
+    { "source": "/contact-us", "destination": "/index.html" },
+    { "source": "/profile", "destination": "/index.html" },
+    { "source": "/affiliation-programs", "destination": "/index.html" },
+    { "source": "/readers-mode", "destination": "/index.html" },
+    { "source": "/privacy-policy", "destination": "/index.html" },
+    { "source": "/copyright", "destination": "/index.html" },
+    { "source": "/order-shipping", "destination": "/index.html" },
+    { "source": "/terms-conditions", "destination": "/index.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
