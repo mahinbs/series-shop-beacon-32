@@ -1,10 +1,49 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
 
-type User = Database['public']['Tables']['profiles']['Row'];
-type CartItem = Database['public']['Tables']['cart_items']['Row'];
-type Order = Database['public']['Tables']['orders']['Row'];
-type OrderItem = Database['public']['Tables']['order_items']['Row'];
+interface User {
+  user_id: string;
+  email: string | null;
+  full_name: string | null;
+  avatar_url: string | null;
+  id?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface CartItem {
+  id: string;
+  user_id: string;
+  product_id: string;
+  quantity: number;
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface Order {
+  id: string;
+  user_id: string;
+  order_number: string;
+  subtotal: number;
+  tax: number;
+  shipping: number;
+  discount: number;
+  total: number;
+  created_at?: string;
+  status?: string | null;
+}
+
+interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product_title: string;
+  product_author: string | null;
+  product_image_url: string | null;
+  quantity: number;
+  unit_price: number;
+  total_price: number;
+  created_at?: string;
+}
 
 export interface AuthUser {
   id: string;
@@ -160,7 +199,7 @@ export class AuthService {
 
   // Cart methods
   static async getCartItems(userId: string): Promise<CartItemWithProduct[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('cart_items')
       .select(`
         *,
@@ -181,7 +220,7 @@ export class AuthService {
 
   static async addToCart(userId: string, productId: string, quantity: number = 1): Promise<void> {
     // Check if item already exists in cart
-    const { data: existingItem } = await supabase
+    const { data: existingItem } = await (supabase as any)
       .from('cart_items')
       .select('id, quantity')
       .eq('user_id', userId)
@@ -190,7 +229,7 @@ export class AuthService {
 
     if (existingItem) {
       // Update quantity
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('cart_items')
         .update({ quantity: existingItem.quantity + quantity })
         .eq('id', existingItem.id);
@@ -198,7 +237,7 @@ export class AuthService {
       if (error) throw error;
     } else {
       // Add new item
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('cart_items')
         .insert([
           {
@@ -219,7 +258,7 @@ export class AuthService {
       return;
     }
 
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('cart_items')
       .update({ quantity })
       .eq('id', cartItemId)
@@ -229,7 +268,7 @@ export class AuthService {
   }
 
   static async removeFromCart(userId: string, cartItemId: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('cart_items')
       .delete()
       .eq('id', cartItemId)
@@ -239,7 +278,7 @@ export class AuthService {
   }
 
   static async clearCart(userId: string): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('cart_items')
       .delete()
       .eq('user_id', userId);
@@ -262,7 +301,7 @@ export class AuthService {
     // Generate order number
     const { data: orderNumber } = await supabase.rpc('generate_order_number');
     
-    const { data: order, error: orderError } = await supabase
+    const { data: order, error: orderError } = await (supabase as any)
       .from('orders')
       .insert([
         {
@@ -287,7 +326,7 @@ export class AuthService {
     unit_price: number;
     total_price: number;
   }>): Promise<void> {
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('order_items')
       .insert(
         items.map(item => ({
@@ -300,7 +339,7 @@ export class AuthService {
   }
 
   static async getOrders(userId: string): Promise<Order[]> {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from('orders')
       .select('*')
       .eq('user_id', userId)
@@ -315,13 +354,13 @@ export class AuthService {
     items: OrderItem[];
   }> {
     const [orderResult, itemsResult] = await Promise.all([
-      supabase
+      (supabase as any)
         .from('orders')
         .select('*')
         .eq('id', orderId)
         .eq('user_id', userId)
         .single(),
-      supabase
+      (supabase as any)
         .from('order_items')
         .select('*')
         .eq('order_id', orderId),

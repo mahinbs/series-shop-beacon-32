@@ -1,9 +1,6 @@
-import React from 'react';
-import { Book } from '@/components/ui/Book';
-import { SectionTitle } from '@/components/ui/SectionTitle';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Book as BookType } from '@/types';
+import type { Book as BookType } from '@/services/database';
 import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
@@ -51,7 +48,18 @@ const RecommendedSection = (props: any) => {
       const normalizeProductType = (t: any) =>
         (['book', 'merchandise', 'digital', 'other'].includes(t) ? t : 'book') as 'book' | 'merchandise' | 'digital' | 'other';
 
-      await addToCart({ ...book, product_type: normalizeProductType(book.product_type) });
+      await addToCart({
+        id: book.id,
+        title: book.title,
+        author: book.author || undefined,
+        price: Number(book.price),
+        imageUrl: book.image_url,
+        category: book.category,
+        product_type: normalizeProductType(book.product_type),
+        inStock: true,
+        coins: (book as any).coins || undefined,
+        canUnlockWithCoins: book.can_unlock_with_coins || undefined,
+      });
       toast.success(`${book.title} added to cart!`);
     } catch (error) {
       console.error("Error adding to cart:", error);
@@ -64,26 +72,30 @@ const RecommendedSection = (props: any) => {
 
   return (
     <section className="container py-8">
-      <SectionTitle title="New Releases" />
+      <h2 className="text-2xl font-semibold mb-4">New Releases</h2>
       {isLoading ? (
         <p>Loading...</p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
           {books.map((book) => (
-            <div key={book.id}>
-              <Book
-                key={book.id}
-                title={book.title}
-                author={book.author || 'Unknown'}
-                price={book.price}
-                imageUrl={book.image_url}
+            <div key={book.id} className="rounded-lg border p-3">
+              <img
+                src={book.image_url}
+                alt={book.title}
+                className="w-full h-48 object-cover rounded"
+                loading="lazy"
               />
-              <Button
-                className="w-full mt-2"
-                onClick={() => handleAddToCart({ ...book, product_type: normalizeProductType(book.product_type) })}
-              >
-                Add to Cart
-              </Button>
+              <div className="mt-2">
+                <div className="font-medium truncate">{book.title}</div>
+                <div className="text-sm text-gray-500">{book.author || 'Unknown'}</div>
+                <div className="text-sm mt-1">${book.price}</div>
+                <Button
+                  className="w-full mt-2"
+                  onClick={() => handleAddToCart({ ...book, product_type: normalizeProductType(book.product_type) })}
+                >
+                  Add to Cart
+                </Button>
+              </div>
             </div>
           ))}
         </div>

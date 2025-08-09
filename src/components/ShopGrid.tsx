@@ -1,6 +1,6 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
-import { Book } from '@/types/book';
+import type { Book } from '@/services/database';
 import { Link } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';

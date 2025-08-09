@@ -77,7 +77,7 @@ export const useAnnouncements = () => {
         .order('display_order', { ascending: true });
 
       if (error) throw error;
-      setAnnouncements((data || []) as Announcement[]);
+      setAnnouncements((data || []) as unknown as Announcement[]);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to load announcements');
       console.error('Error loading announcements:', error);
@@ -90,7 +90,7 @@ export const useAnnouncements = () => {
     try {
       const { error } = await supabase
         .from('announcements')
-        .insert([announcement]);
+        .insert([announcement as any]);
 
       if (error) throw error;
       await loadAnnouncements();
