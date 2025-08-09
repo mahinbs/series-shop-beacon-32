@@ -8,35 +8,44 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
 const AdminPanel = () => {
-  const { user, signOut, isAdmin } = useSupabaseAuth();
+  const { user, profile, signOut, isAdmin, isLoading } = useSupabaseAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect non-admin users to auth page
-    if (!user || !isAdmin) {
+    // Wait for auth to finish before deciding
+    if (isLoading) return;
+
+    // If not logged in, send to auth and preserve intent
+    if (!user) {
       navigate('/auth', { state: { from: '/admin' } });
+      return;
     }
-  }, [user, navigate]);
+
+    // Logged-in but not an admin: send to home
+    if (!isAdmin) {
+      navigate('/');
+    }
+  }, [user, isAdmin, isLoading, navigate]);
 
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
   };
 
-  // Show loading or redirect for non-admin users
-  if (!user) {
+  // Show loading while resolving auth/admin status
+  if (isLoading || !user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-2xl font-bold mb-2">Admin Access Required</h2>
-            <p className="text-muted-foreground mb-4">
-              This area is restricted to administrators only.
-            </p>
-            <Button onClick={() => navigate('/auth', { state: { from: '/admin' } })} className="w-full">
-              Go to Login
-            </Button>
+            <h2 className="text-2xl font-bold mb-2">Checking admin access…</h2>
+            <p className="text-muted-foreground mb-4">Please wait while we verify your permissions.</p>
+            {!user && (
+              <Button onClick={() => navigate('/auth', { state: { from: '/admin' } })} className="w-full">
+                Go to Login
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -63,7 +72,7 @@ const AdminPanel = () => {
           </div>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
-              Welcome, {user.name || user.email}
+              Welcome, {profile?.full_name || user.email}
               {isAdmin && (
                 <span className="ml-2 text-xs text-primary font-medium">
                   (Administrator)

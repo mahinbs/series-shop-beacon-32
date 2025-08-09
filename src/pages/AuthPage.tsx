@@ -25,8 +25,8 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check if user is trying to access admin
-  const isAdminAccess = location.search.includes('admin=true');
+  // Determine where to go after successful sign-in
+  const fromPath = (location.state as any)?.from as string | undefined;
 
   // Redirect logged in users
   useEffect(() => {
@@ -92,7 +92,12 @@ const AuthPage = () => {
         title: "Welcome back!",
         description: "Successfully signed in",
       });
-      navigate('/');
+      // If user intended to visit admin, send them there and let AdminPanel gate by role
+      if (fromPath === '/admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (error: any) {
       toast({
         title: "Sign in failed",
