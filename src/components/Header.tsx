@@ -1,9 +1,8 @@
 
 import { useState } from 'react';
-import { Menu, X, Search, ShoppingCart, User, Heart, Building2, Settings, LogOut, LogIn, UserCircle, Clock, Coins, History } from 'lucide-react';
+import { Menu, X, Search, ShoppingCart, User, Heart, Building2, Settings, LogOut, LogIn, UserCircle, History } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
-import { CoinDisplay } from '@/components/CoinDisplay';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useCart } from '@/hooks/useCart';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -104,7 +103,6 @@ const Header = () => {
                 <Building2 className="w-5 h-5" />
               </Button>
             </Link>
-            <CoinDisplay />
             <Link to="/search">
               <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
                 <Search className="h-5 w-5" />
@@ -160,12 +158,6 @@ const Header = () => {
                     <Link to="/profile?tab=settings" className="flex items-center gap-2">
                       <Settings className="h-4 w-4" />
                       Account Settings
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
-                    <Link to="/buy-coins" className="flex items-center gap-2">
-                      <Coins className="h-4 w-4" />
-                      Coin Balance
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
@@ -273,7 +265,6 @@ const Header = () => {
                 </Link>
               )}
               <div className="flex items-center justify-center space-x-4 px-3 pt-4 border-t border-gray-800">
-                <CoinDisplay />
                 <Link to="/search">
                   <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
                     <Search className="h-5 w-5" />

@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { Unlock, ShoppingCart, Diamond } from 'lucide-react';
+import { ShoppingCart, Diamond } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
@@ -12,12 +12,10 @@ interface ProductCardProps {
   volume: string;
   price: string;
   originalPrice?: string;
-  coins: string;
   imageUrl: string;
   hoverImageUrl?: string;
   isNew?: boolean;
   isOnSale?: boolean;
-  canUnlockWithCoins?: boolean;
   label?: string;
   tagIcon?: 'heart' | 'hot' | 'new' | 'limited' | 'bestseller';
   tagText?: string;
@@ -30,12 +28,10 @@ const ProductCard = ({
   volume, 
   price, 
   originalPrice, 
-  coins, 
   imageUrl,
   hoverImageUrl,
   isNew, 
   isOnSale,
-  canUnlockWithCoins = true,
   label,
   tagIcon,
   tagText
@@ -54,9 +50,7 @@ const ProductCard = ({
       imageUrl,
       category: 'General',
       product_type: 'book' as const,
-      inStock: true,
-      coins,
-      canUnlockWithCoins
+      inStock: true
     };
     
     addToCart(cartItem);
@@ -70,55 +64,6 @@ const ProductCard = ({
     navigate('/cart');
   };
 
-  const handleUnlockWithCoins = () => {
-    console.log('🪙 UNLOCK WITH COINS CLICKED!');
-    
-    try {
-      // Use the provided id or fall back to generated one
-      const productId = id || `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`;
-      
-      console.log('📦 Product title:', title);
-      console.log('👤 Author:', author);
-      console.log('🆔 Using productId:', productId);
-      console.log('🪙 Coins required:', coins);
-      
-      // Create product object for coin unlock
-      const productData = {
-        title,
-        author,
-        volume,
-        price: parseFloat(price.replace('$', '')),
-        originalPrice: originalPrice ? parseFloat(originalPrice.replace('$', '')) : undefined,
-        coins,
-        imageUrl,
-        hoverImageUrl,
-        isNew,
-        isOnSale,
-        canUnlockWithCoins,
-        label,
-        tagIcon,
-        tagText
-      };
-      
-      console.log('📋 Product data for coin unlock:', productData);
-      
-      const targetUrl = `/coin-unlock/${productId}`;
-      console.log('🔗 Navigating to:', targetUrl);
-      
-      // Navigate to coin unlock page
-      navigate(targetUrl, {
-        state: {
-          product: productData,
-          quantity: 1,
-          coinPrice: parseInt(coins.replace(' coins', ''))
-        }
-      });
-      
-      console.log('✅ Navigation successful to coin unlock page');
-    } catch (error) {
-      console.error('❌ Error in handleUnlockWithCoins:', error);
-    }
-  };
 
   // Function to get tag icon (will be customizable based on tagIcon prop)
   const getTagIcon = () => {
@@ -203,9 +148,6 @@ const ProductCard = ({
                 <span className="text-gray-500 line-through text-sm">{originalPrice}</span>
               )}
             </div>
-            {canUnlockWithCoins && (
-              <span className="text-gray-400 text-xs">{coins}</span>
-            )}
           </div>
         </div>
         
@@ -226,17 +168,6 @@ const ProductCard = ({
           >
             Buy Now
           </Button>
-          {canUnlockWithCoins && (
-            <Button 
-              size="sm" 
-              variant="ghost" 
-              className="w-full text-gray-400 hover:text-white text-xs border border-gray-600 hover:border-gray-500"
-              onClick={handleUnlockWithCoins}
-            >
-              <Unlock className="w-3 h-3 mr-1" />
-              Unlock with {coins}
-            </Button>
-          )}
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Coins, CreditCard, Star, Heart } from 'lucide-react';
+import { ArrowLeft, Lock, Star, Heart } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -11,8 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 const EpisodePreview = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const [showUnlockDialog, setShowUnlockDialog] = useState(false);
-  const [userCoins] = useState(5); // Mock user coins
 
   // Mock episode data
   const episode = {
@@ -23,23 +21,13 @@ const EpisodePreview = () => {
     thumbnail: "/lovable-uploads/97f88fee-e070-4d97-a73a-c747112fa093.png",
     previewImage: "/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png",
     summary: "Kai enters the mysterious Shadow Realm for the first time, where he encounters ancient spirits and discovers the true extent of his shadow-hunting abilities. But lurking in the darkness is a powerful enemy that has been waiting for his arrival...",
-    coinPrice: 3,
+    
     releaseDate: "2024-01-29",
     views: "156K",
     likes: "12.3K",
     isLocked: true
   };
 
-  const handleUnlockWithCoins = () => {
-    if (userCoins >= episode.coinPrice) {
-      // In real app, this would make an API call to deduct coins and unlock episode
-      navigate(`/episode/${episode.id}/read`);
-    }
-  };
-
-  const handleBuyCoins = () => {
-    navigate('/buy-coins');
-  };
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -104,60 +92,35 @@ const EpisodePreview = () => {
               </CardContent>
             </Card>
 
-            {/* Unlock Options */}
+            {/* Episode Access */}
             <Card className="bg-gray-800 border-gray-700">
               <CardContent className="p-6">
                 <div className="text-center mb-6">
                   <div className="flex items-center justify-center gap-2 mb-4">
-                    <Coins className="w-8 h-8 text-yellow-400" />
-                    <span className="text-3xl font-bold text-white">{episode.coinPrice}</span>
-                    <span className="text-gray-400">coins to unlock</span>
+                    <Lock className="w-8 h-8 text-gray-400" />
+                    <span className="text-2xl font-bold text-white">Premium Content</span>
                   </div>
                   
-                  <div className="text-sm text-gray-400 mb-4">
-                    Your balance: <span className="text-yellow-400 font-semibold">{userCoins} coins</span>
-                  </div>
+                  <p className="text-sm text-gray-400 mb-4">
+                    This episode is part of our premium collection
+                  </p>
                 </div>
 
                 <div className="space-y-3">
-                  {userCoins >= episode.coinPrice ? (
-                    <Button 
-                      className="w-full bg-green-600 hover:bg-green-700"
-                      onClick={handleUnlockWithCoins}
-                    >
-                      <Coins className="w-4 h-4 mr-2" />
-                      Unlock with {episode.coinPrice} Coins
-                    </Button>
-                  ) : (
-                    <div>
-                      <Button 
-                        className="w-full bg-gray-600 cursor-not-allowed"
-                        disabled
-                      >
-                        <Lock className="w-4 h-4 mr-2" />
-                        Not Enough Coins ({userCoins}/{episode.coinPrice})
-                      </Button>
-                      <p className="text-center text-sm text-gray-400 mt-2">
-                        You need {episode.coinPrice - userCoins} more coins
-                      </p>
-                    </div>
-                  )}
-
                   <Button 
-                    variant="outline" 
-                    className="w-full border-yellow-600 text-yellow-400 hover:bg-yellow-600/10"
-                    onClick={handleBuyCoins}
+                    className="w-full bg-red-600 hover:bg-red-700"
+                    onClick={() => navigate('/shop-all')}
                   >
-                    <CreditCard className="w-4 h-4 mr-2" />
-                    Buy More Coins
+                    <Lock className="w-4 h-4 mr-2" />
+                    Purchase Full Access
                   </Button>
                 </div>
 
                 <div className="mt-6 p-4 bg-gray-700 rounded-lg">
-                  <h4 className="text-white font-semibold mb-2">💡 Why Coins?</h4>
+                  <h4 className="text-white font-semibold mb-2">💡 Premium Benefits</h4>
                   <p className="text-gray-300 text-sm">
-                    Coins support our creators and help us bring you more amazing content. 
-                    First episodes are always free!
+                    Get access to exclusive content and support our creators. 
+                    Free previews available for all episodes!
                   </p>
                 </div>
               </CardContent>

@@ -9,7 +9,6 @@ import ComicsHome from "./pages/ComicsHome";
 import ComicDetail from "./pages/ComicDetail";
 import EpisodePreview from "./pages/EpisodePreview";
 import { EpisodeReader } from "./pages/EpisodeReader";
-import BuyCoins from "./pages/BuyCoins";
 import OurSeries from "./pages/OurSeries";
 import ShopAll from "./pages/ShopAll";
 import Announcements from "./pages/Announcements";
@@ -18,8 +17,6 @@ import PreOrder from "./pages/PreOrder";
 import SeriesPage from "./pages/SeriesPage";
 import Checkout from "./pages/Checkout";
 import DirectCheckout from "./pages/DirectCheckout";
-import CoinUnlock from "./pages/CoinUnlock";
-import UnlockSuccess from "./pages/UnlockSuccess";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
@@ -39,7 +36,6 @@ import ReturnExchange from "./pages/ReturnExchange";
 import CustomerSupport from "./pages/CustomerSupport";
 import LanguageTerms from "./pages/LanguageTerms";
 import Wishlist from "./pages/Wishlist";
-import CoinPurchase from "./pages/CoinPurchase";
 import SearchPage from "./pages/SearchPage";
 import CartPage from "./pages/CartPage";
 import LibraryPage from "./pages/LibraryPage";
@@ -66,7 +62,6 @@ const App = () => (
               <Route path="/comic/:id" element={<ComicDetail />} />
               <Route path="/episode/:id/preview" element={<EpisodePreview />} />
               <Route path="/episode/:id/read" element={<EpisodeReader />} />
-              <Route path="/buy-coins" element={<BuyCoins />} />
               <Route path="/our-series" element={<OurSeries />} />
               <Route path="/shop-all" element={<ShopAll />} />
               <Route path="/announcements" element={<Announcements />} />
@@ -76,8 +71,6 @@ const App = () => (
               <Route path="/product/:productId" element={<MerchandiseDetail />} />
               <Route path="/checkout/:productId" element={<Checkout />} />
               <Route path="/direct-checkout/:productId" element={<DirectCheckout />} />
-              <Route path="/coin-unlock/:productId" element={<CoinUnlock />} />
-              <Route path="/unlock-success" element={<UnlockSuccess />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/about-us" element={<AboutUs />} />
               <Route path="/contact-us" element={<ContactUs />} />

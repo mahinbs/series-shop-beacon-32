@@ -3,14 +3,13 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, ShoppingCart, Download, BookOpen, Unlock, Star, Coins } from 'lucide-react';
+import { Heart, ShoppingCart, Download, BookOpen, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Chapter {
   id: number;
   title: string;
   isLocked: boolean;
-  coinCost?: number;
   isRead: boolean;
 }
 
@@ -21,7 +20,6 @@ interface ProductDetailsProps {
     author: string;
     description: string;
     price: number;
-    coinPrice: number;
     imageUrl: string;
     rating: number;
     totalChapters: number;
@@ -34,16 +32,7 @@ interface ProductDetailsProps {
 
 export function ProductDetails({ product }: ProductDetailsProps) {
   const [selectedFormat, setSelectedFormat] = useState(product.formats[0] || 'Digital');
-  const [userCoins, setUserCoins] = useState(1250); // Mock user coins
   const navigate = useNavigate();
-
-  const unlockChapter = (chapter: Chapter) => {
-    if (chapter.coinCost && userCoins >= chapter.coinCost) {
-      setUserCoins(prev => prev - chapter.coinCost!);
-      // In real implementation, would update chapter unlock status
-      console.log(`Unlocked chapter ${chapter.id} for ${chapter.coinCost} coins`);
-    }
-  };
 
   const purchaseProduct = () => {
     navigate(`/checkout/${product.id}`, {
@@ -130,10 +119,6 @@ export function ProductDetails({ product }: ProductDetailsProps) {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <p className="text-2xl font-bold text-white">${product.price}</p>
-                  <p className="text-gray-400 flex items-center">
-                    <Coins className="w-4 h-4 mr-1 text-yellow-400" />
-                    {product.coinPrice} coins
-                  </p>
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-400">Progress</p>
@@ -195,21 +180,13 @@ export function ProductDetails({ product }: ProductDetailsProps) {
                         </div>
                         
                         <div className="flex items-center space-x-2">
-                          {chapter.isLocked ? (
-                            <Button
-                              size="sm"
-                              onClick={() => unlockChapter(chapter)}
-                              disabled={chapter.coinCost ? userCoins < chapter.coinCost : false}
-                              className="bg-yellow-600 hover:bg-yellow-700 text-black text-xs"
-                            >
-                              <Unlock className="w-3 h-3 mr-1" />
-                              {chapter.coinCost} coins
-                            </Button>
-                          ) : (
+                          {!chapter.isLocked ? (
                             <Button size="sm" variant="outline" className="border-gray-600 text-gray-300">
                               <BookOpen className="w-3 h-3 mr-1" />
                               Read
                             </Button>
+                          ) : (
+                            <span className="text-gray-500 text-sm">Locked</span>
                           )}
                         </div>
                       </div>
