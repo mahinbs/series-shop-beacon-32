@@ -3,6 +3,7 @@ import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useCMS } from '@/hooks/useCMS';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { Link } from 'react-router-dom';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const Footer = () => {
   const { elementRef, isVisible } = useScrollAnimation(0.2);
@@ -88,11 +89,28 @@ const Footer = () => {
               <h3 className="text-red-500 font-semibold mb-3 sm:mb-4 text-base sm:text-lg">{section.title}</h3>
               {index === 3 ? (
                 <div className="flex flex-col space-y-3 items-center sm:items-start">
-                  <img 
-                    src="/lovable-uploads/c63bffdb-4754-4d64-8063-6ac8bba72106.png" 
-                    alt="GL Ami Pop" 
-                    className="h-8 w-auto"
-                  />
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <img 
+                        src="/lovable-uploads/c63bffdb-4754-4d64-8063-6ac8bba72106.png" 
+                        alt="GLAM POP!" 
+                        className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent 
+                      align="center" 
+                      side="top"
+                      sideOffset={10}
+                      className="w-80 bg-gray-900 border border-gray-700 text-gray-300 shadow-xl"
+                    >
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-red-500 text-sm">GLAM POP! (2027)</h4>
+                        <p className="text-xs leading-relaxed">
+                          Imprint for shoujo ai, yuri, and girl's love series that span multiple genres, all brought to life in English with care and authenticity. GLAM POP! showcases stories of love, friendship, and connection between women, ranging from sweet slice-of-life romances to epic, otherworldly adventures.
+                        </p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                   <img 
                     src="/lovable-uploads/298cc90c-2dff-4daf-b31b-2ebe77649735.png" 
                     alt="UE" 
