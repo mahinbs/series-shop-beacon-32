@@ -186,7 +186,7 @@ const BannerCarousel = ({
                   isVisible ? 'translate-y-0 opacity-100' : 'translate-y-8 opacity-0'
                 }`}
                 >
-                {currentBanner.overlayText && typeof currentBanner.overlayText === 'string' && (
+                {currentBanner?.overlayText && (
                   <div
                     className="inline-block bg-gradient-to-r from-red-600 to-red-700 text-white text-sm font-bold px-4 py-2 rounded-full mb-6 animate-pulse shadow-lg"
                     style={{ transitionDelay: '200ms' }}
@@ -248,9 +248,9 @@ const BannerCarousel = ({
                   <Button
                     size="lg"
                     className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold px-8 py-4 text-lg transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25 animate-pulse"
-                    onClick={() => window.location.href = currentBanner.buttonLink}
+                    onClick={() => currentBanner?.buttonLink && (window.location.href = currentBanner.buttonLink)}
                   >
-                    {currentBanner.buttonText}
+                    {currentBanner?.buttonText || 'Shop Now'}
                   </Button>
                 </div>
               </div>
