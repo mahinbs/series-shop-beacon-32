@@ -1,28 +1,34 @@
 # 🔐 Admin Credentials
 
-## Permanent Admin Account
+## Admin Account Setup
 
-Your admin panel now has a **permanent admin account** with the following credentials:
+Your admin panel uses **Supabase authentication** with the following setup:
 
-### 📧 Login Details
+### 📧 Admin Login Details
 
 ```
 Email:    admin@series-shop.com
 Password: Admin@2024!
 ```
 
-### 🎯 How to Access
+### 🎯 How to Access Admin Panel
 
-1. **Go to Admin Panel**: `http://localhost:8080/admin`
-2. **Login with credentials above**
-3. **You'll be redirected to the admin dashboard**
+1. **First Time Setup**: 
+   - Go to `/auth` page and **Sign Up** with the admin credentials above
+   - The system will automatically assign admin privileges to this email
+   
+2. **Subsequent Logins**: 
+   - Go to `/auth` page and **Sign In** with the admin credentials
+   - You'll be redirected to `/admin` dashboard automatically
+
+3. **Direct Admin Access**: After initial setup, go to `/admin` (redirects to auth if not logged in)
 
 ### 🔒 Security Features
 
-- ✅ **Permanent Admin Account**: These credentials will always work
-- ✅ **Admin Role**: Full administrative privileges
+- ✅ **Supabase Authentication**: Real authentication with secure token management
+- ✅ **Auto Admin Role**: admin@series-shop.com automatically gets admin privileges
 - ✅ **Secure Password**: Strong password with special characters
-- ✅ **Protected Email**: Admin email cannot be used for regular registration
+- ✅ **Database Triggers**: Automatic profile and role creation on signup
 
 ### 🎨 Admin Features
 
@@ -45,19 +51,20 @@ Regular users can still:
 ### 🚨 Important Notes
 
 - **Keep these credentials secure** - Don't share them publicly
-- **Admin account is permanent** - These credentials will always work
-- **Local storage** - Login persists until you sign out
-- **No database required** - Works with the dummy authentication system
+- **First signup required** - Must sign up first before signing in
+- **Supabase authentication** - Uses real database authentication
+- **Session persistence** - Login persists until you sign out
 
 ### 🆘 Troubleshooting
 
 If you can't login:
-1. Make sure you're using the exact credentials above
-2. Check that the email and password are copied correctly
-3. Clear browser storage if needed
-4. Try refreshing the page
+1. **First time**: Use **Sign Up** tab with admin credentials
+2. **Return visits**: Use **Sign In** tab with admin credentials  
+3. Make sure you're using the exact credentials above
+4. Check that the email and password are copied correctly
+5. Clear browser storage if needed
 
 ---
 
-**Status**: ✅ **Permanent Admin Account Created**
-**Last Updated**: August 8, 2024
+**Status**: ✅ **Admin Account Database Setup Complete**
+**Last Updated**: August 13, 2025
