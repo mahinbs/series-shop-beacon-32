@@ -111,21 +111,75 @@ const Footer = () => {
                       </div>
                     </PopoverContent>
                   </Popover>
-                  <img 
-                    src="/lovable-uploads/298cc90c-2dff-4daf-b31b-2ebe77649735.png" 
-                    alt="UE" 
-                    className="h-8 w-auto"
-                  />
-                  <img 
-                    src="/lovable-uploads/0eb9fe03-348b-4a44-a643-6c8dfbba66a9.png" 
-                    alt="BL Club" 
-                    className="h-8 w-auto"
-                  />
-                  <img 
-                    src="/lovable-uploads/9c2bfe8c-6585-45b0-bc73-7b72048725ee.png" 
-                    alt="Novel" 
-                    className="h-8 w-auto"
-                  />
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <img 
+                        src="/lovable-uploads/298cc90c-2dff-4daf-b31b-2ebe77649735.png" 
+                        alt="ONE & DONE" 
+                        className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent 
+                      align="center" 
+                      side="top"
+                      sideOffset={10}
+                      className="w-80 bg-gray-900 border border-gray-700 text-gray-300 shadow-xl"
+                    >
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-red-500 text-sm">ONE & DONE (2026)</h4>
+                        <p className="text-xs leading-relaxed">
+                          Designed for readers who want the full experience in one sitting. Specializing in standalone manga volumes that can be read and loved from start to finish in a single go, ONE & DONE is for the binge-reader who can't wait months for the next volume.
+                        </p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <img 
+                        src="/lovable-uploads/0eb9fe03-348b-4a44-a643-6c8dfbba66a9.png" 
+                        alt="BLUSH CLUB" 
+                        className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent 
+                      align="center" 
+                      side="top"
+                      sideOffset={10}
+                      className="w-80 bg-gray-900 border border-gray-700 text-gray-300 shadow-xl"
+                    >
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-red-500 text-sm">BLUSH CLUB (2026)</h4>
+                        <p className="text-xs leading-relaxed">
+                          Dedicated imprint for shounen ai, yaoi, and boy's love stories from across Asia, carefully localized in English for a global readership. From tender first loves to high-stakes romances set against fantastical backdrops, BLUSH CLUB curates series that celebrate love between men in all its forms.
+                        </p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <img 
+                        src="/lovable-uploads/9c2bfe8c-6585-45b0-bc73-7b72048725ee.png" 
+                        alt="E-NOVEL PRESS" 
+                        className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                      />
+                    </PopoverTrigger>
+                    <PopoverContent 
+                      align="center" 
+                      side="top"
+                      sideOffset={10}
+                      className="w-80 bg-gray-900 border border-gray-700 text-gray-300 shadow-xl"
+                    >
+                      <div className="space-y-2">
+                        <h4 className="font-semibold text-red-500 text-sm">E-NOVEL PRESS (2026)</h4>
+                        <p className="text-xs leading-relaxed">
+                          Brings the best of Asian novels—from the original stories behind hit webcomics and manga to captivating new works—into the hands of English-speaking readers worldwide. Our catalogue spans romance, fantasy, action, mystery, horror, and sci-fi.
+                        </p>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
               ) : (
                 <ul className="space-y-1.5 sm:space-y-2">
