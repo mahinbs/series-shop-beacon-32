@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, Play, Pause } from 'lucide-react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useHeroBanners } from '@/hooks/useHeroBanners';
+import { useTypingAnimation } from '@/hooks/useTypingAnimation';
 
 interface BannerItem {
   id: string;
@@ -31,6 +32,7 @@ const BannerCarousel = ({
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [videoPlaying, setVideoPlaying] = useState<{ [key: string]: boolean }>({});
+  const [animationKey, setAnimationKey] = useState(0);
 
   // Transform hero banners to banner items format
   const transformedBanners: BannerItem[] = heroBanners.map((banner) => ({
@@ -56,6 +58,7 @@ const BannerCarousel = ({
 
     const interval = setInterval(() => {
       setCurrentIndex(prev => (prev + 1) % activeBanners.length);
+      setAnimationKey(prev => prev + 1);
     }, autoPlayInterval);
 
     return () => clearInterval(interval);
@@ -70,16 +73,19 @@ const BannerCarousel = ({
 
   const goToSlide = (index: number) => {
     setCurrentIndex(index);
+    setAnimationKey(prev => prev + 1);
   };
 
   const goToPrevious = () => {
     setCurrentIndex(prev => 
       prev === 0 ? activeBanners.length - 1 : prev - 1
     );
+    setAnimationKey(prev => prev + 1);
   };
 
   const goToNext = () => {
     setCurrentIndex(prev => (prev + 1) % activeBanners.length);
+    setAnimationKey(prev => prev + 1);
   };
 
   const toggleVideoPlay = (bannerId: string) => {
@@ -110,6 +116,14 @@ const BannerCarousel = ({
   // Ensure currentIndex is within bounds
   const safeCurrentIndex = Math.min(currentIndex, activeBanners.length - 1);
   const currentBanner = activeBanners[safeCurrentIndex];
+
+  // Typing animations for current banner
+  const { displayedText: displayedTitle, isComplete: titleComplete } = useTypingAnimation(
+    currentBanner?.title || '', 80, 600
+  );
+  const { displayedText: displayedSubtitle, isComplete: subtitleComplete } = useTypingAnimation(
+    currentBanner?.subtitle || '', 30, titleComplete ? 200 : 0
+  );
 
 
   // Don't render if no current banner
@@ -184,36 +198,58 @@ const BannerCarousel = ({
             )}
             
             <h1
-              className="text-6xl md:text-8xl font-black mb-6 leading-tight relative z-50"
+              key={`title-${animationKey}`}
+              className="text-6xl md:text-8xl font-black mb-6 leading-tight relative z-50 animate-fade-in"
               style={{ 
                 transitionDelay: '400ms',
                 color: '#FFFFFF',
                 textShadow: '4px 4px 8px rgba(0,0,0,1), 2px 2px 4px rgba(0,0,0,0.8)',
-                fontWeight: '900'
+                fontWeight: '900',
+                minHeight: '1.2em'
               }}
             >
-              {currentBanner?.title || 'No Title Available'}
+              <span className="inline-block">
+                {displayedTitle}
+                {!titleComplete && (
+                  <span className="animate-pulse ml-1 text-red-500">|</span>
+                )}
+              </span>
             </h1>
             
             <p
+              key={`subtitle-${animationKey}`}
               className="text-2xl md:text-3xl mb-8 max-w-2xl leading-relaxed relative z-50"
               style={{ 
                 transitionDelay: '600ms',
                 color: '#FFFFFF',
                 textShadow: '3px 3px 6px rgba(0,0,0,1), 1px 1px 2px rgba(0,0,0,0.8)',
-                fontWeight: '600'
+                fontWeight: '600',
+                minHeight: '1.5em',
+                opacity: titleComplete ? 1 : 0,
+                transform: titleComplete ? 'translateY(0)' : 'translateY(20px)',
+                transition: 'opacity 0.5s ease, transform 0.5s ease'
               }}
             >
-              {currentBanner?.subtitle || 'No Subtitle Available'}
+              <span className="inline-block">
+                {displayedSubtitle}
+                {titleComplete && !subtitleComplete && (
+                  <span className="animate-pulse ml-1 text-red-500">|</span>
+                )}
+              </span>
             </p>
             
             <div
               className="flex flex-col sm:flex-row gap-4"
-              style={{ transitionDelay: '800ms' }}
+              style={{ 
+                transitionDelay: '800ms',
+                opacity: subtitleComplete ? 1 : 0,
+                transform: subtitleComplete ? 'translateY(0)' : 'translateY(20px)',
+                transition: 'opacity 0.5s ease 0.5s, transform 0.5s ease 0.5s'
+              }}
             >
               <Button
                 size="lg"
-                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold px-8 py-4 text-lg transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25"
+                className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold px-8 py-4 text-lg transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25 animate-pulse"
                 onClick={() => window.location.href = currentBanner.buttonLink}
               >
                 {currentBanner.buttonText}
