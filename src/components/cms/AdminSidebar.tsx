@@ -55,8 +55,8 @@ const adminPages: AdminPage[] = [
     description: 'Manage about page content'
   },
   { 
-    id: 'readers-mode', 
-    title: "Reader's Mode", 
+    id: 'digital-reader', 
+    title: "Digital Reader", 
     icon: SettingsIcon,
     description: 'Manage reading experience settings'
   },

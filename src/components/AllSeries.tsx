@@ -7,7 +7,7 @@ const AllSeries = () => {
   
   const handleReadClick = (title: string) => {
     const seriesSlug = title.toLowerCase().replace(/\s+/g, '-');
-    navigate(`/readers-mode/${encodeURIComponent(seriesSlug)}`);
+    navigate(`/digital-reader/${encodeURIComponent(seriesSlug)}`);
   };
   const allSeries = [
     { title: "Chainsaw Man", rating: 4.7, image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },

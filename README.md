@@ -49,7 +49,7 @@ The admin panel provides comprehensive product management capabilities:
 - **Our Series**: Manage series and collections
 - **Shop All**: Manage shop content and products
 - **About Us**: Manage about page content
-- **Reader's Mode**: Manage reading experience settings
+- **Digital Reader**: Manage reading experience settings
 
 ### 🚀 Getting Started with Admin Panel
 

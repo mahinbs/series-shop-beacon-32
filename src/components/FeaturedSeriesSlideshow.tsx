@@ -48,7 +48,7 @@ const FeaturedSeriesSlideshow = () => {
 
   const handleReadClick = (title: string) => {
     const seriesSlug = title.toLowerCase().replace(/\s+/g, '-');
-    navigate(`/readers-mode/${encodeURIComponent(seriesSlug)}`);
+    navigate(`/digital-reader/${encodeURIComponent(seriesSlug)}`);
   };
 
   return (

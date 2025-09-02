@@ -23,7 +23,7 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
       'our-series': 'our_series',
       'shop-all': 'shop_all',
       'about-us': 'about_us',
-      'readers-mode': 'readers_mode',
+      'digital-reader': 'readers_mode',
       'announcement-page': 'announcements',
     };
     
@@ -164,8 +164,8 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
       return renderGenericPage('shop-all', 'Shop All');
     case 'about-us':
       return renderGenericPage('about-us', 'About Us');
-    case 'readers-mode':
-      return renderGenericPage('readers-mode', "Reader's Mode");
+    case 'digital-reader':
+      return renderGenericPage('digital-reader', "Digital Reader");
     case 'announcement-page':
       return renderGenericPage('announcement-page', 'Announcement Page');
     case 'announcements-management':

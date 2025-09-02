@@ -2,9 +2,51 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { useState } from 'react';
+import { toast } from '@/hooks/use-toast';
 
 const Newsletter = () => {
   const { elementRef, isVisible } = useScrollAnimation(0.3);
+  const [email, setEmail] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email || !email.includes('@')) {
+      toast({
+        title: "Invalid Email",
+        description: "Please enter a valid email address.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Send email to hello@thecrossedhearts.com
+      const mailtoLink = `mailto:hello@thecrossedhearts.com?subject=New Collector's Circle Signup&body=New email signup for Collector's Circle: ${email}`;
+      window.open(mailtoLink);
+      
+      // Show success message
+      toast({
+        title: "Welcome to the Circle!",
+        description: "Thank you for joining our Collector's Circle. We'll be in touch soon!",
+      });
+      
+      // Reset form
+      setEmail('');
+    } catch (error) {
+      toast({
+        title: "Something went wrong",
+        description: "Please try again or contact us directly.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   return (
     <section 
@@ -58,27 +100,37 @@ const Newsletter = () => {
           </p>
         </div>
         
-        <div className={`max-w-lg mx-auto transition-all duration-1000 delay-600 transform ${
+        <form onSubmit={handleSubmit} className={`max-w-lg mx-auto transition-all duration-1000 delay-600 transform ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
         }`}>
           <div className="flex flex-col sm:flex-row space-y-4 sm:space-y-0 sm:space-x-4 relative">
             <div className="flex-1 relative group">
               <Input 
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 placeholder="Enter your email address"
                 className="bg-gray-800/50 border-gray-600 text-white placeholder-gray-400 h-14 px-6 text-lg rounded-xl backdrop-blur-sm transition-all duration-300 focus:scale-105 focus:border-red-500 focus:bg-gray-800 group-hover:border-gray-500"
+                required
               />
               <div className="absolute inset-0 bg-gradient-to-r from-red-500/0 via-red-500/5 to-red-500/0 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
             </div>
-            <Button className="group bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 h-14 text-lg font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-red-500/25 relative overflow-hidden">
+            <Button 
+              type="submit"
+              disabled={isSubmitting}
+              className="group bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 h-14 text-lg font-semibold rounded-xl transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-red-500/25 relative overflow-hidden disabled:opacity-50 disabled:cursor-not-allowed"
+            >
               <div className="absolute inset-0 bg-gradient-to-r from-red-400/0 via-white/20 to-red-400/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700"></div>
-              <span className="relative z-10">Join Circle</span>
+              <span className="relative z-10">
+                {isSubmitting ? 'Joining...' : 'Join Circle'}
+              </span>
             </Button>
           </div>
           
           <p className="text-gray-500 text-sm mt-4">
             No spam, unsubscribe at any time. Your privacy is important to us.
           </p>
-        </div>
+        </form>
       </div>
     </section>
   );

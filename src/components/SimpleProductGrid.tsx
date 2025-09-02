@@ -85,11 +85,23 @@ const SimpleProductGrid = () => {
   };
 
   const handleBuyNow = (product: any) => {
-    // First add to cart
-    handleAddToCart(product);
-    
-    // Then navigate to cart
-    navigate('/cart');
+    // Navigate directly to direct checkout with product details
+    navigate(`/direct-checkout/${product.id}`, {
+      state: {
+        product: {
+          id: product.id,
+          title: product.title,
+          author: product.author,
+          price: product.price,
+          imageUrl: product.image_url || product.imageUrl,
+          category: product.category || 'General',
+          product_type: product.product_type || 'book',
+          inStock: true
+        },
+        quantity: 1,
+        totalPrice: product.price
+      }
+    });
   };
 
   return (

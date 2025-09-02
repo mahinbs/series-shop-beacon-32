@@ -121,11 +121,13 @@ const AnnouncementDetail = () => {
         <div className="max-w-4xl mx-auto">
           {/* Hero Image */}
           <div className="relative mb-8">
-            <img 
-              src={announcement.image} 
-              alt={announcement.title}
-              className="w-full h-64 md:h-96 object-cover rounded-lg"
-            />
+            <div className="aspect-[16/9] overflow-hidden rounded-lg">
+              <img 
+                src={announcement.image} 
+                alt={announcement.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
             {announcement.isHot && (
               <Badge className="absolute top-4 left-4 bg-destructive text-destructive-foreground">
                 HOT
@@ -206,11 +208,13 @@ const AnnouncementDetail = () => {
                 <Link key={related.id} to={`/announcement/${related.id}`}>
                   <Card className="overflow-hidden group hover:shadow-lg transition-shadow cursor-pointer">
                     <div className="relative">
-                      <img 
-                        src={related.image} 
-                        alt={related.title}
-                        className="w-full h-32 object-cover"
-                      />
+                      <div className="aspect-[4/3] overflow-hidden">
+                        <img 
+                          src={related.image} 
+                          alt={related.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                     </div>
                     <CardContent className="p-4">
                       <div className="flex items-center gap-2 mb-2">

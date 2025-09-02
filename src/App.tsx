@@ -22,8 +22,9 @@ import AboutUs from "./pages/AboutUs";
 import ContactUs from "./pages/ContactUs";
 import Profile from "./pages/Profile";
 import AffiliationPrograms from "./pages/AffiliationPrograms";
-import ReadersMode from "./pages/ReadersMode";
+import DigitalReader from "./pages/DigitalReader";
 import MerchandiseDetail from "./pages/MerchandiseDetail";
+import Coins from "./pages/Coins";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -79,6 +80,8 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/search" element={<SearchPage />} />
               <Route path="/library" element={<LibraryPage />} />
+              <Route path="/digital-reader/:seriesTitle" element={<DigitalReader />} />
+              <Route path="/coins" element={<Coins />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="*" element={<NotFound />} />

@@ -12,7 +12,7 @@
     { "source": "/contact-us", "destination": "/index.html" },
     { "source": "/profile", "destination": "/index.html" },
     { "source": "/affiliation-programs", "destination": "/index.html" },
-    { "source": "/readers-mode", "destination": "/index.html" },
+    { "source": "/digital-reader", "destination": "/index.html" },
     { "source": "/privacy-policy", "destination": "/index.html" },
     { "source": "/copyright", "destination": "/index.html" },
     { "source": "/order-shipping", "destination": "/index.html" },

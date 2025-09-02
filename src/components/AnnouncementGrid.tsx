@@ -103,11 +103,13 @@ const AnnouncementGrid = ({ activeFilter }: AnnouncementGridProps) => {
                 style={{ transitionDelay: `${400 + index * 200}ms` }}
               >
                 <div className="relative overflow-hidden">
-                  <img 
-                    src={announcement.imageUrl} 
-                    alt={announcement.title}
-                    className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700"
-                  />
+                  <div className="aspect-[4/3] overflow-hidden">
+                    <img 
+                      src={announcement.imageUrl} 
+                      alt={announcement.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                  </div>
                   
                   {/* Symbol Badge */}
                   <div className="absolute top-3 left-3">

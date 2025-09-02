@@ -7,53 +7,60 @@ const ContactInfo = () => {
 
   const supportContacts = [
     {
-      region: "US and Canada customers:",
-      email: "support.na@crossedhearts.com",
+      region: "For Australia:",
+      email: "cservice@simonandschuster.com.au",
       color: "text-red-400"
     },
     {
-      region: "UK and Europe customers:", 
-      email: "support.eu@crossedhearts.com",
+      region: "For Canada Support:", 
+      email: "customerservice@raincoast.com",
       color: "text-red-400"
     },
     {
-      region: "Africa customers:",
-      email: "support.af@crossedhearts.com",
+      region: "For US Support:",
+      email: "ips@ingramcontent.com",
       color: "text-red-400"
     },
     {
-      region: "Australia and New Zealand customers:",
-      email: "support.anz@crossedhearts.com",
+      region: "For UK Support:",
+      email: "customerservices@scriptps.co.uk",
       color: "text-red-400"
     },
     {
-      region: "Indian subcontinent customers:",
-      email: "support.in@crossedhearts.com",
-      color: "text-red-400"
-    },
-    {
-      region: "Middle East customers:",
-      email: "support.me@crossedhearts.com",
+      region: "For New Zealand:",
+      email: "cservice@simonandschuster.com.au",
       color: "text-red-400"
     }
   ];
 
   const businessContacts = [
     {
-      type: "For licensing any of our titles:",
-      email: "licensing@crossedhearts.com"
+      type: "For Affiliates:",
+      email: "proposals@thecrossedhearts.com"
+    },
+    {
+      type: "For Collector's Circle:",
+      email: "hello@thecrossedhearts.com"
+    },
+    {
+      type: "For Authors:",
+      email: "submissions@thecrossedhearts.com"
+    },
+    {
+      type: "For Licensing:",
+      email: "proposals@thecrossedhearts.com"
     },
     {
       type: "For any partnership proposals:",
-      email: "partnerships@crossedhearts.com"
+      email: "proposal@thecrossedhearts.com"
     },
     {
       type: "For PR or marketing proposals:",
-      email: "marketing@crossedhearts.com"
+      email: "proposal@thecrossedhearts.com"
     },
     {
       type: "For any other reasons:",
-      email: "general@crossedhearts.com"
+      email: "hello@thecrossedhearts.com"
     }
   ];
 

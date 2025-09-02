@@ -363,11 +363,13 @@ const Announcements = () => {
                   filteredFeaturedAnnouncements.map((announcement) => (
                   <Card key={announcement.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
                     <div className="relative">
-                      <img 
-                        src={announcement.image} 
-                        alt={announcement.title}
-                        className="w-full h-48 object-cover"
-                      />
+                      <div className="aspect-[4/3] overflow-hidden">
+                        <img 
+                          src={announcement.image} 
+                          alt={announcement.title}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
                       {announcement.isHot && (
                         <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground">
                           HOT
@@ -440,7 +442,7 @@ const Announcements = () => {
                   <Card key={announcement.id} className="overflow-hidden hover:shadow-md transition-shadow">
                     <CardContent className="p-0">
                       <div className="flex flex-col md:flex-row">
-                        <div className="md:w-48 h-32 md:h-auto">
+                        <div className="md:w-64 aspect-[4/3] overflow-hidden">
                           <img 
                             src={announcement.image} 
                             alt={announcement.title}

@@ -86,7 +86,7 @@ npx supabase db push
    - Our Series management
    - Shop All content
    - About Us content
-   - Reader's Mode settings
+   - Digital Reader settings
 
 ### 🔧 **Technical Features**
 

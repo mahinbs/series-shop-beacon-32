@@ -57,11 +57,25 @@ const ProductCard = ({
   };
 
   const handleBuyNow = () => {
-    // First add to cart
-    handleAddToCart();
-    
-    // Then navigate to cart
-    navigate('/cart');
+    // Navigate directly to direct checkout with product details
+    const productId = id || `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`;
+    navigate(`/direct-checkout/${productId}`, {
+      state: {
+        product: {
+          id: productId,
+          title,
+          author,
+          price: parseFloat(price.replace('$', '')),
+          originalPrice: originalPrice ? parseFloat(originalPrice.replace('$', '')) : undefined,
+          imageUrl,
+          category: 'General',
+          product_type: 'book' as const,
+          inStock: true
+        },
+        quantity: 1,
+        totalPrice: parseFloat(price.replace('$', ''))
+      }
+    });
   };
 
 

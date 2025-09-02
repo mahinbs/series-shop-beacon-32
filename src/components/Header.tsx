@@ -7,6 +7,8 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useCart } from '@/hooks/useCart';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import CoinDisplay from './CoinDisplay';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -36,15 +38,14 @@ const Header = () => {
     { name: 'Home', href: '/' },
     { name: 'Our Series', href: '/our-series' },
     { name: 'Shop All', href: '/shop-all' },
+    { name: 'Digital Reader', href: '/comics' },
     { name: 'About Us', href: '/about-us' },
-    { name: 'Contact Us', href: '/contact-us' },
-    { name: 'Affiliation Programs', href: '/affiliation-programs' },
-    { name: 'Readers Mode', href: '/comics' },
-    { name: 'Announcements', href: '/announcements' }
+    { name: 'Contact Us', href: '/contact-us' }
   ];
 
   return (
-    <header className="bg-black border-b border-gray-800 sticky top-0 z-50">
+    <TooltipProvider>
+      <header className="bg-black border-b border-gray-800 sticky top-0 z-50">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
@@ -85,53 +86,91 @@ const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link to="/wishlist">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300"
-              >
-                <Heart className="w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="/library">
-              <Button 
-                variant="ghost" 
-                size="icon"
-                className="text-gray-300 hover:text-blue-400 hover:bg-blue-500/10 transition-all duration-300"
-              >
-                <Building2 className="w-5 h-5" />
-              </Button>
-            </Link>
-            <Link to="/search">
-              <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                <Search className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/cart">
-              <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white relative">
-                <ShoppingCart className="h-5 w-5" />
-                {getCartItemCount() > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                    {getCartItemCount() > 99 ? '99+' : getCartItemCount()}
-                  </span>
-                )}
-              </Button>
-            </Link>
+            {/* Coin Display */}
+            <CoinDisplay />
+            
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to="/wishlist">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300"
+                  >
+                    <Heart className="w-5 h-5" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Wishlist</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to="/library">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    className="text-gray-300 hover:text-blue-400 hover:bg-blue-500/10 transition-all duration-300"
+                  >
+                    <Building2 className="w-5 h-5" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Library</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to="/search">
+                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+                    <Search className="h-5 w-5" />
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Search</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to="/cart">
+                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white relative">
+                    <ShoppingCart className="h-5 w-5" />
+                    {getCartItemCount() > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                        {getCartItemCount() > 99 ? '99+' : getCartItemCount()}
+                      </span>
+                    )}
+                  </Button>
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Shopping Cart</p>
+              </TooltipContent>
+            </Tooltip>
             
             {/* Profile Dropdown */}
             {isAuthenticated ? (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white relative">
-                    <UserCircle className="h-5 w-5" />
-                    {profile?.full_name && (
-                      <Badge variant="secondary" className="absolute -bottom-1 -right-1 h-4 w-4 p-0 text-xs">
-                        {profile.full_name.charAt(0).toUpperCase()}
-                      </Badge>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white relative">
+                        <UserCircle className="h-5 w-5" />
+                        {profile?.full_name && (
+                          <Badge variant="secondary" className="absolute -bottom-1 -right-1 h-4 w-4 p-0 text-xs">
+                            {profile.full_name.charAt(0).toUpperCase()}
+                          </Badge>
+                        )}
+                      </Button>
+                    </DropdownMenuTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Profile</p>
+                  </TooltipContent>
+                </Tooltip>
                 <DropdownMenuContent align="end" className="w-56 bg-background border border-border shadow-lg z-50">
                   <div className="px-2 py-1.5 text-sm font-medium border-b border-border">
                     {profile?.full_name || user?.email}
@@ -265,27 +304,42 @@ const Header = () => {
                 </Link>
               )}
               <div className="flex items-center justify-center space-x-4 px-3 pt-4 border-t border-gray-800">
-                <Link to="/search">
-                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                    <Search className="h-5 w-5" />
-                  </Button>
-                </Link>
-                <Link to="/cart">
-                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white relative">
-                    <ShoppingCart className="h-5 w-5" />
-                    {getCartItemCount() > 0 && (
-                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
-                        {getCartItemCount() > 99 ? '99+' : getCartItemCount()}
-                      </span>
-                    )}
-                  </Button>
-                </Link>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to="/search">
+                      <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
+                        <Search className="h-5 w-5" />
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Search</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to="/cart">
+                      <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white relative">
+                        <ShoppingCart className="h-5 w-5" />
+                        {getCartItemCount() > 0 && (
+                          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                            {getCartItemCount() > 99 ? '99+' : getCartItemCount()}
+                          </span>
+                        )}
+                      </Button>
+                    </Link>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Shopping Cart</p>
+                  </TooltipContent>
+                </Tooltip>
               </div>
             </nav>
           </div>
         )}
       </div>
     </header>
+    </TooltipProvider>
   );
 };
 

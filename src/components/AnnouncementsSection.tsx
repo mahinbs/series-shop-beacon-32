@@ -79,11 +79,13 @@ const AnnouncementsSection = () => {
               style={{ transitionDelay: `${400 + index * 200}ms` }}
             >
               <div className="relative overflow-hidden">
-                <img 
-                  src={announcement.image_url} 
-                  alt={announcement.title}
-                  className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-700"
-                />
+                <div className="aspect-[4/3] overflow-hidden">
+                  <img 
+                    src={announcement.image_url} 
+                    alt={announcement.title}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                </div>
                 
                 {/* Card suit symbol */}
                 <div className="absolute top-3 right-3">
@@ -154,11 +156,13 @@ const AnnouncementsSection = () => {
                     <div className="space-y-6">
                       {/* Image */}
                       <div className="relative rounded-lg overflow-hidden">
-                        <img 
-                          src={announcement.image_url} 
-                          alt={announcement.title}
-                          className="w-full h-64 object-cover"
-                        />
+                        <div className="aspect-[4/3] overflow-hidden">
+                          <img 
+                            src={announcement.image_url} 
+                            alt={announcement.title}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
                         <div className="absolute top-3 left-3">
                           {announcement.badge_type === 'hot' && (
                             <span className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">

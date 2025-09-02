@@ -18,6 +18,7 @@ const Footer = () => {
       title: "Crossed Hearts",
       links: [
         "A global publishing house specialising in the English localization of Japanese manga and Korean webcomics.",
+        "Affiliation Programs",
         "Announcements",
         "Blogs",
         "Contact Us"
@@ -217,6 +218,10 @@ const Footer = () => {
                         </Link>
                       ) : link === "Language Terms" ? (
                         <Link to="/language-terms" className="text-xs sm:text-sm hover:text-white transition-colors duration-200 transform hover:translate-x-1 block px-2 sm:px-0 py-1">
+                          {link}
+                        </Link>
+                      ) : link === "Affiliation Programs" ? (
+                        <Link to="/affiliation-programs" className="text-xs sm:text-sm hover:text-white transition-colors duration-200 transform hover:translate-x-1 block px-2 sm:px-0 py-1">
                           {link}
                         </Link>
                       ) : link === "Announcements" ? (

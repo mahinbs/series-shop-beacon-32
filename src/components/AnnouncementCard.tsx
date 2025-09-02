@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Heart, Diamond, Club, Spade, Calendar } from 'lucide-react';
+import { AnnouncementCardImage } from './AnnouncementImage';
 
 interface AnnouncementCardProps {
   title: string;
@@ -39,13 +40,10 @@ export function AnnouncementCard({
   return (
     <Card className="bg-gray-800 border-gray-700 hover:bg-gray-750 transition-all duration-300 hover:scale-105 hover:shadow-lg">
       {imageUrl && (
-        <div className="aspect-video overflow-hidden rounded-t-lg">
-          <img 
-            src={imageUrl} 
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-300 hover:scale-110"
-          />
-        </div>
+        <AnnouncementCardImage 
+          src={imageUrl} 
+          alt={title}
+        />
       )}
       
       <CardHeader className="pb-3">
