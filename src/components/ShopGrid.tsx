@@ -1,9 +1,10 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import type { Book } from '@/services/database';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { toast } from 'sonner';
+import { Eye } from 'lucide-react'; // Added Eye icon import
 
 interface ShopGridProps {
   category?: string;
@@ -19,6 +20,7 @@ const ShopGrid: React.FC<ShopGridProps> = ({ category, sectionType, searchTerm }
   const [booksPerPage] = useState(12);
 
   const { addToCart } = useCart();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -73,37 +75,83 @@ const ShopGrid: React.FC<ShopGridProps> = ({ category, sectionType, searchTerm }
       
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
         {currentBooks.map(product => (
-          <div key={product.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+          <div 
+            key={product.id} 
+            className="bg-white rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-300"
+            onClick={() => navigate(`/product/${product.id}`)}
+          >
             <Link to={`/product/${product.id}`}>
               <img
-                src={product.image_url}
+                src={product.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png'}
                 alt={product.title}
-                className="w-full h-64 object-cover"
+                className="w-full h-48 object-cover group-hover:scale-105 transition-all duration-300"
               />
+              
+              {/* Enhanced hover overlay with book details */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                  <h3 className="text-lg font-bold text-red-300">{product.title}</h3>
+                  {product.author && (
+                    <p className="text-sm text-gray-300">by {product.author}</p>
+                  )}
+                  <p className="text-xs text-gray-400 uppercase tracking-wide">{product.category}</p>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xl font-bold text-white">${product.price}</span>
+                    {product.original_price && (
+                      <span className="text-sm text-gray-400 line-through">${product.original_price}</span>
+                    )}
+                  </div>
+                  {product.description && (
+                    <p className="text-xs text-gray-300 line-clamp-2 mt-2">{product.description}</p>
+                  )}
+                  <div className="flex space-x-2 mt-3">
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        navigate(`/product/${product.id}`);
+                      }}
+                      className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110"
+                      title="View Details"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
             </Link>
             <div className="p-4">
               <h3 className="text-lg font-semibold mb-2">{product.title}</h3>
               <p className="text-gray-600">${product.price}</p>
-              <button
-                className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-                onClick={() => {
-                  addToCart({
-                    id: product.id,
-                    title: product.title,
-                    author: product.author || undefined,
-                    price: Number(product.price),
-                    imageUrl: product.image_url,
-                    category: product.category,
-                    product_type: normalizeProductType(product.product_type),
-                    inStock: true,
-                    coins: (product as any).coins || undefined,
-                    canUnlockWithCoins: product.can_unlock_with_coins || undefined,
-                  });
-                  toast.success(`${product.title} added to cart!`);
-                }}
-              >
-                Add to Cart
-              </button>
+              <div className="flex space-x-2 mt-4">
+                <Link
+                  to={`/product/${product.id}`}
+                  className="flex-1 bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded text-center"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  View Details
+                </Link>
+                <button
+                  className="flex-1 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    addToCart({
+                      id: product.id,
+                      title: product.title,
+                      author: product.author || undefined,
+                      price: Number(product.price),
+                      imageUrl: product.image_url,
+                      category: product.category,
+                      product_type: normalizeProductType(product.product_type),
+                      inStock: true,
+                      coins: (product as any).coins || undefined,
+                      canUnlockWithCoins: product.can_unlock_with_coins || undefined,
+                    });
+                    toast.success(`${product.title} added to cart!`);
+                  }}
+                >
+                  Add to Cart
+                </button>
+              </div>
             </div>
           </div>
         ))}

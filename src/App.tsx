@@ -84,6 +84,17 @@ const App = () => (
               <Route path="/coins" element={<Coins />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/customer-support" element={<CustomerSupport />} />
+              <Route path="/return-exchange" element={<ReturnExchange />} />
+              <Route path="/order-shipping" element={<OrderShipping />} />
+              <Route path="/terms-conditions" element={<TermsConditions />} />
+              <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+              <Route path="/copyright" element={<Copyright />} />
+              <Route path="/language-terms" element={<LanguageTerms />} />
+              <Route path="/affiliation-programs" element={<AffiliationPrograms />} />
+              <Route path="/contact-us" element={<ContactUs />} />
+              <Route path="/about-us" element={<AboutUs />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
             <ChatBot />

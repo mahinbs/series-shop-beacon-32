@@ -76,15 +76,29 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         } else {
           // Load from localStorage for anonymous users
           const savedCart = localStorage.getItem('anonymous_cart');
+          console.log('Loading cart from localStorage:', savedCart);
           if (savedCart) {
             try {
               const parsedCart = JSON.parse(savedCart);
-              setCartItems(parsedCart);
+              // Validate cart data structure
+              if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+                setCartItems(parsedCart);
+                console.log('Cart loaded from localStorage:', parsedCart);
+              } else {
+                // Clear invalid cart data
+                localStorage.removeItem('anonymous_cart');
+                setCartItems([]);
+                console.log('Invalid cart data cleared');
+              }
             } catch (error) {
               console.error('Error loading cart from localStorage:', error);
               // Clear corrupted cart data
               localStorage.removeItem('anonymous_cart');
+              setCartItems([]);
             }
+          } else {
+            setCartItems([]);
+            console.log('No cart data in localStorage');
           }
         }
       } catch (error) {
@@ -104,8 +118,14 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
   // Save anonymous cart to localStorage
   useEffect(() => {
-    if (!isAuthenticated && cartItems.length > 0) {
-      localStorage.setItem('anonymous_cart', JSON.stringify(cartItems));
+    if (!isAuthenticated) {
+      if (cartItems.length > 0) {
+        localStorage.setItem('anonymous_cart', JSON.stringify(cartItems));
+        console.log('Cart saved to localStorage:', cartItems);
+      } else {
+        localStorage.removeItem('anonymous_cart');
+        console.log('Cart cleared from localStorage');
+      }
     }
   }, [cartItems, isAuthenticated]);
 
@@ -234,7 +254,19 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       }
 
       const item = cartItems.find(item => item.id === itemId);
-      setCartItems(prevItems => prevItems.filter(item => item.id !== itemId));
+      const updatedCartItems = cartItems.filter(item => item.id !== itemId);
+      setCartItems(updatedCartItems);
+      
+      // Update localStorage for anonymous users
+      if (!isAuthenticated) {
+        if (updatedCartItems.length > 0) {
+          localStorage.setItem('anonymous_cart', JSON.stringify(updatedCartItems));
+          console.log('Cart updated in localStorage after removal:', updatedCartItems);
+        } else {
+          localStorage.removeItem('anonymous_cart');
+          console.log('Cart cleared from localStorage after removal');
+        }
+      }
       
       if (item) {
         toast({
@@ -264,11 +296,15 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         await AuthService.updateCartItemQuantity(user.id, itemId, quantity);
       }
       
-      setCartItems(prevItems =>
-        prevItems.map(item =>
-          item.id === itemId ? { ...item, quantity } : item
-        )
+      const updatedCartItems = cartItems.map(item =>
+        item.id === itemId ? { ...item, quantity } : item
       );
+      setCartItems(updatedCartItems);
+      
+      // Update localStorage for anonymous users
+      if (!isAuthenticated) {
+        localStorage.setItem('anonymous_cart', JSON.stringify(updatedCartItems));
+      }
     } catch (error) {
       console.error('Error updating quantity:', error);
       toast({

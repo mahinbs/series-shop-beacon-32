@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Heart, ShoppingCart, Download, BookOpen, Star } from 'lucide-react';
+import { Heart, ShoppingCart, Download, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 interface Chapter {
@@ -21,7 +21,7 @@ interface ProductDetailsProps {
     description: string;
     price: number;
     imageUrl: string;
-    rating: number;
+
     totalChapters: number;
     unlockedChapters: number;
     formats: string[];
@@ -91,16 +91,6 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             <p className="text-xl text-gray-400 mb-4">by {product.author}</p>
             
             <div className="flex items-center space-x-4 mb-4">
-              <div className="flex items-center space-x-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star 
-                    key={i} 
-                    className={`w-5 h-5 ${i < product.rating ? 'text-yellow-400 fill-current' : 'text-gray-600'}`} 
-                  />
-                ))}
-                <span className="text-gray-400 ml-2">({product.rating}/5)</span>
-              </div>
-              
               <div className="flex flex-wrap gap-2">
                 {product.genre.map((g) => (
                   <Badge key={g} variant="secondary" className="bg-gray-700 text-gray-300">

@@ -6,6 +6,8 @@ import { Badge } from '@/components/ui/badge';
 import { ArrowLeft, Star, Heart, ShoppingCart, Package, Truck, Shield, RotateCcw } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
+import { useCart } from '@/hooks/useCart';
+import { useToast } from '@/hooks/use-toast';
 
 const MerchandiseDetail = () => {
   const { productId } = useParams();
@@ -14,6 +16,8 @@ const MerchandiseDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('M');
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   // Get product data from location state or use mock data
   const product = location.state?.product || {
@@ -38,6 +42,36 @@ const MerchandiseDetail = () => {
     product.imageUrl,
     product.imageUrl
   ];
+
+  const handleAddToCart = () => {
+    try {
+      const cartItem = {
+        id: product.id.toString(),
+        title: product.title,
+        price: product.priceValue || parseFloat(product.price.replace('$', '')),
+        imageUrl: product.imageUrl,
+        category: product.category,
+        product_type: 'merchandise' as const,
+        inStock: product.inStock,
+        quantity: quantity
+      };
+      
+      addToCart(cartItem);
+      toast({
+        title: "Added to Cart!",
+        description: `${product.title} has been added to your cart.`,
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
+  };
 
   const handleCheckout = () => {
     console.log('🛍️ Proceeding to checkout for merchandise');
@@ -170,12 +204,21 @@ const MerchandiseDetail = () => {
             {/* Action Buttons */}
             <div className="space-y-3">
               <Button
-                onClick={handleCheckout}
+                onClick={handleAddToCart}
                 disabled={!product.inStock}
                 className="w-full bg-red-600 hover:bg-red-700 text-white py-6 text-lg font-semibold"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                {product.inStock ? `Checkout - $${totalPrice.toFixed(2)}` : 'Out of Stock'}
+                {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+              </Button>
+              
+              <Button
+                onClick={handleCheckout}
+                disabled={!product.inStock}
+                variant="outline"
+                className="w-full border-red-600 text-red-400 hover:bg-red-600 hover:text-white py-6 text-lg font-semibold"
+              >
+                Checkout Now - ${totalPrice.toFixed(2)}
               </Button>
               
               <Button

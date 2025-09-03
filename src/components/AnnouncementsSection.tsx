@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Calendar, ExternalLink, Star, Heart, Diamond, Club, Spade } from 'lucide-react';
+import { Calendar, ExternalLink, Heart, Diamond, Club, Spade } from 'lucide-react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 
@@ -207,7 +207,7 @@ const AnnouncementsSection = () => {
                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           {announcement.features.map((feature, idx) => (
                             <li key={idx} className="flex items-center space-x-2 text-gray-300">
-                              <Star className="w-4 h-4 text-orange-400 flex-shrink-0" />
+                              <span className="w-4 h-4 text-orange-400 flex-shrink-0">•</span>
                               <span>{feature}</span>
                             </li>
                           ))}

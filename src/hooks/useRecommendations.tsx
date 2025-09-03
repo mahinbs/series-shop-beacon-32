@@ -10,7 +10,6 @@ interface RecommendedProduct {
   coins: string;
   imageUrl: string;
   genre: string[];
-  rating: number;
   type: string;
   isPersonalized?: boolean;
 }
@@ -42,7 +41,7 @@ export const useRecommendations = () => {
         coins: book.coins || `${Math.round(Number(book.price) * 100)} coins`,
         imageUrl: book.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png',
         genre: [book.category || 'General'],
-        rating: 5, // Default rating
+
         type: book.product_type === 'book' ? 'Digital' : 
               book.product_type === 'merchandise' ? 'Merchandise' : 
               book.product_type === 'digital' ? 'Digital' : 'Other',

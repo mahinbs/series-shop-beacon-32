@@ -104,6 +104,10 @@ const SimpleProductGrid = () => {
     });
   };
 
+  const handleViewProduct = (product: any) => {
+    navigate(`/product/${product.id}`);
+  };
+
   return (
     <section className="relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 py-12 overflow-hidden">
       <div className="container mx-auto px-4 relative z-10">
@@ -188,17 +192,57 @@ const SimpleProductGrid = () => {
             filteredProducts.map((product, index) => (
               <div 
                 key={product.id} 
-                className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[560px] transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:scale-105"
+                className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[560px] transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:scale-105 cursor-pointer"
                 onMouseEnter={() => setHoveredBook(product.id)}
                 onMouseLeave={() => setHoveredBook(null)}
+                onClick={() => handleViewProduct(product)}
               >
                 <div className="relative overflow-hidden">
                   <img 
-                    src={hoveredBook === product.id && product.hover_image_url ? product.hover_image_url : product.image_url} 
+                    src={product.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png'} 
                     alt={product.title}
-                    className="w-full h-96 object-cover transition-all duration-500 ease-in-out"
+                    className="w-full h-96 object-cover transition-all duration-500 ease-in-out group-hover:scale-105"
                   />
                   
+                  {/* Subtle hover overlay to indicate clickability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  {/* Enhanced hover overlay with book details */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                    <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                      <h3 className="text-lg font-bold text-red-300">{product.title}</h3>
+                      {product.author && (
+                        <p className="text-sm text-gray-300">by {product.author}</p>
+                      )}
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">{product.category}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl font-bold text-white">${product.price}</span>
+                        {product.original_price && (
+                          <span className="text-sm text-gray-400 line-through">${product.original_price}</span>
+                        )}
+                      </div>
+                      {product.description && (
+                        <p className="text-xs text-gray-300 line-clamp-2 mt-2">{product.description}</p>
+                      )}
+                      <div className="flex space-x-2 mt-3">
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleViewProduct(product); }}
+                          className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
+                          className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-300 hover:scale-110"
+                          title="Add to Cart"
+                        >
+                          <ShoppingCart className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
                   {/* Badges */}
                   <div className="absolute top-3 left-3 space-y-2 z-10">
                     {product.is_new && (
@@ -244,14 +288,21 @@ const SimpleProductGrid = () => {
                   
                   <div className="flex flex-col space-y-2 pt-2 mt-auto">
                     <button 
-                      onClick={() => handleAddToCart(product)}
+                      onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
                       className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold py-2 rounded transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
                     >
                       <ShoppingCart className="w-3 h-3 inline mr-1" />
                       Add to Cart
                     </button>
                     <button 
-                      onClick={() => handleBuyNow(product)}
+                      onClick={(e) => { e.stopPropagation(); handleViewProduct(product); }}
+                      className="w-full bg-gray-700 hover:bg-gray-600 text-white text-xs py-2 rounded transition-all duration-300 hover:shadow-lg"
+                    >
+                      <Eye className="w-3 h-3 inline mr-1" />
+                      View Details
+                    </button>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleBuyNow(product); }}
                       className="w-full bg-white hover:bg-gray-100 text-black text-xs py-2 rounded transition-all duration-300 hover:shadow-lg"
                     >
                       Buy Now

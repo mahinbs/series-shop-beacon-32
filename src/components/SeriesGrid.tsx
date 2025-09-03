@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Star, Users, BookOpen, Package } from 'lucide-react';
+import { Users, BookOpen, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const SeriesGrid = () => {
@@ -16,7 +16,6 @@ const SeriesGrid = () => {
       genre: "Adventure",
       description: "Join Monkey D. Luffy on his epic adventure to become the Pirate King in this legendary manga series.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 5,
       popularity: 98,
       volumeCount: 108,
       status: "Ongoing",
@@ -29,7 +28,6 @@ const SeriesGrid = () => {
       genre: "Action",
       description: "Humanity's last stand against the titans in this gripping and emotional saga.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 5,
       popularity: 95,
       volumeCount: 34,
       status: "Completed",
@@ -42,7 +40,6 @@ const SeriesGrid = () => {
       genre: "Action",
       description: "Follow Tanjiro's journey to save his sister and defeat demons in this beautifully illustrated series.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 5,
       popularity: 92,
       volumeCount: 23,
       status: "Completed",
@@ -55,7 +52,6 @@ const SeriesGrid = () => {
       genre: "Action",
       description: "Enter the world of curses and sorcery with Yuji Itadori in this supernatural thriller.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 4,
       popularity: 90,
       volumeCount: 24,
       status: "Ongoing",
@@ -68,7 +64,6 @@ const SeriesGrid = () => {
       genre: "Horror",
       description: "A dark and twisted tale of devils, contracts, and chainsaws in modern Japan.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 4,
       popularity: 88,
       volumeCount: 11,
       status: "Completed",
@@ -81,7 +76,6 @@ const SeriesGrid = () => {
       genre: "Comedy",
       description: "A spy, an assassin, and a telepath form an unlikely family in this heartwarming comedy.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 4,
       popularity: 85,
       volumeCount: 12,
       status: "Ongoing",
@@ -94,7 +88,6 @@ const SeriesGrid = () => {
       genre: "Drama",
       description: "Time travel meets gang warfare in this intense story of redemption and friendship.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 4,
       popularity: 82,
       volumeCount: 31,
       status: "Completed",
@@ -107,7 +100,6 @@ const SeriesGrid = () => {
       genre: "Action",
       description: "In a world where everyone has superpowers, one boy dreams of becoming a hero.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 4,
       popularity: 80,
       volumeCount: 38,
       status: "Ongoing",
@@ -123,7 +115,6 @@ const SeriesGrid = () => {
       type: "Collectibles",
       description: "Premium quality figures featuring Luffy, Zoro, and Sanji from the Straw Hat Pirates.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 5,
       popularity: 95,
       price: "$89.99",
       inStock: true,
@@ -136,7 +127,6 @@ const SeriesGrid = () => {
       type: "Clothing",
       description: "Official Survey Corps hoodie with embroidered wings of freedom logo.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 4,
       popularity: 88,
       price: "$49.99",
       inStock: true,
@@ -149,7 +139,6 @@ const SeriesGrid = () => {
       type: "Replica",
       description: "High-quality replica of Tanjiro's Nichirin sword with display stand.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 5,
       popularity: 92,
       price: "$129.99",
       inStock: false,
@@ -162,7 +151,6 @@ const SeriesGrid = () => {
       type: "Art",
       description: "Set of 6 high-quality posters featuring main characters and iconic scenes.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 4,
       popularity: 85,
       price: "$24.99",
       inStock: true,
@@ -175,7 +163,6 @@ const SeriesGrid = () => {
       type: "Keychain",
       description: "Detailed Pochita keychain made from premium materials with LED eyes.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 4,
       popularity: 78,
       price: "$19.99",
       inStock: true,
@@ -188,7 +175,6 @@ const SeriesGrid = () => {
       type: "Collectibles",
       description: "Adorable plushie set featuring Anya, Loid, and Yor in their casual outfits.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 5,
       popularity: 90,
       price: "$69.99",
       inStock: true,
@@ -362,6 +348,27 @@ const SeriesGrid = () => {
                     className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   
+                  {/* Enhanced hover overlay with series details */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                    <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                      <h3 className="text-lg font-bold text-red-300">{item.title}</h3>
+                      <p className="text-sm text-gray-300">by {item.author}</p>
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">{item.genre}</p>
+                      <p className="text-xs text-gray-300 line-clamp-2">{item.description}</p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="text-yellow-400">★</span>
+                          <span className="text-sm font-semibold">{item.popularity}%</span>
+                        </div>
+                        <span className="text-sm text-gray-300">{item.volumeCount} volumes</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-gray-400 uppercase">{item.status}</span>
+                        <span className="text-xs text-gray-400">{item.followers} followers</span>
+                      </div>
+                    </div>
+                  </div>
+                  
                   {/* Stock Status Badge */}
                   <div className="absolute top-3 left-3">
                     <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
@@ -384,10 +391,7 @@ const SeriesGrid = () => {
                   {hoveredSeries === item.id && (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="space-y-2">
-                        <div className="flex items-center text-white text-sm">
-                          <Star className="w-4 h-4 mr-2 text-yellow-400" />
-                          {item.rating}/5 Rating
-                        </div>
+
                         <div className="flex items-center text-white text-sm">
                           <Users className="w-4 h-4 mr-2" />
                           {item.reviews} Reviews

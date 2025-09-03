@@ -5,13 +5,28 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Diamond, Star, ShoppingCart, Plus, Minus, ArrowLeft, Truck, Shield, RotateCcw } from 'lucide-react';
+import { Diamond, ShoppingCart, Plus, Minus, ArrowLeft, Truck, Shield, RotateCcw } from 'lucide-react';
+import { useCart } from '@/hooks/useCart';
+import { useToast } from '@/hooks/use-toast';
 
 const PreOrder = () => {
   const { productId } = useParams();
   const navigate = useNavigate();
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedVolume, setSelectedVolume] = useState(1);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+  const { addToCart } = useCart();
+  const { toast } = useToast();
+  
+  // Get volume from URL query parameter
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const volume = urlParams.get('volume');
+    if (volume) {
+      setSelectedVolume(parseInt(volume));
+    }
+  }, []);
 
   useEffect(() => {
     console.log('🎯 PreOrder page loaded');
@@ -23,6 +38,38 @@ const PreOrder = () => {
     const newQuantity = quantity + change;
     if (newQuantity >= 1 && newQuantity <= 10) {
       setQuantity(newQuantity);
+    }
+  };
+
+  const handleAddToCart = () => {
+    try {
+      const cartItem = {
+        id: product.id.toString(),
+        title: product.title,
+        author: product.author,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        imageUrl: product.coverImage,
+        category: product.category,
+        product_type: 'book' as const,
+        inStock: product.inStock,
+        quantity: quantity
+      };
+      
+      addToCart(cartItem);
+      toast({
+        title: "Added to Cart!",
+        description: `${product.title} has been added to your cart.`,
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add item to cart. Please try again.",
+        variant: "destructive",
+        duration: 3000,
+      });
     }
   };
 
@@ -42,6 +89,59 @@ const PreOrder = () => {
     });
   };
 
+  const handleAddToWishlist = (volumeId: string) => {
+    if (isInWishlist(volumeId)) {
+      removeFromWishlist(volumeId);
+      toast({
+        title: "Removed from Wishlist",
+        description: "Item has been removed from your wishlist.",
+        duration: 3000,
+      });
+    } else {
+      // Create wishlist item with proper data structure
+      const wishlistItem = {
+        id: volumeId,
+        title: `Skip and Loafer, Vol.${volumeId.split('-vol-')[1] || '1'}`,
+        author: product.author,
+        price: product.price,
+        originalPrice: product.originalPrice,
+        imageUrl: product.coverImage,
+        category: product.category,
+        product_type: 'book' as const,
+        inStock: product.inStock,
+        volume: parseInt(volumeId.split('-vol-')[1] || '1')
+      };
+      
+      addToWishlist(wishlistItem);
+    }
+  };
+
+  const handleOrderNow = (volume: number) => {
+    const volumePrice = volume <= 4 ? volume * 99 : (volume * 99) + 100;
+    const isPreOrder = volume > 4;
+    
+    const volumeProduct = {
+      id: `${product.id}-vol-${volume}`,
+      title: `Skip and Loafer, Vol.${volume}`,
+      author: product.author,
+      price: volumePrice,
+      imageUrl: product.coverImage,
+      category: product.category,
+      product_type: 'book' as const,
+      inStock: !isPreOrder,
+      quantity: 1
+    };
+
+    // Navigate directly to checkout with this volume
+    navigate(`/checkout/${product.id}-vol-${volume}`, {
+      state: {
+        product: volumeProduct,
+        quantity: 1,
+        totalPrice: volumePrice
+      }
+    });
+  };
+
   const product = {
     id: parseInt(productId || '1'),
     title: "SKIP AND LOAFER",
@@ -49,9 +149,9 @@ const PreOrder = () => {
     author: "Misaki Takamatsu",
     category: "Manga",
     genres: ["HIGH SCHOOL", "ROMANCE", "DRAMA", "HIGH SCHOOL", "FANTASY", "ACTION TALES"],
-    price: 11.99,
-    originalPrice: 14.99,
-    coins: "1199 coins",
+    price: selectedVolume <= 4 ? selectedVolume * 11.99 : (selectedVolume * 11.99) + 2.99,
+    originalPrice: selectedVolume <= 4 ? selectedVolume * 14.99 : (selectedVolume * 14.99) + 3.99,
+    coins: `${Math.round((selectedVolume <= 4 ? selectedVolume * 11.99 : (selectedVolume * 11.99) + 2.99) * 100)} coins`,
     rating: 4.5,
     heroImage: "/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png",
     coverImage: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
@@ -62,8 +162,8 @@ const PreOrder = () => {
     ],
     isNew: true,
     isOnSale: true,
-    inStock: false,
-    releaseDate: "March 15, 2024",
+    inStock: selectedVolume <= 4,
+    releaseDate: selectedVolume <= 4 ? "March 15, 2024" : "Coming Soon",
     description: "Overall, Oshi no Ko is best described as a subversive, dramatic take on the idol industry in Japan, though it has some romantic plotlines as well. Protagonist Aqua Hoshino is more interested in pursuing his quest for vengeance in an exploitative industry, but he finds himself in the spotlight without even meaning to. Two girls around Aqua's age, Kana Arima and Akane Kurokawa, both mean a lot to Aqua, and they have a strong interest in him.",
     creator: "MISAKI TAKAMATSU",
     artist: "",
@@ -168,42 +268,25 @@ const PreOrder = () => {
                   onClick={handleSeriesClick}
                   className="text-2xl lg:text-3xl font-bold text-white hover:text-red-400 transition-colors duration-200 text-left block"
                 >
-                  {product.title}, {product.subtitle}
+                  {product.title}, VOL.{selectedVolume}
                 </button>
                 <p className="text-gray-400 text-sm mt-1">ORIGINAL TITLE: SUKIPPU TU RŌFĀ</p>
-              </div>
-
-              {/* Rating */}
-              <div className="flex items-center space-x-2">
-                <span className="text-white font-semibold">Rating</span>
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className={`w-4 h-4 ${
-                        i < Math.floor(product.rating) 
-                          ? 'text-red-500 fill-current' 
-                          : 'text-gray-600'
-                      }`}
-                    />
-                  ))}
-                  <span className="text-white ml-2 font-bold">★★★★★</span>
-                </div>
               </div>
 
               {/* Action Buttons */}
               <div className="flex space-x-4 pt-4">
                 <Button
-                  onClick={handlePreOrder}
-                  className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold uppercase"
+                  onClick={handleAddToCart}
+                  className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold uppercase transition-colors duration-200"
                 >
-                  ADD TO CART
+                  PRE-ORDER NOW
                 </Button>
                 <Button
+                  onClick={handlePreOrder}
                   variant="outline"
-                  className="border-gray-500 text-gray-300 hover:bg-gray-700 px-8 py-3 font-bold uppercase"
+                  className="border-red-500 text-red-400 hover:bg-red-500 hover:text-white px-8 py-3 font-bold uppercase transition-colors duration-200"
                 >
-                  WISH TO BUY
+                  PRE-ORDER & CHECKOUT
                 </Button>
               </div>
 
@@ -244,7 +327,7 @@ const PreOrder = () => {
             {/* Right Container - Details (40% width) */}
             <div className="md:w-[40%] space-y-3 border border-gray-700 p-4 rounded-lg">
               <div className="text-sm">
-                <span className="text-red-400 font-bold uppercase">Creator: </span>
+                <span className="text-red-400 font-bold uppercase">Creator (s): </span>
                 <span className="text-white font-bold">{product.creator}</span>
               </div>
               
@@ -261,12 +344,7 @@ const PreOrder = () => {
               </div>
               
               <div className="text-sm">
-                <span className="text-red-400 font-bold uppercase">Category: </span>
-                <span className="text-white font-bold">{product.category2}</span>
-              </div>
-              
-              <div className="text-sm">
-                <span className="text-red-400 font-bold uppercase">Age Rating: </span>
+                <span className="text-red-400 font-bold uppercase">Rated As: </span>
                 <span className="text-white font-bold">{product.ageRating}</span>
               </div>
               
@@ -282,186 +360,97 @@ const PreOrder = () => {
             </div>
           </div>
 
-          {/* Trailer and Preview Section - For Print + E-book Rights */}
-          <div className="mt-8 bg-gray-900 p-6 rounded-lg">
-            <div className="flex flex-col lg:flex-row gap-6">
-              {/* Left Side - Trailer Video */}
-              <div className="lg:w-[60%]">
-                <div className="relative bg-gray-800 rounded-lg overflow-hidden h-[400px] lg:h-[500px]">
-                  <img
-                    src="/lovable-uploads/787454a4-0883-433c-9325-ded8a4d8293e.png"
-                    alt="Video Thumbnail"
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <button className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center hover:bg-red-700 transition-colors shadow-lg">
-                      <div className="w-0 h-0 border-l-[20px] border-l-white border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent ml-1"></div>
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Right Side - Chapter Preview List */}
-              <div className="lg:w-[40%]">
-                <div className="bg-white rounded-lg p-4">
-                  <h3 className="text-black font-bold text-lg mb-4 uppercase">Preview</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                      <span className="text-black font-bold">CH. 1</span>
-                      <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded text-sm font-bold">
-                        📖 READ NOW
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                      <span className="text-black font-bold">CH. 2</span>
-                      <button className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1 rounded text-sm font-bold">
-                        🔒 JOIN TO CONTINUE
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                      <span className="text-black font-bold">CH. 3</span>
-                      <button className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1 rounded text-sm font-bold">
-                        🔒 JOIN TO CONTINUE
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                      <span className="text-black font-bold">CH. 4</span>
-                      <button className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1 rounded text-sm font-bold">
-                        🔒 JOIN TO CONTINUE
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                      <span className="text-black font-bold">CH. 5</span>
-                      <button className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1 rounded text-sm font-bold">
-                        🔒 JOIN TO CONTINUE
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between py-2">
-                      <span className="text-black font-bold">CH. 6</span>
-                      <button className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1 rounded text-sm font-bold">
-                        🔒 JOIN TO CONTINUE
-                      </button>
-                    </div>
-                    <div className="text-center pt-2">
-                      <button className="text-gray-600 hover:text-gray-800">
-                        ▼
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-          </div>
-
-          {/* Checkout Button */}
-          <div className="mt-8 text-center">
-            <Button
-              onClick={handlePreOrder}
-              className="bg-red-600 hover:bg-red-700 text-white px-12 py-4 text-lg font-bold uppercase"
-            >
-              CHECKOUT
-            </Button>
-          </div>
-
-          {/* Where to Buy Section */}
-          <div className="mt-8 bg-gray-900 p-6 rounded-lg">
-            <h2 className="text-white text-xl font-bold mb-6 uppercase">Where to Buy</h2>
-            
-            {/* Format Tabs */}
-            <div className="flex space-x-1 mb-6">
-              <button className="bg-white text-black px-6 py-2 font-bold text-sm uppercase">
-                Digital
-              </button>
-              <button className="bg-transparent text-red-400 px-6 py-2 font-bold text-sm uppercase border-b-2 border-red-400">
-                Paperback
-              </button>
-              <button className="bg-transparent text-red-400 px-6 py-2 font-bold text-sm uppercase border-b-2 border-red-400">
-                Hardcover
-              </button>
-            </div>
-
-            {/* Retailer Buttons */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase">
-                Flipkart
-              </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase">
-                Amazon
-              </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase">
-                Amazon
-              </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase">
-                Flipkart
-              </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase">
-                Amazon
-              </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase">
-                Flipkart
-              </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase">
-                Flipkart
-              </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase">
-                Amazon
-              </button>
-              <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase">
-                Amazon
-              </button>
-            </div>
-          </div>
-
           {/* All The Volume Section */}
           <div className="mt-8">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-white text-xl font-bold uppercase">All The Volume</h2>
-              <button className="text-red-400 hover:text-red-300 font-bold text-sm uppercase">
+              <button 
+                onClick={() => navigate('/our-series')}
+                className="text-red-400 hover:text-red-300 font-bold text-sm uppercase transition-colors duration-200"
+              >
                 See All
               </button>
             </div>
             
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((volume) => (
-                <div key={volume} className="bg-gray-900 rounded-lg overflow-hidden">
-                  {/* Pre-order Banner */}
-                  {volume > 4 && (
-                    <div className="bg-orange-600 text-white text-center py-1 text-xs font-bold uppercase">
-                      Pre-orders now open
-                    </div>
-                  )}
-                  
-                  <div className="p-4">
-                    <img
-                      src={product.coverImage}
-                      alt={`Skip and Loafer Vol.${volume}`}
-                      className="w-full h-40 object-cover rounded mb-3"
-                    />
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((volume) => {
+                const volumePrice = volume <= 4 ? volume * 99 : (volume * 99) + 100;
+                const isPreOrder = volume > 4;
+                
+                return (
+                  <div key={volume} className="bg-gray-900 rounded-lg overflow-hidden border border-gray-700 hover:border-red-500 transition-all duration-300 hover:scale-105">
+                    {/* Pre-order Banner */}
+                    {isPreOrder && (
+                      <div className="bg-orange-600 text-white text-center py-1 text-xs font-bold uppercase">
+                        Pre-orders now open
+                      </div>
+                    )}
                     
-                    <div className="text-center">
-                      <h3 className="text-red-400 text-xs font-bold mb-1 uppercase">
-                        Skip and Loafer, Vol.{volume}
-                      </h3>
-                      <p className="text-white text-xs font-bold mb-3">₹{volume}99</p>
+                    <div className="p-4">
+                      <img
+                        src={product.coverImage}
+                        alt={`Skip and Loafer Vol.${volume}`}
+                        className="w-full h-40 object-cover rounded mb-3 cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                        onClick={() => {
+                          // Navigate to the same product detail page but with different volume
+                          navigate(`/pre-order/${product.id}?volume=${volume}`);
+                        }}
+                      />
                       
-                      <div className="space-y-2">
-                        <button className="w-full bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-xs font-bold uppercase">
-                          {volume > 4 ? 'Pre-Order Now' : 'Order Now'}
-                        </button>
-                        <div className="flex space-x-1">
-                          <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold">
-                            Cart
+                      <div className="text-center">
+                        <h3 className="text-red-400 text-xs font-bold mb-1 uppercase">
+                          Skip and Loafer, Vol.{volume}
+                        </h3>
+                        <p className="text-white text-xs font-bold mb-3">₹{volumePrice}</p>
+                        
+                        <div className="space-y-2">
+                          <button 
+                            onClick={() => handleOrderNow(volume)}
+                            className="w-full bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-xs font-bold uppercase transition-colors duration-200"
+                          >
+                            {isPreOrder ? 'Pre-Order Now' : 'Order Now'}
                           </button>
-                          <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold">
-                            ♡
-                          </button>
+                          
+                          <div className="flex space-x-1">
+                            <button 
+                              onClick={() => {
+                                const volumeProduct = {
+                                  id: `${product.id}-vol-${volume}`,
+                                  title: `Skip and Loafer, Vol.${volume}`,
+                                  author: product.author,
+                                  price: volumePrice,
+                                  imageUrl: product.coverImage,
+                                  category: product.category,
+                                  product_type: 'book' as const,
+                                  inStock: !isPreOrder,
+                                  quantity: 1
+                                };
+                                
+                                addToCart(volumeProduct);
+                                toast({
+                                  title: "Added to Cart!",
+                                  description: `Volume ${volume} has been added to your cart.`,
+                                  duration: 3000,
+                                });
+                              }}
+                              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold transition-colors duration-200"
+                            >
+                              Cart
+                            </button>
+                            <button 
+                              onClick={() => handleAddToWishlist(`${product.id}-vol-${volume}`)}
+                              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold transition-colors duration-200"
+                            >
+                              {wishlist.includes(`${product.id}-vol-${volume}`) ? '❤️' : '♡'}
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
-          </div>
           </div>
         </div>
       </div>

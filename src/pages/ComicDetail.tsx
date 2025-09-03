@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Heart, Share2, BookOpen, Star, Clock, User, Tag, Lock, Coins } from 'lucide-react';
+import { Heart, Share2, BookOpen, Clock, User, Tag, Lock, Coins } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -20,8 +20,7 @@ const ComicDetail = () => {
     coverImage: "/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png",
     description: "In a world where shadows hold ancient secrets and supernatural beings lurk in every corner, young Kai discovers he has the rare ability to hunt and control shadow creatures. Join him on an epic journey as he uncovers the truth about his past and battles against the forces of darkness threatening to consume his world.",
     genre: ["Action", "Fantasy", "Supernatural"],
-    rating: 4.8,
-    totalRatings: 15420,
+
     status: "Ongoing",
     totalEpisodes: 45,
     lastUpdate: "2 hours ago",
@@ -136,11 +135,6 @@ const ComicDetail = () => {
             <p className="text-xl text-gray-300 mb-4">by {comic.author}</p>
             
             <div className="flex items-center gap-6 mb-6">
-              <div className="flex items-center gap-2">
-                <Star className="w-5 h-5 text-yellow-400 fill-current" />
-                <span className="text-white font-semibold">{comic.rating}</span>
-                <span className="text-gray-400">({comic.totalRatings.toLocaleString()} ratings)</span>
-              </div>
               <div className="flex items-center gap-2 text-gray-400">
                 <User className="w-4 h-4" />
                 <span>{comic.subscribers} subscribers</span>

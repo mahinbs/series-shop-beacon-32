@@ -134,14 +134,41 @@ const ComicsHome = () => {
 
   const ComicCard = ({ comic }: { comic: any }) => (
     <Link to={`/comic/${comic.id}`}>
-      <Card className="bg-gray-800 border-gray-700 hover:border-red-500/50 transition-all duration-300 group cursor-pointer">
+      <Card className="group bg-gray-900 border-gray-700 hover:border-red-500 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 cursor-pointer">
         <CardContent className="p-0">
           <div className="relative">
             <img 
               src={comic.thumbnail} 
               alt={comic.title}
-              className="w-full h-48 object-cover rounded-t-lg"
+              className="w-full h-48 object-cover rounded-t-lg group-hover:scale-105 transition-all duration-300"
             />
+            
+            {/* Enhanced hover overlay with comic details */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+              <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                <h3 className="text-lg font-bold text-red-300">{comic.title}</h3>
+                <p className="text-sm text-gray-300">by {comic.author}</p>
+                <div className="flex flex-wrap gap-1 mb-2">
+                  {comic.genre.map((g: string) => (
+                    <span key={g} className="text-xs bg-red-600/80 text-white px-2 py-1 rounded">
+                      {g}
+                    </span>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1">
+                    <span className="text-yellow-400">★</span>
+                    <span className="text-sm font-semibold">{comic.rating}</span>
+                  </div>
+                  <span className="text-sm text-gray-300">{comic.episodes} episodes</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-gray-400 uppercase">{comic.status}</span>
+                  <span className="text-xs text-gray-400">{comic.lastUpdate}</span>
+                </div>
+              </div>
+            </div>
+            
             <div className="absolute top-2 left-2 flex gap-1">
               {comic.isNew && <Badge className="bg-green-600 text-white">New</Badge>}
               {comic.isTrending && <Badge className="bg-orange-600 text-white">Trending</Badge>}
@@ -150,23 +177,6 @@ const ComicsHome = () => {
             <div className="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded flex items-center gap-1">
               <Star className="w-3 h-3 text-yellow-400 fill-current" />
               <span className="text-white text-xs">{comic.rating}</span>
-            </div>
-          </div>
-          <div className="p-4">
-            <h3 className="text-white font-semibold mb-1 group-hover:text-red-400 transition-colors">
-              {comic.title}
-            </h3>
-            <p className="text-gray-400 text-sm mb-2">by {comic.author}</p>
-            <div className="flex flex-wrap gap-1 mb-2">
-              {comic.genre.map((g: string) => (
-                <Badge key={g} variant="outline" className="text-xs border-gray-600 text-gray-300">
-                  {g}
-                </Badge>
-              ))}
-            </div>
-            <div className="flex justify-between items-center text-xs text-gray-500">
-              <span>{comic.episodes} episodes</span>
-              <span>{comic.lastUpdate}</span>
             </div>
           </div>
         </CardContent>

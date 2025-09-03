@@ -1,6 +1,6 @@
 
 import { Button } from '@/components/ui/button';
-import { ShoppingCart, Diamond } from 'lucide-react';
+import { ShoppingCart, Diamond, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
@@ -19,6 +19,8 @@ interface ProductCardProps {
   label?: string;
   tagIcon?: 'heart' | 'hot' | 'new' | 'limited' | 'bestseller';
   tagText?: string;
+  category?: string; // Added category prop
+  description?: string; // Added description prop
 }
 
 const ProductCard = ({ 
@@ -34,7 +36,9 @@ const ProductCard = ({
   isOnSale,
   label,
   tagIcon,
-  tagText
+  tagText,
+  category, // Destructure category
+  description // Destructure description
 }: ProductCardProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
@@ -78,6 +82,11 @@ const ProductCard = ({
     });
   };
 
+  const handleViewProduct = () => {
+    const productId = id || `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`;
+    navigate(`/product/${productId}`);
+  };
+
 
   // Function to get tag icon (will be customizable based on tagIcon prop)
   const getTagIcon = () => {
@@ -91,9 +100,10 @@ const ProductCard = ({
 
   return (
     <div 
-      className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 min-h-[560px] max-w-[350px] w-full flex flex-col"
+      className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 min-h-[560px] max-w-[350px] w-full flex flex-col cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={handleViewProduct}
     >
       <div className="relative overflow-hidden flex-shrink-0">
         <img 
@@ -123,9 +133,50 @@ const ProductCard = ({
           </div>
         )}
 
-
-        {/* Hover overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        {/* Subtle hover overlay to indicate clickability */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+        
+        {/* Enhanced hover overlay with book details */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+          <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+            <h3 className="text-lg font-bold text-red-300">{title}</h3>
+            {author && (
+              <p className="text-sm text-gray-300">by {author}</p>
+            )}
+            <p className="text-xs text-gray-400 uppercase tracking-wide">{category}</p>
+            <div className="flex items-center justify-between">
+              <span className="text-xl font-bold text-white">${price}</span>
+              {originalPrice && (
+                <span className="text-sm text-gray-400 line-through">${originalPrice}</span>
+              )}
+            </div>
+            {description && (
+              <p className="text-xs text-gray-300 line-clamp-2 mt-2">{description}</p>
+            )}
+            <div className="flex space-x-2 mt-3">
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleViewProduct();
+                }}
+                className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110"
+                title="View Details"
+              >
+                <Eye className="w-4 h-4" />
+              </button>
+              <button 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleAddToCart();
+                }}
+                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-300 hover:scale-110"
+                title="Add to Cart"
+              >
+                <ShoppingCart className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
       
       <div className="p-5 space-y-3 flex-1 flex flex-col">
@@ -169,7 +220,10 @@ const ProductCard = ({
           <Button 
             size="sm" 
             className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25"
-            onClick={handleAddToCart}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCart();
+            }}
           >
             <ShoppingCart className="w-3 h-3 mr-1" />
             Add to Cart
@@ -177,8 +231,22 @@ const ProductCard = ({
           <Button 
             size="sm" 
             variant="outline"
+            className="w-full bg-gray-700 hover:bg-gray-600 text-white hover:text-white text-xs transform hover:scale-105 transition-all duration-300"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleViewProduct();
+            }}
+          >
+            View Details
+          </Button>
+          <Button 
+            size="sm" 
+            variant="outline"
             className="w-full bg-white border-gray-600 text-black hover:bg-gray-100 hover:text-black text-xs transform hover:scale-105 transition-all duration-300"
-            onClick={handleBuyNow}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleBuyNow();
+            }}
           >
             Buy Now
           </Button>

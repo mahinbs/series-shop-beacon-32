@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const FeaturedSeriesSlideshow = () => {
@@ -13,7 +12,6 @@ const FeaturedSeriesSlideshow = () => {
       description: "Follow Tanjiro's quest to cure his sister and battle demons in this epic tale of family, duty, and supernatural combat.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
       seriesUrl: "/series/demon-slayer",
-      rating: 4.9,
       badge: "New Chapter",
       badgeColor: "bg-red-600",
       genres: ["Action", "Supernatural", "Drama"]
@@ -24,7 +22,6 @@ const FeaturedSeriesSlideshow = () => {
       description: "Enter a world where curses run rampant and sorcerers battle supernatural threats in modern-day Japan.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
       seriesUrl: "/series/jujutsu-kaisen",
-      rating: 4.8,
       badge: "Trending",
       badgeColor: "bg-red-600",
       genres: ["Action", "Fantasy", "Horror"]
@@ -35,7 +32,6 @@ const FeaturedSeriesSlideshow = () => {
       description: "Join Luffy and his pirate crew on their grand adventure to find the legendary One Piece treasure.",
       imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
       seriesUrl: "/series/one-piece",
-      rating: 4.9,
       badge: "Updated",
       badgeColor: "bg-red-600",
       genres: ["Adventure", "Action", "Comedy"]
@@ -60,7 +56,7 @@ const FeaturedSeriesSlideshow = () => {
           {featuredSeries.map((series) => (
             <div
               key={series.id}
-              className="bg-gray-800 rounded-lg overflow-hidden cursor-pointer hover:transform hover:scale-105 transition-transform duration-300"
+              className="bg-gray-800 rounded-lg overflow-hidden cursor-pointer hover:transform hover:scale-105 transition-transform duration-300 group"
               onClick={() => handleSeriesClick(series.seriesUrl)}
             >
               {/* Image with Badge */}
@@ -68,8 +64,25 @@ const FeaturedSeriesSlideshow = () => {
                 <img
                   src={series.imageUrl}
                   alt={series.title}
-                  className="w-full h-64 object-cover"
+                  className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+                
+                {/* Enhanced hover overlay with series details */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                  <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h3 className="text-lg font-bold text-red-300">{series.title}</h3>
+                    <p className="text-xs text-gray-300 line-clamp-2">{series.description}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400 uppercase">{series.genre}</span>
+                      <span className="text-xs text-gray-400">{series.episodes} episodes</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs text-gray-400 uppercase">{series.status}</span>
+                      <span className="text-xs text-gray-400">{series.rating} rating</span>
+                    </div>
+                  </div>
+                </div>
+                
                 <div className={`absolute top-3 right-3 ${series.badgeColor} text-white px-3 py-1 rounded-full text-sm font-medium`}>
                   {series.badge}
                 </div>
@@ -77,13 +90,9 @@ const FeaturedSeriesSlideshow = () => {
 
               {/* Content */}
               <div className="p-4">
-                {/* Title and Rating */}
-                <div className="flex items-center justify-between mb-2">
+                {/* Title */}
+                <div className="mb-2">
                   <h3 className="text-xl font-bold text-white">{series.title}</h3>
-                  <div className="flex items-center gap-1">
-                    <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                    <span className="text-white font-medium">{series.rating}</span>
-                  </div>
                 </div>
 
                 {/* Description */}
