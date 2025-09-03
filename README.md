@@ -2,7 +2,6 @@
 
 A comprehensive e-commerce platform for manga, webtoons, comics, and related merchandise.
 
-
 ## 🎯 Admin Panel
 
 ### 🔐 Admin Access
