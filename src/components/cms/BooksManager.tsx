@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, Save, Edit, Upload, BookOpen, Database } from 'lucide-react';
+import { Trash2, Plus, Save, Edit, Upload, BookOpen, Database, X } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BookForm {
@@ -301,7 +301,10 @@ export const BooksManager = () => {
               {testing ? 'Testing...' : 'Test DB'}
             </Button>
             <Button 
-              onClick={() => setShowAddForm(true)}
+              onClick={() => {
+                console.log('Add Book button clicked');
+                setShowAddForm(true);
+              }}
               className="flex items-center gap-2"
               disabled={submitting}
             >
@@ -370,9 +373,21 @@ export const BooksManager = () => {
       </Card>
 
       {showAddForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>{editingId ? 'Edit Book' : 'Add New Book'}</CardTitle>
+        <Card className="border-2 border-blue-500">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-blue-600">{editingId ? 'Edit Book' : 'Add New Book'}</CardTitle>
+              <p className="text-sm text-muted-foreground">Fill out the form below to add a new book</p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={resetForm}
+              className="flex items-center gap-2"
+            >
+              <X className="h-4 w-4" />
+              Close
+            </Button>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

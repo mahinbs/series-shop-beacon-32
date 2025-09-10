@@ -205,7 +205,7 @@ const AnnouncementsSection = () => {
                       <div>
                         <h4 className="font-semibold text-lg mb-3 text-orange-300">What's Included</h4>
                         <ul className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                          {announcement.features.map((feature, idx) => (
+                          {(announcement.features || []).map((feature, idx) => (
                             <li key={idx} className="flex items-center space-x-2 text-gray-300">
                               <span className="w-4 h-4 text-orange-400 flex-shrink-0">•</span>
                               <span>{feature}</span>

@@ -8,7 +8,11 @@ import {
   Megaphone,
   Image,
   Settings,
-  Package
+  Package,
+  Users,
+  BarChart3,
+  Cog,
+  Coins
 } from 'lucide-react';
 import {
   Sidebar,
@@ -61,6 +65,18 @@ const adminPages: AdminPage[] = [
     description: 'Manage reading experience settings'
   },
   { 
+    id: 'comic-series-management', 
+    title: 'Comic Series', 
+    icon: BookOpen,
+    description: 'Manage comic series, creators, and content'
+  },
+  { 
+    id: 'comic-episodes-management', 
+    title: 'Comic Episodes', 
+    icon: BookOpen,
+    description: 'Manage episodes, pages, and uploads'
+  },
+  { 
     id: 'books-management', 
     title: 'Books Management', 
     icon: BookOpen,
@@ -77,6 +93,36 @@ const adminPages: AdminPage[] = [
     title: 'Products Management', 
     icon: Package,
     description: 'Manage all products including books, merchandise, and digital items'
+  },
+  { 
+    id: 'user-management', 
+    title: 'User Management', 
+    icon: Users,
+    description: 'Manage users, roles, and permissions'
+  },
+  { 
+    id: 'order-management', 
+    title: 'Order Management', 
+    icon: ShoppingBag,
+    description: 'Manage orders, shipments, and payments'
+  },
+  { 
+    id: 'analytics', 
+    title: 'Analytics', 
+    icon: BarChart3,
+    description: 'View sales reports and business analytics'
+  },
+  { 
+    id: 'settings', 
+    title: 'Settings', 
+    icon: Cog,
+    description: 'Configure site settings and preferences'
+  },
+  { 
+    id: 'coins-management', 
+    title: 'Coins Management', 
+    icon: Coins,
+    description: 'Manage coin packages, transactions, and user balances'
   },
 ];
 
@@ -101,12 +147,12 @@ export function AdminSidebar({ selectedPage, onPageSelect }: AdminSidebarProps) 
       className={`
         ${collapsed ? "w-16" : "w-64"} 
         border-r transition-all duration-300 ease-in-out
-        flex-shrink-0 overflow-hidden
+        flex-shrink-0
       `} 
       collapsible="icon"
     >
-      <SidebarContent className="p-0 overflow-hidden">
-        <div className="p-4 space-y-4">
+      <SidebarContent className="p-0 overflow-y-auto h-full">
+        <div className="p-4 space-y-4 min-h-full">
           {/* Admin Pages Section */}
           <SidebarGroup>
             <SidebarGroupLabel className={`
@@ -129,7 +175,6 @@ export function AdminSidebar({ selectedPage, onPageSelect }: AdminSidebarProps) 
                           transition-colors duration-200
                           ${getNavClass(page.id)}
                           ${collapsed ? "justify-center" : "justify-start"}
-                          overflow-hidden
                         `}
                         title={collapsed ? page.title : undefined}
                       >

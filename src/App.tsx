@@ -23,6 +23,7 @@ import ContactUs from "./pages/ContactUs";
 import Profile from "./pages/Profile";
 import AffiliationPrograms from "./pages/AffiliationPrograms";
 import DigitalReader from "./pages/DigitalReader";
+import ComicSeries from "./pages/ComicSeries";
 import MerchandiseDetail from "./pages/MerchandiseDetail";
 import Coins from "./pages/Coins";
 import AdminPanel from "./pages/AdminPanel";
@@ -64,6 +65,7 @@ const App = () => (
               <Route path="/episode/:id/preview" element={<EpisodePreview />} />
               <Route path="/episode/:id/read" element={<EpisodeReader />} />
               <Route path="/our-series" element={<OurSeries />} />
+              <Route path="/comic-series" element={<ComicSeries />} />
               <Route path="/shop-all" element={<ShopAll />} />
               <Route path="/announcements" element={<Announcements />} />
               <Route path="/announcement/:id" element={<AnnouncementDetail />} />

@@ -62,7 +62,7 @@ export const AdminDashboard = () => {
   return (
     <div className="min-h-screen w-full bg-background">
       <SidebarProvider defaultOpen={true}>
-        <div className="flex min-h-screen w-full">
+        <div className="flex h-screen w-full">
           {/* Sidebar */}
           <AdminSidebar 
             selectedPage={selectedPage} 

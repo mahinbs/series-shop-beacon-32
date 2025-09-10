@@ -1,20 +1,30 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { ContentEditor } from './ContentEditor';
 import { HeroBannerManager } from './HeroBannerManager';
 import { BooksManager } from './BooksManager';
 import { MerchandiseManager } from './MerchandiseManager';
 import { ProductsManager } from './ProductsManager';
+import { UserManagement } from './UserManagement';
+import { OrderManagement } from './OrderManagement';
+import { AnalyticsDashboard } from './AnalyticsDashboard';
+import { SettingsPanel } from './SettingsPanel';
+import { CoinsManagement } from './CoinsManagement';
+import { ComicSeriesManager } from './ComicSeriesManager';
+import { ComicEpisodesManager } from './ComicEpisodesManager';
 import AnnouncementsManager from './AnnouncementsManager';
 import { useCMS } from '@/hooks/useCMS';
+import { useToast } from '@/hooks/use-toast';
 import { AdminPage } from './AdminSidebar';
-import { Construction, Settings, Image } from 'lucide-react';
+import { Construction, Settings, Image, Plus } from 'lucide-react';
 
 interface PageEditorProps {
   selectedPage: string;
 }
 
 export function PageEditor({ selectedPage }: PageEditorProps) {
-  const { sections } = useCMS();
+  const { sections, updateSectionContent } = useCMS();
+  const { toast } = useToast();
 
   const getPageSections = (pageId: string) => {
     // Map page IDs to actual page names in database
@@ -86,6 +96,33 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
   const renderGenericPage = (pageId: string, pageTitle: string) => {
     const pageSections = getPageSections(pageId);
     
+    const handleAddSection = async () => {
+      const sectionName = prompt('Enter section name (e.g., "hero", "features", "about"):');
+      if (!sectionName) return;
+      
+      try {
+        await updateSectionContent(
+          pageId === 'digital-reader' ? 'readers_mode' : pageId,
+          sectionName,
+          {
+            title: `${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)} Section`,
+            content: 'Add your content here...',
+            description: 'Section description'
+          }
+        );
+        toast({
+          title: 'Success',
+          description: 'Content section created successfully',
+        });
+      } catch (error: any) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to create section',
+          variant: 'destructive',
+        });
+      }
+    };
+    
     return (
       <div className="space-y-6">
         <div className="mb-6">
@@ -97,8 +134,12 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
 
         {pageSections.length > 0 ? (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>{pageTitle} Content Sections</CardTitle>
+              <Button onClick={handleAddSection} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Section
+              </Button>
             </CardHeader>
             <CardContent className="space-y-6">
               {pageSections.map(section => (
@@ -112,13 +153,27 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
           </Card>
         ) : (
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>No Content Found</CardTitle>
+              <Button onClick={handleAddSection} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add First Section
+              </Button>
             </CardHeader>
             <CardContent>
-              <p className="text-muted-foreground">
-                No content sections found for this page. Content sections will appear here once they are created.
+              <p className="text-muted-foreground mb-4">
+                No content sections found for this page. Click "Add First Section" to create your first content section.
               </p>
+              <div className="text-sm text-muted-foreground">
+                <p><strong>Common section names:</strong></p>
+                <ul className="list-disc list-inside mt-2 space-y-1">
+                  <li>hero - Main banner/header section</li>
+                  <li>features - Key features or benefits</li>
+                  <li>about - About this page</li>
+                  <li>content - Main content area</li>
+                  <li>footer - Footer information</li>
+                </ul>
+              </div>
             </CardContent>
           </Card>
         )}
@@ -180,7 +235,45 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
           <AnnouncementsManager />
         </div>
       );
-    default:
+    case 'user-management':
+      return <UserManagement />;
+    case 'order-management':
+      return <OrderManagement />;
+    case 'analytics':
+      return <AnalyticsDashboard />;
+        case 'settings':
+          return <SettingsPanel />;
+        case 'coins-management':
+          return <CoinsManagement />;
+        case 'comic-series-management':
+          return (
+            <div className="h-full overflow-hidden">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold mb-4">Comic Series Management</h2>
+                <p className="text-muted-foreground mb-6">
+                  Manage comic series, creators, and content for the Digital Reader
+                </p>
+              </div>
+              <div className="h-[calc(100vh-300px)] overflow-y-auto">
+                <ComicSeriesManager />
+              </div>
+            </div>
+          );
+        case 'comic-episodes-management':
+          return (
+            <div className="h-full overflow-hidden">
+              <div className="mb-6">
+                <h2 className="text-xl font-semibold mb-4">Comic Episodes Management</h2>
+                <p className="text-muted-foreground mb-6">
+                  Manage episodes, pages, and uploads for comic series
+                </p>
+              </div>
+              <div className="h-[calc(100vh-300px)] overflow-y-auto">
+                <ComicEpisodesManager />
+              </div>
+            </div>
+          );
+        default:
       return (
         <Card>
           <CardHeader>

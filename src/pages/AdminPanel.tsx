@@ -12,18 +12,24 @@ const AdminPanel = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    console.log('AdminPanel useEffect - isLoading:', isLoading, 'user:', user, 'isAdmin:', isAdmin);
+    
     // Wait for auth to finish before deciding
     if (isLoading) return;
 
     // If not logged in, send to auth and preserve intent
     if (!user) {
+      console.log('No user found, redirecting to auth');
       navigate('/auth', { state: { from: '/admin' } });
       return;
     }
 
     // Logged-in but not an admin: send to home
     if (!isAdmin) {
+      console.log('User found but not admin, redirecting to home');
       navigate('/');
+    } else {
+      console.log('User is admin, staying on admin panel');
     }
   }, [user, isAdmin, isLoading, navigate]);
 

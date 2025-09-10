@@ -60,19 +60,25 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       setIsLoading(true);
       try {
         if (isAuthenticated && user) {
-          // Load from backend for authenticated users
-          const backendCartItems = await AuthService.getCartItems(user.id);
-          const transformedItems: CartItem[] = backendCartItems.map(item => ({
-            id: item.product.id,
-            title: item.product.title,
-            author: item.product.author || undefined,
-            price: item.product.price,
-            imageUrl: item.product.image_url,
-            product_type: item.product.product_type,
-            quantity: item.quantity,
-            inStock: true,
-          }));
-          setCartItems(transformedItems);
+          // For local storage auth, skip backend cart loading
+          if (user.id && user.id.startsWith('local-')) {
+            console.log('Using local storage auth, skipping backend cart loading');
+            setCartItems([]);
+          } else {
+            // Load from backend for authenticated users
+            const backendCartItems = await AuthService.getCartItems(user.id);
+            const transformedItems: CartItem[] = backendCartItems.map(item => ({
+              id: item.product.id,
+              title: item.product.title,
+              author: item.product.author || undefined,
+              price: item.product.price,
+              imageUrl: item.product.image_url,
+              product_type: item.product.product_type,
+              quantity: item.quantity,
+              inStock: true,
+            }));
+            setCartItems(transformedItems);
+          }
         } else {
           // Load from localStorage for anonymous users
           const savedCart = localStorage.getItem('anonymous_cart');
@@ -116,9 +122,9 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     loadCart();
   }, [user, isAuthenticated]);
 
-  // Save anonymous cart to localStorage
+  // Save cart to localStorage for anonymous users or local storage auth users
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (!isAuthenticated || (user && user.id && user.id.startsWith('local-'))) {
       if (cartItems.length > 0) {
         localStorage.setItem('anonymous_cart', JSON.stringify(cartItems));
         console.log('Cart saved to localStorage:', cartItems);
@@ -127,11 +133,17 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         console.log('Cart cleared from localStorage');
       }
     }
-  }, [cartItems, isAuthenticated]);
+  }, [cartItems, isAuthenticated, user]);
 
   // Merge anonymous cart when user logs in
   const mergeAnonymousCart = useCallback(async () => {
     if (!user || !isAuthenticated || hasMergedCart) return;
+    
+    // Skip merging for local storage auth users
+    if (user.id && user.id.startsWith('local-')) {
+      setHasMergedCart(true);
+      return;
+    }
 
     try {
       const savedCart = localStorage.getItem('anonymous_cart');
@@ -184,23 +196,41 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   const addToCart = async (item: Omit<CartItem, 'quantity'>) => {
     try {
       if (isAuthenticated && user) {
-        // Add to backend for authenticated users
-        await AuthService.addToCart(user.id, item.id, 1);
-        
-        // Update local state
-        setCartItems(prevItems => {
-          const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
+        // For local storage auth, skip backend operations
+        if (user.id && user.id.startsWith('local-')) {
+          console.log('Using local storage auth, adding to local cart');
+          setCartItems(prevItems => {
+            const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
+            
+            if (existingItem) {
+              return prevItems.map(cartItem =>
+                cartItem.id === item.id
+                  ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                  : cartItem
+              );
+            } else {
+              return [...prevItems, { ...item, quantity: 1 }];
+            }
+          });
+        } else {
+          // Add to backend for authenticated users
+          await AuthService.addToCart(user.id, item.id, 1);
           
-          if (existingItem) {
-            return prevItems.map(cartItem =>
-              cartItem.id === item.id
-                ? { ...cartItem, quantity: cartItem.quantity + 1 }
-                : cartItem
-            );
-          } else {
-            return [...prevItems, { ...item, quantity: 1 }];
-          }
-        });
+          // Update local state
+          setCartItems(prevItems => {
+            const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
+            
+            if (existingItem) {
+              return prevItems.map(cartItem =>
+                cartItem.id === item.id
+                  ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                  : cartItem
+              );
+            } else {
+              return [...prevItems, { ...item, quantity: 1 }];
+            }
+          });
+        }
 
         toast({
           title: "Added to cart",
@@ -249,16 +279,21 @@ export const CartProvider = ({ children }: CartProviderProps) => {
   const removeFromCart = async (itemId: string) => {
     try {
       if (isAuthenticated && user) {
-        // Remove from backend for authenticated users
-        await AuthService.removeFromCart(user.id, itemId);
+        // For local storage auth, skip backend operations
+        if (user.id && user.id.startsWith('local-')) {
+          console.log('Using local storage auth, removing from local cart');
+        } else {
+          // Remove from backend for authenticated users
+          await AuthService.removeFromCart(user.id, itemId);
+        }
       }
 
       const item = cartItems.find(item => item.id === itemId);
       const updatedCartItems = cartItems.filter(item => item.id !== itemId);
       setCartItems(updatedCartItems);
       
-      // Update localStorage for anonymous users
-      if (!isAuthenticated) {
+      // Update localStorage for anonymous users or local storage auth users
+      if (!isAuthenticated || (user && user.id && user.id.startsWith('local-'))) {
         if (updatedCartItems.length > 0) {
           localStorage.setItem('anonymous_cart', JSON.stringify(updatedCartItems));
           console.log('Cart updated in localStorage after removal:', updatedCartItems);
@@ -292,8 +327,13 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       }
 
       if (isAuthenticated && user) {
-        // Update in backend for authenticated users
-        await AuthService.updateCartItemQuantity(user.id, itemId, quantity);
+        // For local storage auth, skip backend operations
+        if (user.id && user.id.startsWith('local-')) {
+          console.log('Using local storage auth, updating local cart quantity');
+        } else {
+          // Update in backend for authenticated users
+          await AuthService.updateCartItemQuantity(user.id, itemId, quantity);
+        }
       }
       
       const updatedCartItems = cartItems.map(item =>
@@ -301,8 +341,8 @@ export const CartProvider = ({ children }: CartProviderProps) => {
       );
       setCartItems(updatedCartItems);
       
-      // Update localStorage for anonymous users
-      if (!isAuthenticated) {
+      // Update localStorage for anonymous users or local storage auth users
+      if (!isAuthenticated || (user && user.id && user.id.startsWith('local-'))) {
         localStorage.setItem('anonymous_cart', JSON.stringify(updatedCartItems));
       }
     } catch (error) {

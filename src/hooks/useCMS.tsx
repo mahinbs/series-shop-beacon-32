@@ -22,6 +22,15 @@ export const useCMS = () => {
     const loadData = async () => {
       try {
         setIsLoading(true);
+        
+        // For local storage auth users, skip Supabase loading
+        if (user && user.id && user.id.startsWith('local-')) {
+          console.log('Using local storage auth, skipping CMS data loading');
+          setSections([]);
+          setIsLoading(false);
+          return;
+        }
+        
         const { data, error } = await supabase
           .from('page_sections')
           .select('*')
@@ -50,50 +59,60 @@ export const useCMS = () => {
 
     loadData();
     
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('page_sections_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'page_sections'
-        },
-        (payload) => {
-          if (!isMounted) return;
-          
-          if (payload.eventType === 'INSERT') {
-            setSections(prev => [...prev, payload.new as PageSection]);
-          } else if (payload.eventType === 'UPDATE') {
-            setSections(prev => 
-              prev.map(section => 
-                section.id === payload.new.id ? payload.new as PageSection : section
-              )
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setSections(prev => 
-              prev.filter(section => section.id !== payload.old.id)
-            );
+    // Set up real-time subscription (skip for local storage auth)
+    let channel: any = null;
+    if (!user || !user.id || !user.id.startsWith('local-')) {
+      channel = supabase
+        .channel('page_sections_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'page_sections'
+          },
+          (payload) => {
+            if (!isMounted) return;
+            
+            if (payload.eventType === 'INSERT') {
+              setSections(prev => [...prev, payload.new as PageSection]);
+            } else if (payload.eventType === 'UPDATE') {
+              setSections(prev => 
+                prev.map(section => 
+                  section.id === payload.new.id ? payload.new as PageSection : section
+                )
+              );
+            } else if (payload.eventType === 'DELETE') {
+              setSections(prev => 
+                prev.filter(section => section.id !== payload.old.id)
+              );
+            }
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    }
 
-    // Add a timeout to prevent infinite loading
-    const timeoutId = setTimeout(() => {
-      if (isMounted && isLoading) {
-        console.warn('CMS loading timeout - forcing completion');
-        setIsLoading(false);
-      }
-    }, 5000); // 5 second timeout
+    // Add a timeout to prevent infinite loading (skip for local storage auth)
+    let timeoutId: NodeJS.Timeout | null = null;
+    if (!user || !user.id || !user.id.startsWith('local-')) {
+      timeoutId = setTimeout(() => {
+        if (isMounted && isLoading) {
+          console.warn('CMS loading timeout - forcing completion');
+          setIsLoading(false);
+        }
+      }, 5000); // 5 second timeout
+    }
 
     return () => {
       isMounted = false;
-      supabase.removeChannel(channel);
-      clearTimeout(timeoutId);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
     };
-  }, []);
+  }, [user]);
 
   const getSectionContent = (pageName: string, sectionName: string) => {
     const section = sections.find(
@@ -109,6 +128,24 @@ export const useCMS = () => {
   ) => {
     if (!user || !isAdmin) {
       throw new Error('Only admins can update content');
+    }
+
+    // For local storage auth users, simulate success
+    if (user.id && user.id.startsWith('local-')) {
+      console.log('Using local storage auth, simulating section creation');
+      // Create a mock section object
+      const newSection = {
+        id: `local-${Date.now()}`,
+        page_name: pageName,
+        section_name: sectionName,
+        content,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Add to local state
+      setSections(prev => [...prev, newSection]);
+      return;
     }
 
     try {

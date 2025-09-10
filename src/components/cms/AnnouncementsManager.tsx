@@ -9,7 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Plus, X } from 'lucide-react';
 import { useAnnouncements, type Announcement } from '@/hooks/useAnnouncements';
-import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 
 interface AnnouncementForm {
   title: string;
@@ -26,6 +26,7 @@ interface AnnouncementForm {
 
 const AnnouncementsManager = () => {
   const { announcements, isLoading, createAnnouncement, updateAnnouncement, deleteAnnouncement } = useAnnouncements();
+  const { toast } = useToast();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newFeature, setNewFeature] = useState('');
@@ -66,14 +67,24 @@ const AnnouncementsManager = () => {
     try {
       if (editingId) {
         await updateAnnouncement(editingId, formData);
-        toast.success('Announcement updated successfully');
+        toast({
+          title: "Success",
+          description: "Announcement updated successfully",
+        });
       } else {
         await createAnnouncement(formData);
-        toast.success('Announcement created successfully');
+        toast({
+          title: "Success",
+          description: "Announcement created successfully",
+        });
       }
       resetForm();
     } catch (error) {
-      toast.error('Failed to save announcement');
+      toast({
+        title: "Error",
+        description: "Failed to save announcement",
+        variant: "destructive"
+      });
       console.error('Error saving announcement:', error);
     }
   };

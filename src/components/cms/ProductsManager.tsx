@@ -67,7 +67,7 @@ export const ProductsManager = () => {
   const [activeTab, setActiveTab] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCategory, setFilterCategory] = useState('');
+  const [filterCategory, setFilterCategory] = useState('all');
   const [formData, setFormData] = useState<ProductForm>({
     title: '',
     author: '',
@@ -259,7 +259,7 @@ export const ProductsManager = () => {
     }
     
     // Filter by category
-    if (filterCategory) {
+    if (filterCategory && filterCategory !== 'all') {
       filteredProducts = filteredProducts.filter(product => 
         product.category === filterCategory
       );
@@ -323,7 +323,7 @@ export const ProductsManager = () => {
                 <SelectValue placeholder="Filter by category" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Categories</SelectItem>
+                <SelectItem value="all">All Categories</SelectItem>
                 {CATEGORIES.map((category) => (
                   <SelectItem key={category} value={category}>
                     {category}

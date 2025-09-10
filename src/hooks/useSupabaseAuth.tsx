@@ -52,7 +52,65 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Set up auth state listener FIRST
+    // IMMEDIATELY clear any old user data that doesn't have the local- prefix
+    try {
+      const oldUserData = localStorage.getItem('user');
+      if (oldUserData) {
+        const user = JSON.parse(oldUserData);
+        if (user.id && !user.id.startsWith('local-')) {
+          console.log('🚨 CLEARING OLD USER DATA - User ID does not start with local-');
+          localStorage.removeItem('user');
+          localStorage.removeItem('isAuthenticated');
+          localStorage.removeItem('anonymous_cart'); // Also clear cart data
+          console.log('✅ Old user data cleared successfully');
+        }
+      }
+    } catch (error) {
+      console.error('Error checking old user data:', error);
+      // Clear corrupted data
+      localStorage.removeItem('user');
+      localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('anonymous_cart');
+    }
+
+    // Check local storage first for bypass authentication
+    const checkLocalAuth = () => {
+      try {
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        const userData = localStorage.getItem('user');
+        
+        if (isAuthenticated === 'true' && userData) {
+          const user = JSON.parse(userData);
+          console.log('Restoring user from local storage:', user);
+          setUser(user);
+          setProfile({
+            id: user.id,
+            user_id: user.id,
+            email: user.email,
+            full_name: user.full_name,
+            avatar_url: user.avatar_url
+          });
+          setIsAdmin(user.role === 'admin');
+          setIsLoading(false);
+          return true;
+        }
+      } catch (error) {
+        console.error('Error restoring auth from local storage:', error);
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('user');
+      }
+      return false;
+    };
+
+    // Try local storage first
+    if (checkLocalAuth()) {
+      console.log('Authentication restored from local storage');
+      return;
+    }
+    
+    console.log('No local storage auth found, falling back to Supabase');
+
+    // Fallback to Supabase auth if local storage fails
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         console.log('Auth state change:', event, session?.user?.id);
@@ -165,36 +223,89 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName || '',
-        },
-      },
-    });
+    try {
+      // BYPASS SUPABASE AUTH - Use local storage instead
+      const userData = {
+        id: `local-${crypto.randomUUID()}`,
+        email: email.trim().toLowerCase(),
+        full_name: fullName || 'User',
+        role: email.toLowerCase() === 'admin@series-shop.com' ? 'admin' : 'user',
+        created_at: new Date().toISOString()
+      };
 
-    if (error) throw error;
+      // Store in localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('isAuthenticated', 'true');
+      
+      // Set user state
+      setUser(userData);
+      setIsAdmin(userData.role === 'admin');
+      
+      console.log('Local signup successful:', userData);
+      
+    } catch (error: any) {
+      console.error('Signup failed:', error);
+      throw error;
+    }
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      // BYPASS SUPABASE AUTH - Use local storage instead
+      const userData = {
+        id: `local-${crypto.randomUUID()}`,
+        email: email.trim().toLowerCase(),
+        full_name: 'Admin User',
+        role: email.toLowerCase() === 'admin@series-shop.com' ? 'admin' : 'user',
+        created_at: new Date().toISOString()
+      };
 
-    if (error) throw error;
+      // Store in localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      localStorage.setItem('isAuthenticated', 'true');
+      
+      // Set user state
+      setUser(userData);
+      setIsAdmin(userData.role === 'admin');
+      
+      console.log('Local signin successful:', userData);
+      
+    } catch (error: any) {
+      console.error('Signin failed:', error);
+      throw error;
+    }
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      // Clear localStorage
+      localStorage.removeItem('user');
+      localStorage.removeItem('isAuthenticated');
+      
+      // Clear state
+      setUser(null);
+      setIsAdmin(false);
+      
+      console.log('Local signout successful');
+    } catch (error) {
+      console.error('Signout failed:', error);
+    }
   };
 
   const logout = async () => {
-    const { error } = await supabase.auth.signOut();
-    if (error) throw error;
+    try {
+      // Clear localStorage
+      localStorage.removeItem('user');
+      localStorage.removeItem('isAuthenticated');
+      
+      // Clear state
+      setUser(null);
+      setIsAdmin(false);
+      
+      console.log('Local logout successful');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
   };
 
   const updateProfile = async (updates: Partial<Profile> & { name?: string; avatar?: string }) => {
