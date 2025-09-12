@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Star, Heart, ShoppingCart, Package, Truck, Shield, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, Package, Truck, Shield, RotateCcw } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCart } from '@/hooks/useCart';
@@ -27,7 +27,6 @@ const MerchandiseDetail = () => {
     type: "Collectibles",
     description: "Premium quality figures featuring Luffy, Zoro, and Sanji from the Straw Hat Pirates.",
     imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-    rating: 5,
     popularity: 95,
     price: "$89.99",
     priceValue: 89.99,
@@ -144,15 +143,7 @@ const MerchandiseDetail = () => {
               <h1 className="text-3xl font-bold text-white mb-2">{product.title}</h1>
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star
-                      key={i}
-                      className={`w-4 h-4 ${
-                        i < product.rating ? 'text-yellow-400 fill-current' : 'text-gray-600'
-                      }`}
-                    />
-                  ))}
-                  <span className="text-gray-400 ml-2">({product.reviews} reviews)</span>
+                  <span className="text-gray-400">({product.reviews} reviews)</span>
                 </div>
               </div>
               <p className="text-xl font-bold text-white mb-4">{product.price}</p>

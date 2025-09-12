@@ -10,9 +10,11 @@ interface ShopGridProps {
   category?: string;
   sectionType?: string;
   searchTerm?: string;
+  appliedFilters?: string[];
+  sortBy?: string;
 }
 
-const ShopGrid: React.FC<ShopGridProps> = ({ category, sectionType, searchTerm }) => {
+const ShopGrid: React.FC<ShopGridProps> = ({ category, sectionType, searchTerm, appliedFilters = [], sortBy = 'Newest First' }) => {
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);

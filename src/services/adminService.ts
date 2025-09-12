@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { UserService, type User as UserServiceUser, type UserStats as UserServiceStats } from './userService';
 
 // Helper function to check if user is using local storage auth
 const isLocalAuth = (userId?: string) => {
@@ -83,93 +84,30 @@ export interface AdminStats {
 }
 
 export class AdminService {
-  // User Management
+  // User Management - Delegate to UserService
   static async getUsers(): Promise<AdminUser[]> {
     try {
-      // Check if we should use local storage first
-      if (shouldUseLocalStorage()) {
-        const localUser = localStorage.getItem('user');
-        if (localUser) {
-          const user = JSON.parse(localUser);
-          // Return mock data for local auth
-          return [{
-            id: user.id,
-            email: user.email,
-            full_name: user.full_name || 'Admin User',
-            role: user.role || 'admin',
-            created_at: user.created_at || new Date().toISOString(),
-            last_login: new Date().toISOString(),
-            is_active: true,
-            avatar_url: undefined
-          }];
-        }
-      }
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select(`
-          id,
-          user_id,
-          email,
-          full_name,
-          avatar_url,
-          created_at,
-          updated_at,
-          user_roles!inner(role)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      return (data || []).map((profile: any) => ({
-        id: profile.user_id,
-        email: profile.email,
-        full_name: profile.full_name || 'Unknown User',
-        role: profile.user_roles?.role || 'user',
-        created_at: profile.created_at,
-        last_login: profile.updated_at,
-        is_active: true, // Assuming active if profile exists
-        avatar_url: profile.avatar_url
+      const users = await UserService.getUsers();
+      // Convert UserServiceUser to AdminUser format
+      return users.map((user: UserServiceUser) => ({
+        id: user.id,
+        email: user.email,
+        full_name: user.full_name,
+        role: user.role,
+        created_at: user.created_at,
+        last_login: user.last_login,
+        is_active: user.is_active,
+        avatar_url: user.avatar_url
       }));
     } catch (error) {
       console.error('Error fetching users:', error);
-      // Return mock data on error
-      return [{
-        id: 'local-admin-1',
-        email: 'admin@series-shop.com',
-        full_name: 'Admin User',
-        role: 'admin',
-        created_at: new Date().toISOString(),
-        last_login: new Date().toISOString(),
-        is_active: true,
-        avatar_url: undefined
-      }];
+      return [];
     }
   }
 
   static async updateUserRole(userId: string, role: 'admin' | 'user'): Promise<void> {
     try {
-      if (isLocalAuth(userId)) {
-        // For local auth, just update local storage
-        const localUser = localStorage.getItem('user');
-        if (localUser) {
-          const user = JSON.parse(localUser);
-          user.role = role;
-          localStorage.setItem('user', JSON.stringify(user));
-        }
-        return;
-      }
-
-      const { error } = await supabase
-        .from('user_roles')
-        .upsert({
-          user_id: userId,
-          role: role
-        }, {
-          onConflict: 'user_id'
-        });
-
-      if (error) throw error;
+      await UserService.updateUserRole(userId, role);
     } catch (error) {
       console.error('Error updating user role:', error);
       throw error;
@@ -292,79 +230,75 @@ export class AdminService {
     }
   }
 
-  // Analytics
+  // Analytics - Delegate user stats to UserService
   static async getStats(): Promise<AdminStats> {
     try {
-      // Check if we should use local storage first
-      if (shouldUseLocalStorage()) {
-        // Return mock stats for local auth
-        return {
-          total_users: 1,
-          active_users: 1,
-          admin_users: 1,
-          new_users_today: 1,
+      // Get user stats from UserService
+      const userStats = await UserService.getUserStats();
+      
+      // Get order stats (keep existing logic)
+      let orderStats = {
+        total_orders: 0,
+        pending_orders: 0,
+        completed_orders: 0,
+        total_revenue: 0,
+        average_order_value: 0,
+        orders_today: 0
+      };
+
+      if (!shouldUseLocalStorage()) {
+        try {
+          const { data: orderData, error: orderError } = await supabase
+            .from('orders')
+            .select('status, total, created_at');
+
+          if (!orderError && orderData) {
+            const today = new Date().toISOString().split('T')[0];
+            const totalOrders = orderData.length;
+            const pendingOrders = orderData.filter((o: any) => ['pending', 'processing'].includes(o.status)).length;
+            const completedOrders = orderData.filter((o: any) => o.status === 'delivered').length;
+            const totalRevenue = orderData.reduce((sum: number, order: any) => sum + parseFloat(order.total || 0), 0);
+            const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+            const ordersToday = orderData.filter((o: any) => o.created_at.startsWith(today)).length;
+
+            orderStats = {
+              total_orders: totalOrders,
+              pending_orders: pendingOrders,
+              completed_orders: completedOrders,
+              total_revenue: totalRevenue,
+              average_order_value: averageOrderValue,
+              orders_today: ordersToday
+            };
+          }
+        } catch (orderError) {
+          console.log('⚠️ Could not fetch order stats, using defaults');
+        }
+      } else {
+        // Mock order stats for local storage
+        orderStats = {
           total_orders: 1,
           pending_orders: 0,
           completed_orders: 1,
           total_revenue: 45.98,
           average_order_value: 45.98,
-          orders_today: 1,
-          // Coins analytics
-          total_users_with_coins: 1,
-          total_coins_in_circulation: 500,
-          total_revenue_from_coins: 4.99,
-          average_coins_per_user: 500,
-          coins_transactions_today: 1
+          orders_today: 1
         };
       }
 
-      // Get user stats
-      const { data: userStats, error: userError } = await supabase
-        .from('profiles')
-        .select(`
-          created_at,
-          user_roles!inner(role)
-        `);
-
-      if (userError) throw userError;
-
-      const today = new Date().toISOString().split('T')[0];
-      const totalUsers = userStats?.length || 0;
-      const activeUsers = totalUsers; // Assuming all profiles are active
-      const adminUsers = userStats?.filter((u: any) => u.user_roles?.role === 'admin').length || 0;
-      const newUsersToday = userStats?.filter((u: any) => u.created_at.startsWith(today)).length || 0;
-
-      // Get order stats
-      const { data: orderStats, error: orderError } = await supabase
-        .from('orders')
-        .select('status, total, created_at');
-
-      if (orderError) throw orderError;
-
-      const totalOrders = orderStats?.length || 0;
-      const pendingOrders = orderStats?.filter((o: any) => ['pending', 'processing'].includes(o.status)).length || 0;
-      const completedOrders = orderStats?.filter((o: any) => o.status === 'delivered').length || 0;
-      const totalRevenue = orderStats?.reduce((sum: number, order: any) => sum + parseFloat(order.total || 0), 0) || 0;
-      const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-      const ordersToday = orderStats?.filter((o: any) => o.created_at.startsWith(today)).length || 0;
-
       return {
-        total_users: totalUsers,
-        active_users: activeUsers,
-        admin_users: adminUsers,
-        new_users_today: newUsersToday,
-        total_orders: totalOrders,
-        pending_orders: pendingOrders,
-        completed_orders: completedOrders,
-        total_revenue: totalRevenue,
-        average_order_value: averageOrderValue,
-        orders_today: ordersToday,
+        // User stats from UserService
+        total_users: userStats.total_users,
+        active_users: userStats.active_users,
+        admin_users: userStats.admin_users,
+        new_users_today: userStats.new_users_today,
+        // Order stats
+        ...orderStats,
         // Coins analytics - would need separate queries for real data
-        total_users_with_coins: Math.floor(totalUsers * 0.8), // Mock: 80% of users have coins
-        total_coins_in_circulation: Math.floor(totalRevenue * 100), // Mock: estimate based on revenue
-        total_revenue_from_coins: totalRevenue * 0.3, // Mock: 30% of revenue from coins
-        average_coins_per_user: Math.floor((totalRevenue * 100) / totalUsers) || 0,
-        coins_transactions_today: Math.floor(ordersToday * 1.5) // Mock: more coin transactions than orders
+        total_users_with_coins: Math.floor(userStats.total_users * 0.8), // Mock: 80% of users have coins
+        total_coins_in_circulation: Math.floor(orderStats.total_revenue * 100), // Mock: estimate based on revenue
+        total_revenue_from_coins: orderStats.total_revenue * 0.3, // Mock: 30% of revenue from coins
+        average_coins_per_user: Math.floor((orderStats.total_revenue * 100) / userStats.total_users) || 0,
+        coins_transactions_today: Math.floor(orderStats.orders_today * 1.5) // Mock: more coin transactions than orders
       };
     } catch (error) {
       console.error('Error fetching stats:', error);

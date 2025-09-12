@@ -1,68 +1,211 @@
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Play } from 'lucide-react';
+import { BookOpen, Play, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ComicService, type ComicSeries } from '@/services/comicService';
+import { FeaturedSeriesService, type FeaturedSeriesConfig, type FeaturedSeriesBadge } from '@/services/featuredSeriesService';
 
 const FeaturedSeries = () => {
   const navigate = useNavigate();
-  
-  const featuredSeries = [
-    {
-      id: 1,
-      title: "Demon Slayer",
-      description: "Follow Tanjiro's quest to cure his sister and battle demons",
-      status: "Ongoing",
-      imageUrl: "/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png",
-      tags: ["Action", "Supernatural", "Drama"],
-      episodes: "44 Episodes",
-      genre: "Action",
-      rating: "9.5",
-      badge: "New",
-      badgeColor: "bg-blue-500"
-    },
-    {
-      id: 2,
-      title: "Jujutsu Kaisen",
-      description: "Enter a world where curses can be fought and exercised",
-      status: "Ongoing", 
-      imageUrl: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&h=600&fit=crop&crop=center",
-      tags: ["Action", "Fantasy", "Horror"],
-      episodes: "24 Episodes",
-      genre: "Fantasy",
-      rating: "9.2",
-      badge: "Popular",
-      badgeColor: "bg-green-500"
-    },
-    {
-      id: 3,
-      title: "One Piece",
-      description: "Join Luffy and his pirate crew on their grand adventure",
-      status: "Ongoing",
-      imageUrl: "https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400&h=600&fit=crop&crop=center",
-      tags: ["Adventure", "Action", "Comedy"],
-      episodes: "1000+ Episodes",
-      genre: "Adventure",
-      rating: "9.0",
-      badge: "Top Rated",
-      badgeColor: "bg-purple-500"
-    }
-  ];
+  const [featuredSeries, setFeaturedSeries] = useState<ComicSeries[]>([]);
+  const [configs, setConfigs] = useState<FeaturedSeriesConfig[]>([]);
+  const [badges, setBadges] = useState<FeaturedSeriesBadge[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    loadFeaturedSeries();
+  }, []);
+
+  const loadFeaturedSeries = async () => {
+    try {
+      const series = await ComicService.getSeries();
+      // Filter for featured series and limit to 3
+      const featured = series.filter(s => s.is_featured && s.is_active).slice(0, 3);
+      setFeaturedSeries(featured);
+    } catch (error) {
+      console.error('Error loading featured series:', error);
+      // Fallback to dummy data if database fails
+      setFeaturedSeries([
+        {
+          id: "1",
+      title: "Demon Slayer",
+          slug: "demon-slayer",
+      description: "Follow Tanjiro's quest to cure his sister and battle demons",
+          status: "ongoing",
+          cover_image_url: "/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png",
+          genre: ["Action", "Supernatural", "Drama"],
+      tags: ["Action", "Supernatural", "Drama"],
+          age_rating: "all",
+          total_episodes: 44,
+          total_pages: 0,
+          is_featured: true,
+          is_active: true,
+          display_order: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: "2",
+      title: "Jujutsu Kaisen",
+          slug: "jujutsu-kaisen",
+      description: "Enter a world where curses can be fought and exercised",
+          status: "ongoing",
+          cover_image_url: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&h=600&fit=crop&crop=center",
+          genre: ["Action", "Fantasy", "Horror"],
+      tags: ["Action", "Fantasy", "Horror"],
+          age_rating: "all",
+          total_episodes: 24,
+          total_pages: 0,
+          is_featured: true,
+          is_active: true,
+          display_order: 2,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: "3",
+      title: "One Piece",
+          slug: "one-piece",
+      description: "Join Luffy and his pirate crew on their grand adventure",
+          status: "ongoing",
+          cover_image_url: "https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400&h=600&fit=crop&crop=center",
+          genre: ["Adventure", "Action", "Comedy"],
+      tags: ["Adventure", "Action", "Comedy"],
+          age_rating: "all",
+          total_episodes: 1000,
+          total_pages: 0,
+          is_featured: true,
+          is_active: true,
+          display_order: 3,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Load configurations and badges
+  useEffect(() => {
+    const loadConfigsAndBadges = async () => {
+      try {
+        // Load configurations
+        const configData = await FeaturedSeriesService.getConfigs();
+        setConfigs(configData);
+        console.log('⭐ Configs loaded in FeaturedSeries:', configData);
+
+        // Load badges
+        const badgeData = await FeaturedSeriesService.getBadges();
+        setBadges(badgeData);
+        console.log('⭐ Badges loaded in FeaturedSeries:', badgeData);
+      } catch (error) {
+        console.error('❌ Error loading configs and badges:', error);
+      }
+    };
+    
+    loadConfigsAndBadges();
+  }, []);
+
+  const getBadgeInfo = (series: ComicSeries, index: number) => {
+    // Use badges from admin panel if available, otherwise use default logic
+    if (badges.length > 0) {
+      const badgeIndex = index % badges.length;
+      const badge = badges[badgeIndex];
+      return {
+        text: badge.name,
+        color: badge.color
+      };
+    }
+    
+    // Fallback to default badges
+    const defaultBadges = [
+      { text: "New", color: "bg-blue-500" },
+      { text: "Popular", color: "bg-green-500" },
+      { text: "Top Rated", color: "bg-purple-500" }
+    ];
+    return defaultBadges[index] || { text: "Featured", color: "bg-red-500" };
+  };
+
+  if (isLoading) {
   return (
     <section className="bg-gray-900 py-16">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-white mb-12">Featured Series</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
+                <div className="w-full h-64 bg-gray-700"></div>
+                <div className="p-4">
+                  <div className="h-4 bg-gray-700 rounded mb-2"></div>
+                  <div className="h-3 bg-gray-700 rounded w-3/4"></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Get the active configuration
+  const activeConfig = configs.find(config => config.is_active) || configs[0];
+
+  return (
+    <section 
+      className="py-16"
+      style={{
+        backgroundImage: activeConfig?.background_image_url ? `url(${activeConfig.background_image_url})` : undefined,
+        backgroundColor: activeConfig?.background_image_url ? undefined : '#111827'
+      }}
+    >
+      <div className="container mx-auto px-4">
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            <h2 className="text-3xl font-bold text-white">
+              {activeConfig?.title || 'Featured Series'}
+            </h2>
+            {activeConfig?.description && (
+              <p className="text-gray-300 mt-2 max-w-2xl">
+                {activeConfig.description}
+              </p>
+            )}
+          </div>
+          <Button
+            onClick={() => {
+              console.log('🔍 FeaturedSeries Debug:');
+              console.log('📊 Configs:', configs);
+              console.log('🎯 Active Config:', activeConfig);
+              console.log('🏷️ Badges:', badges);
+              console.log('⭐ Featured Series:', featuredSeries);
+            }}
+            variant="outline"
+            size="sm"
+            className="border-white/30 text-white hover:bg-white/10"
+          >
+            Debug
+          </Button>
+        </div>
         
+        {featuredSeries.length === 0 ? (
+          <div className="text-center py-12">
+            <p className="text-gray-400 text-lg">No featured series available</p>
+            <p className="text-gray-500 text-sm mt-2">Add some series and mark them as featured in the admin panel</p>
+          </div>
+        ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredSeries.map((series) => (
+            {featuredSeries.map((series, index) => {
+              const badgeInfo = getBadgeInfo(series, index);
+              return (
             <div
               key={series.id}
               className="bg-gray-800 rounded-lg overflow-hidden cursor-pointer hover:transform hover:scale-105 transition-transform duration-300 group"
-              onClick={() => navigate(`/readers/${series.title.toLowerCase().replace(/\s+/g, '-')}`)}
+                  onClick={() => navigate(`/series/${series.id}`)}
             >
               {/* Image with Badge */}
               <div className="relative">
                 <img
-                  src={series.imageUrl}
+                      src={series.cover_image_url || "/placeholder.svg"}
                   alt={series.title}
                   className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
@@ -73,23 +216,47 @@ const FeaturedSeries = () => {
                     <h3 className="text-lg font-bold text-red-300">{series.title}</h3>
                     <p className="text-xs text-gray-300 line-clamp-2">{series.description}</p>
                     <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400 uppercase">{series.genre}</span>
-                      <span className="text-xs text-gray-400">{series.episodes} episodes</span>
+                          <span className="text-xs text-gray-400 uppercase">{series.genre?.[0] || 'Action'}</span>
+                          <span className="text-xs text-gray-400">{series.total_episodes} episodes</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-xs text-gray-400 uppercase">{series.status}</span>
-                      <span className="text-xs text-gray-400">{series.rating} rating</span>
                     </div>
                   </div>
                 </div>
                 
-                <div className={`absolute top-3 right-3 ${series.badgeColor} text-white px-3 py-1 rounded-full text-sm font-medium`}>
-                  {series.badge}
+                    <div className={`absolute top-3 right-3 ${badgeInfo.color} text-white px-3 py-1 rounded-full text-sm font-medium`}>
+                      {badgeInfo.text}
                 </div>
               </div>
             </div>
-          ))}
+              );
+            })}
+          </div>
+        )}
+
+        {/* Configuration Buttons */}
+        {activeConfig && (activeConfig.primary_button_text || activeConfig.secondary_button_text) && (
+          <div className="flex justify-center gap-4 mt-12">
+            {activeConfig.primary_button_text && (
+              <Button
+                onClick={() => window.location.href = activeConfig.primary_button_link || '#'}
+                className="bg-red-600 hover:bg-red-700 text-white px-6 py-2"
+              >
+                {activeConfig.primary_button_text}
+              </Button>
+            )}
+            {activeConfig.secondary_button_text && (
+              <Button
+                onClick={() => window.location.href = activeConfig.secondary_button_link || '#'}
+                variant="outline"
+                className="border-white/30 text-white hover:bg-white/10 px-6 py-2"
+              >
+                {activeConfig.secondary_button_text}
+              </Button>
+            )}
         </div>
+        )}
       </div>
     </section>
   );

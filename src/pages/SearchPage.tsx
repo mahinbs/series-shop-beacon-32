@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Search, Filter, Star, Heart, ShoppingCart, BookOpen, Zap } from 'lucide-react';
+import { Search, Filter, Heart, ShoppingCart, BookOpen, Zap } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 
 const SearchPage = () => {
@@ -38,7 +38,6 @@ const SearchPage = () => {
       image: "/lovable-uploads/26efc76c-fa83-4369-8d8d-354eab1433e6.png",
       category: "Manga",
       type: "Physical",
-      rating: 4.9,
       reviews: 1250,
       description: "The epic conclusion to the Demon Slayer manga series.",
       inStock: true,
@@ -54,7 +53,6 @@ const SearchPage = () => {
       image: "/lovable-uploads/503cc23b-a28f-4564-86f9-53896fa75f10.png",
       category: "Manga",
       type: "Box Set",
-      rating: 4.8,
       reviews: 890,
       description: "Complete collection of early One Piece adventures.",
       inStock: true,
@@ -70,7 +68,6 @@ const SearchPage = () => {
       image: "/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png",
       category: "Merchandise",
       type: "Figure",
-      rating: 4.7,
       reviews: 456,
       description: "Highly detailed figure of the main protagonist.",
       inStock: true,
@@ -86,7 +83,6 @@ const SearchPage = () => {
       image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png",
       category: "Digital",
       type: "Complete Series",
-      rating: 4.9,
       reviews: 2100,
       description: "All 72 volumes in high-quality digital format.",
       inStock: true,
@@ -102,7 +98,6 @@ const SearchPage = () => {
       image: "/lovable-uploads/97f88fee-e070-4d97-a73a-c747112fa093.png",
       category: "Media",
       type: "Blu-ray",
-      rating: 4.6,
       reviews: 789,
       description: "The hit movie featuring Class 1-A heroes.",
       inStock: false,
@@ -154,9 +149,6 @@ const SearchPage = () => {
           break;
         case 'price-high':
           filtered.sort((a, b) => b.price - a.price);
-          break;
-        case 'rating':
-          filtered.sort((a, b) => b.rating - a.rating);
           break;
         case 'newest':
           filtered.sort((a, b) => (b.isNew ? 1 : 0) - (a.isNew ? 1 : 0));
@@ -257,7 +249,6 @@ const SearchPage = () => {
               <SelectItem value="relevance">Relevance</SelectItem>
               <SelectItem value="price-low">Price: Low to High</SelectItem>
               <SelectItem value="price-high">Price: High to Low</SelectItem>
-              <SelectItem value="rating">Highest Rated</SelectItem>
               <SelectItem value="newest">Newest First</SelectItem>
             </SelectContent>
           </Select>
@@ -336,9 +327,8 @@ const SearchPage = () => {
                   <div className="flex items-start justify-between mb-2">
                     <Badge variant="outline">{item.type}</Badge>
                     <div className="flex items-center gap-1">
-                      <Star className="w-4 h-4 text-yellow-400 fill-current" />
                       <span className="text-sm text-muted-foreground">
-                        {item.rating} ({item.reviews})
+                        {item.reviews} reviews
                       </span>
                     </div>
                   </div>

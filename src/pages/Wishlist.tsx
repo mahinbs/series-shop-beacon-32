@@ -6,7 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Heart, Search, Trash2, ShoppingCart, Filter, Grid, List, Star } from 'lucide-react';
+import { Heart, Search, Trash2, ShoppingCart, Filter, Grid, List } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 
@@ -25,7 +25,6 @@ const Wishlist = () => {
       category: "Manga",
       isOnSale: true,
       discount: 15,
-      rating: 4.9,
       addedDate: "2025-01-15",
       availability: "In Stock"
     },
@@ -39,7 +38,6 @@ const Wishlist = () => {
       category: "Manga",
       isOnSale: false,
       discount: 0,
-      rating: 4.8,
       addedDate: "2025-01-10",
       availability: "Pre-order"
     },
@@ -53,7 +51,6 @@ const Wishlist = () => {
       category: "Merchandise",
       isOnSale: true,
       discount: 10,
-      rating: 4.7,
       addedDate: "2025-01-05",
       availability: "Limited Stock"
     },
@@ -67,7 +64,6 @@ const Wishlist = () => {
       category: "Manga",
       isOnSale: false,
       discount: 0,
-      rating: 4.9,
       addedDate: "2025-01-03",
       availability: "In Stock"
     }
@@ -263,10 +259,6 @@ const Wishlist = () => {
                     <CardContent className="p-4">
                       <h3 className="font-semibold text-foreground mb-1 line-clamp-2">{item.title}</h3>
                       <p className="text-sm text-muted-foreground mb-2">{item.author}</p>
-                      <div className="flex items-center gap-1 mb-3">
-                        <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                        <span className="text-sm text-muted-foreground">{item.rating}</span>
-                      </div>
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-foreground">${item.price}</span>
@@ -319,10 +311,6 @@ const Wishlist = () => {
                           >
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
-                        </div>
-                        <div className="flex items-center gap-1 mb-2">
-                          <Star className="w-4 h-4 text-yellow-400 fill-current" />
-                          <span className="text-sm text-muted-foreground">{item.rating}</span>
                         </div>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">

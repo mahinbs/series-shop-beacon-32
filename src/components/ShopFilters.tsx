@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter, Search, ArrowUpDown, X } from 'lucide-react';
+import { Filter, Search, ArrowUpDown, X, RefreshCw } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
+import { ShopAllService, type ShopAllFilter, type ShopAllSort } from '@/services/shopAllService';
 
 interface ShopFiltersProps {
   viewMode: 'series' | 'volume';
@@ -17,28 +18,67 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState('Newest First');
   const [searchTerm, setSearchTerm] = useState('');
+  const [dynamicFilters, setDynamicFilters] = useState<ShopAllFilter[]>([]);
+  const [dynamicSorts, setDynamicSorts] = useState<ShopAllSort[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
   const categories = [
     'All', 'Action', 'Adventure', 'Romance', 'Fantasy', 'Sci-Fi', 
     'Horror', 'Comedy', 'Drama', 'More...'
   ];
 
-  const filterOptions = {
-    'Types': ['Manga', 'Webtoon', 'Light Novel', 'Anthology'],
-    'Price': ['Free', 'Under $5', '$5-$10', '$10-$20', '$20+'],
-    'Status': ['Ongoing', 'Completed', 'Upcoming', 'On Hold']
+  const handleCategoryClick = (category: string) => {
+    setActiveCategory(category);
+    console.log('🎯 Category selected:', category);
+    
+    // Clear search when category is selected
+    if (searchTerm) {
+      setSearchTerm('');
+      onSearchChange?.('');
+      console.log('🔍 Cleared search term for category filter');
+    }
+    
+    // Apply category filter
+    if (category === 'All') {
+      onFiltersApply?.([]);
+    } else {
+      onFiltersApply?.([category]);
+    }
   };
 
-  const sortOptions = [
-    'Newest First',
-    'Oldest First', 
-    'A-Z',
-    'Z-A',
-    'Price: Low to High',
-    'Price: High to Low',
-    'Most Popular',
-    'Highest Rated'
-  ];
+  useEffect(() => {
+    loadShopAllData();
+  }, []);
+
+  const loadShopAllData = async () => {
+    try {
+      setIsLoading(true);
+      console.log('🛍️ Loading Shop All filters and sorts...');
+      
+      const [filtersData, sortsData] = await Promise.all([
+        ShopAllService.getFilters(),
+        ShopAllService.getSortOptions()
+      ]);
+      
+      setDynamicFilters(filtersData);
+      setDynamicSorts(sortsData);
+      console.log('✅ Loaded dynamic filters:', filtersData);
+      console.log('✅ Loaded dynamic sorts:', sortsData);
+    } catch (error) {
+      console.error('❌ Error loading Shop All data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Convert dynamic filters to the format expected by the component
+  const filterOptions = dynamicFilters.reduce((acc, filter) => {
+    acc[filter.name] = filter.options;
+    return acc;
+  }, {} as Record<string, string[]>);
+
+  // Convert dynamic sorts to the format expected by the component
+  const sortOptions = dynamicSorts.map(sort => sort.name);
 
   const handleSortChange = (sortOption: string) => {
     setSelectedSort(sortOption);
@@ -70,6 +110,13 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
     const value = e.target.value;
     setSearchTerm(value);
     onSearchChange?.(value);
+    
+    // Clear category filters when searching
+    if (value && activeCategory !== 'All') {
+      setActiveCategory('All');
+      onFiltersApply?.([]);
+      console.log('🎯 Cleared category filters for search');
+    }
   };
 
   const clearSearch = () => {
@@ -104,6 +151,15 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
 
           {/* Filter and Sort Buttons */}
           <div className="flex items-center gap-3">
+            <Button
+              onClick={loadShopAllData}
+              variant="outline"
+              size="sm"
+              className="bg-blue-900/50 border-blue-700 text-white hover:bg-blue-800/60 px-4 py-2 rounded-lg"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -218,7 +274,7 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
           {categories.map((category) => (
             <Button
               key={category}
-              onClick={() => setActiveCategory(category)}
+              onClick={() => handleCategoryClick(category)}
               className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
                 activeCategory === category
                   ? 'bg-red-600 text-white hover:bg-red-700 border-0'

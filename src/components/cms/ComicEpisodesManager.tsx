@@ -100,14 +100,39 @@ export const ComicEpisodesManager = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      console.log('🎬 Submitting episode form:', formData);
+      console.log('🆔 Editing ID:', editingId);
+      
+      // Basic validation
+      if (!formData.series_id) {
+        toast({
+          title: "Error",
+          description: "Please select a series",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!formData.title.trim()) {
+        toast({
+          title: "Error",
+          description: "Episode title is required",
+          variant: "destructive"
+        });
+        return;
+      }
+      
       if (editingId) {
+        console.log('🔄 Updating existing episode...');
         await ComicService.updateEpisode(editingId, formData);
         toast({
           title: "Success",
           description: "Episode updated successfully",
         });
       } else {
-        await ComicService.createEpisode(formData);
+        console.log('➕ Creating new episode...');
+        const newEpisode = await ComicService.createEpisode(formData);
+        console.log('✅ Episode created:', newEpisode);
         toast({
           title: "Success",
           description: "Episode created successfully",
@@ -116,7 +141,7 @@ export const ComicEpisodesManager = () => {
       resetForm();
       loadData();
     } catch (error) {
-      console.error('Error saving episode:', error);
+      console.error('❌ Error saving episode:', error);
       toast({
         title: "Error",
         description: "Failed to save episode",
@@ -169,7 +194,29 @@ export const ComicEpisodesManager = () => {
   const handlePageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await ComicService.createPage(pageForm);
+      console.log('📄 Submitting page form:', pageForm);
+      
+      // Basic validation
+      if (!pageForm.episode_id) {
+        toast({
+          title: "Error",
+          description: "Please select an episode",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      if (!pageForm.image_url.trim()) {
+        toast({
+          title: "Error",
+          description: "Image URL is required",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const newPage = await ComicService.createPage(pageForm);
+      console.log('✅ Page created:', newPage);
       toast({
         title: "Success",
         description: "Page created successfully",
@@ -183,7 +230,7 @@ export const ComicEpisodesManager = () => {
       setShowPageForm(false);
       loadData();
     } catch (error) {
-      console.error('Error creating page:', error);
+      console.error('❌ Error creating page:', error);
       toast({
         title: "Error",
         description: "Failed to create page",
@@ -219,10 +266,45 @@ export const ComicEpisodesManager = () => {
                 Manage comic episodes and chapters
               </p>
             </div>
-            <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Episode
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  console.log('🔍 Debug - Current localStorage data:');
+                  console.log('📚 Comic series:', localStorage.getItem('comic_series'));
+                  console.log('🎬 Comic episodes:', localStorage.getItem('comic_episodes'));
+                  console.log('📄 Comic pages:', localStorage.getItem('comic_pages'));
+                  console.log('🎯 Current state - episodes:', episodes);
+                  console.log('🎯 Current state - series:', series);
+                }}
+                variant="outline" size="sm"
+              >
+                Debug
+              </Button>
+              <Button
+                onClick={() => {
+                  setFormData({
+                    series_id: series.length > 0 ? series[0].id : '',
+                    episode_number: episodes.length + 1,
+                    title: 'Test Episode',
+                    description: 'This is a test episode description',
+                    cover_image_url: 'https://picsum.photos/200/300',
+                    is_free: true,
+                    coin_price: 0,
+                    is_published: true,
+                    is_active: true,
+                    display_order: 0
+                  });
+                  setShowAddForm(true);
+                }}
+                variant="outline" size="sm"
+              >
+                Test Data
+              </Button>
+              <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Episode
+              </Button>
+            </div>
           </div>
 
           {/* Series Filter */}

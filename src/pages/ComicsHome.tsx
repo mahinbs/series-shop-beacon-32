@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, Grid, List, Star, Clock, Users, TrendingUp } from 'lucide-react';
+import { Search, Filter, Grid, List, Clock, Users, TrendingUp } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,6 @@ const ComicsHome = () => {
       author: "Alex Chen",
       thumbnail: "/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png",
       genre: ["Action", "Fantasy"],
-      rating: 4.8,
       episodes: 45,
       status: "Ongoing",
       isNew: true,
@@ -35,7 +34,6 @@ const ComicsHome = () => {
       author: "Sarah Kim",
       thumbnail: "/lovable-uploads/6ce223e4-a7e8-4282-a3a6-0f55f5341a03.png",
       genre: ["Romance", "Slice of Life"],
-      rating: 4.6,
       episodes: 28,
       status: "Ongoing",
       isNew: false,
@@ -48,7 +46,6 @@ const ComicsHome = () => {
       author: "Mike Johnson",
       thumbnail: "/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png",
       genre: ["Sci-Fi", "Action"],
-      rating: 4.9,
       episodes: 67,
       status: "Completed",
       isNew: false,
@@ -61,7 +58,6 @@ const ComicsHome = () => {
       author: "Luna Martinez",
       thumbnail: "/lovable-uploads/97f88fee-e070-4d97-a73a-c747112fa093.png",
       genre: ["Fantasy", "Comedy"],
-      rating: 4.5,
       episodes: 34,
       status: "Ongoing",
       isNew: true,
@@ -116,7 +112,6 @@ const ComicsHome = () => {
       case 'oldest':
         return a.id - b.id;
       case 'popular':
-        return b.rating - a.rating;
       case 'updated':
         return new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime();
       default:
@@ -156,10 +151,6 @@ const ComicsHome = () => {
                   ))}
                 </div>
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1">
-                    <span className="text-yellow-400">★</span>
-                    <span className="text-sm font-semibold">{comic.rating}</span>
-                  </div>
                   <span className="text-sm text-gray-300">{comic.episodes} episodes</span>
                 </div>
                 <div className="flex items-center justify-between">
@@ -173,10 +164,6 @@ const ComicsHome = () => {
               {comic.isNew && <Badge className="bg-green-600 text-white">New</Badge>}
               {comic.isTrending && <Badge className="bg-orange-600 text-white">Trending</Badge>}
               {comic.status === 'Completed' && <Badge className="bg-blue-600 text-white">Completed</Badge>}
-            </div>
-            <div className="absolute top-2 right-2 bg-black/70 px-2 py-1 rounded flex items-center gap-1">
-              <Star className="w-3 h-3 text-yellow-400 fill-current" />
-              <span className="text-white text-xs">{comic.rating}</span>
             </div>
           </div>
         </CardContent>

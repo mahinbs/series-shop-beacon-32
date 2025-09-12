@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Lock, Star, Heart } from 'lucide-react';
+import { ArrowLeft, Lock, Heart } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -127,7 +127,7 @@ const EpisodePreview = () => {
             </Card>
 
             {/* Quick Stats */}
-            <div className="mt-6 grid grid-cols-3 gap-4">
+            <div className="mt-6 grid grid-cols-2 gap-4">
               <Card className="bg-gray-800 border-gray-700">
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-white">{episode.views}</div>
@@ -138,15 +138,6 @@ const EpisodePreview = () => {
                 <CardContent className="p-4 text-center">
                   <div className="text-2xl font-bold text-white">{episode.likes}</div>
                   <div className="text-sm text-gray-400">Likes</div>
-                </CardContent>
-              </Card>
-              <Card className="bg-gray-800 border-gray-700">
-                <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-white">4.8</div>
-                  <div className="text-sm text-gray-400 flex items-center justify-center gap-1">
-                    <Star className="w-3 h-3 text-yellow-400 fill-current" />
-                    Rating
-                  </div>
                 </CardContent>
               </Card>
             </div>

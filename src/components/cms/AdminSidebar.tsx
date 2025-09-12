@@ -12,7 +12,8 @@ import {
   Users,
   BarChart3,
   Cog,
-  Coins
+  Coins,
+  Database
 } from 'lucide-react';
 import {
   Sidebar,
@@ -42,9 +43,9 @@ const adminPages: AdminPage[] = [
   },
   { 
     id: 'our-series', 
-    title: 'Our Series', 
+    title: 'Featured Series', 
     icon: BookOpen,
-    description: 'Manage series and collections'
+    description: 'Manage featured series and collections'
   },
   { 
     id: 'shop-all', 
@@ -66,9 +67,9 @@ const adminPages: AdminPage[] = [
   },
   { 
     id: 'comic-series-management', 
-    title: 'Comic Series', 
+    title: 'All Series', 
     icon: BookOpen,
-    description: 'Manage comic series, creators, and content'
+    description: 'Manage all comic series, creators, and content'
   },
   { 
     id: 'comic-episodes-management', 
@@ -123,6 +124,18 @@ const adminPages: AdminPage[] = [
     title: 'Coins Management', 
     icon: Coins,
     description: 'Manage coin packages, transactions, and user balances'
+  },
+  { 
+    id: 'admin-status', 
+    title: 'System Status', 
+    icon: Settings,
+    description: 'Check admin panel system status and connectivity'
+  },
+  { 
+    id: 'database-setup', 
+    title: 'Database Setup', 
+    icon: Database,
+    description: 'Set up database tables and configure Supabase'
   },
 ];
 

@@ -38,7 +38,6 @@ const LibraryPage = () => {
       totalChapters: 205,
       readingProgress: 62,
       lastRead: "2 hours ago",
-      rating: 5,
       status: "Reading",
       downloadStatus: "Downloaded",
       purchaseDate: "2024-12-15",
@@ -57,7 +56,6 @@ const LibraryPage = () => {
       totalChapters: 1100,
       readingProgress: 81,
       lastRead: "1 day ago",
-      rating: 5,
       status: "Reading",
       downloadStatus: "Partial",
       purchaseDate: "2024-10-20",
@@ -76,7 +74,6 @@ const LibraryPage = () => {
       totalChapters: 139,
       readingProgress: 100,
       lastRead: "1 week ago",
-      rating: 5,
       status: "Completed",
       downloadStatus: "Downloaded",
       purchaseDate: "2024-08-10",
@@ -95,7 +92,6 @@ const LibraryPage = () => {
       totalChapters: 400,
       readingProgress: 39,
       lastRead: "3 days ago",
-      rating: 4,
       status: "Reading",
       downloadStatus: "Not Downloaded",
       purchaseDate: "2024-11-05",
@@ -121,8 +117,6 @@ const LibraryPage = () => {
         return b.readingProgress - a.readingProgress;
       case 'title':
         return a.title.localeCompare(b.title);
-      case 'rating':
-        return b.rating - a.rating;
       default:
         return 0;
     }
@@ -196,7 +190,6 @@ const LibraryPage = () => {
               <SelectItem value="recent">Recently Added</SelectItem>
               <SelectItem value="progress">Reading Progress</SelectItem>
               <SelectItem value="title">Title A-Z</SelectItem>
-              <SelectItem value="rating">Highest Rated</SelectItem>
             </SelectContent>
           </Select>
         </div>

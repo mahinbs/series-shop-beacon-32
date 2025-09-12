@@ -13,6 +13,11 @@ import { CoinsManagement } from './CoinsManagement';
 import { ComicSeriesManager } from './ComicSeriesManager';
 import { ComicEpisodesManager } from './ComicEpisodesManager';
 import AnnouncementsManager from './AnnouncementsManager';
+import { AdminPanelStatus } from './AdminPanelStatus';
+import { DatabaseSetupHelper } from './DatabaseSetupHelper';
+import { DigitalReaderManager } from './DigitalReaderManager';
+import { ShopAllManager } from './ShopAllManager';
+import { FeaturedSeriesManager } from './FeaturedSeriesManager';
 import { useCMS } from '@/hooks/useCMS';
 import { useToast } from '@/hooks/use-toast';
 import { AdminPage } from './AdminSidebar';
@@ -214,13 +219,43 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
     case 'hero-banners':
       return renderHeroBanners();
     case 'our-series':
-      return renderGenericPage('our-series', 'Our Series');
+      return (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Featured Series Management</h2>
+            <p className="text-muted-foreground mb-6">
+              Manage featured series configuration, badges, and series selection
+            </p>
+          </div>
+          <FeaturedSeriesManager />
+        </div>
+      );
     case 'shop-all':
-      return renderGenericPage('shop-all', 'Shop All');
+      return (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Shop All Management</h2>
+            <p className="text-muted-foreground mb-6">
+              Manage hero sections, filters, sorting, and product display for the Shop All page
+            </p>
+          </div>
+          <ShopAllManager />
+        </div>
+      );
     case 'about-us':
       return renderGenericPage('about-us', 'About Us');
     case 'digital-reader':
-      return renderGenericPage('digital-reader', "Digital Reader");
+      return (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Digital Reader Management</h2>
+            <p className="text-muted-foreground mb-6">
+              Manage digital reader specifications and content
+            </p>
+          </div>
+          <DigitalReaderManager />
+        </div>
+      );
     case 'announcement-page':
       return renderGenericPage('announcement-page', 'Announcement Page');
     case 'announcements-management':
@@ -273,6 +308,10 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
               </div>
             </div>
           );
+        case 'admin-status':
+          return <AdminPanelStatus />;
+        case 'database-setup':
+          return <DatabaseSetupHelper />;
         default:
       return (
         <Card>

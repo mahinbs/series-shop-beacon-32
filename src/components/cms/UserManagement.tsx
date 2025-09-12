@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 import { 
   Users, 
   UserPlus, 
@@ -20,14 +21,12 @@ import {
   Edit,
   Trash2,
   Crown,
-  UserCheck
+  UserCheck,
+  Save,
+  X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { AdminService, type AdminUser, type AdminStats } from '@/services/adminService';
-
-// Use AdminUser type from service
-type User = AdminUser;
-type UserStats = AdminStats;
+import { UserService, type User, type UserStats, type CreateUserData } from '@/services/userService';
 
 export const UserManagement = () => {
   const { toast } = useToast();
@@ -43,18 +42,30 @@ export const UserManagement = () => {
     new_users_today: 0
   });
 
+  // Add User Form State
+  const [showAddUserForm, setShowAddUserForm] = useState(false);
+  const [newUserData, setNewUserData] = useState<CreateUserData>({
+    email: '',
+    password: '',
+    full_name: '',
+    role: 'user'
+  });
+  const [isCreatingUser, setIsCreatingUser] = useState(false);
+
   // Load real data from database
   useEffect(() => {
     const loadUsers = async () => {
       setIsLoading(true);
       try {
         const [usersData, statsData] = await Promise.all([
-          AdminService.getUsers(),
-          AdminService.getStats()
+          UserService.getUsers(),
+          UserService.getUserStats()
         ]);
         
         setUsers(usersData);
         setStats(statsData);
+        console.log('👥 Loaded users:', usersData.length);
+        console.log('📊 Loaded stats:', statsData);
       } catch (error) {
         console.error('Error loading users:', error);
         toast({
@@ -81,13 +92,91 @@ export const UserManagement = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
+  // Add User Handlers
+  const handleAddUser = () => {
+    setShowAddUserForm(true);
+    setNewUserData({
+      email: '',
+      password: '',
+      full_name: '',
+      role: 'user'
+    });
+  };
+
+  const handleCancelAddUser = () => {
+    setShowAddUserForm(false);
+    setNewUserData({
+      email: '',
+      password: '',
+      full_name: '',
+      role: 'user'
+    });
+  };
+
+  const handleCreateUser = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Basic validation
+    if (!newUserData.email || !newUserData.password || !newUserData.full_name) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (newUserData.password.length < 6) {
+      toast({
+        title: "Validation Error",
+        description: "Password must be at least 6 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsCreatingUser(true);
+    try {
+      console.log('➕ Creating new user:', newUserData);
+      const newUser = await UserService.createUser(newUserData);
+      
+      // Add to local state
+      setUsers(prev => [newUser, ...prev]);
+      
+      // Update stats
+      const updatedStats = await UserService.getUserStats();
+      setStats(updatedStats);
+      
+      toast({
+        title: "Success",
+        description: `User ${newUser.full_name} created successfully`,
+      });
+      
+      // Reset form
+      handleCancelAddUser();
+    } catch (error) {
+      console.error('Error creating user:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create user. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsCreatingUser(false);
+    }
+  };
+
   const handleRoleChange = async (userId: string, newRole: 'admin' | 'user') => {
     try {
-      await AdminService.updateUserRole(userId, newRole);
+      await UserService.updateUserRole(userId, newRole);
       
       setUsers(prev => prev.map(user => 
         user.id === userId ? { ...user, role: newRole } : user
       ));
+      
+      // Update stats
+      const updatedStats = await UserService.getUserStats();
+      setStats(updatedStats);
       
       toast({
         title: "Success",
@@ -104,16 +193,22 @@ export const UserManagement = () => {
 
   const handleStatusToggle = async (userId: string) => {
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const user = users.find(u => u.id === userId);
+      if (!user) return;
+      
+      await UserService.updateUserStatus(userId, !user.is_active);
       
       setUsers(prev => prev.map(user => 
         user.id === userId ? { ...user, is_active: !user.is_active } : user
       ));
       
+      // Update stats
+      const updatedStats = await UserService.getUserStats();
+      setStats(updatedStats);
+      
       toast({
         title: "Success",
-        description: "User status updated",
+        description: `User ${user.is_active ? 'deactivated' : 'activated'}`,
       });
     } catch (error) {
       toast({
@@ -164,7 +259,11 @@ export const UserManagement = () => {
           <h2 className="text-2xl font-bold">User Management</h2>
           <p className="text-muted-foreground">Manage users and their roles</p>
         </div>
-        <Button className="flex items-center gap-2">
+        <Button 
+          className="flex items-center gap-2"
+          onClick={handleAddUser}
+          disabled={showAddUserForm}
+        >
           <UserPlus className="h-4 w-4" />
           Add User
         </Button>
@@ -220,6 +319,96 @@ export const UserManagement = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Add User Form */}
+      {showAddUserForm && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <UserPlus className="h-5 w-5" />
+              Add New User
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleCreateUser} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="full_name">Full Name *</Label>
+                  <Input
+                    id="full_name"
+                    value={newUserData.full_name}
+                    onChange={(e) => setNewUserData({ ...newUserData, full_name: e.target.value })}
+                    placeholder="Enter full name"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email *</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newUserData.email}
+                    onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                    placeholder="Enter email address"
+                    required
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password *</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={newUserData.password}
+                    onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                    placeholder="Enter password (min 6 characters)"
+                    required
+                    minLength={6}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="role">Role *</Label>
+                  <Select
+                    value={newUserData.role}
+                    onValueChange={(value: 'admin' | 'user') => setNewUserData({ ...newUserData, role: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">User</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="flex items-center gap-2 pt-4">
+                <Button 
+                  type="submit" 
+                  disabled={isCreatingUser}
+                  className="flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  {isCreatingUser ? 'Creating...' : 'Create User'}
+                </Button>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={handleCancelAddUser}
+                  disabled={isCreatingUser}
+                  className="flex items-center gap-2"
+                >
+                  <X className="h-4 w-4" />
+                  Cancel
+                </Button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>

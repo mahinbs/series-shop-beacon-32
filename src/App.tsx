@@ -23,6 +23,7 @@ import ContactUs from "./pages/ContactUs";
 import Profile from "./pages/Profile";
 import AffiliationPrograms from "./pages/AffiliationPrograms";
 import DigitalReader from "./pages/DigitalReader";
+import DigitalReaderSpecs from "./pages/DigitalReaderSpecs";
 import ComicSeries from "./pages/ComicSeries";
 import MerchandiseDetail from "./pages/MerchandiseDetail";
 import Coins from "./pages/Coins";
@@ -83,6 +84,7 @@ const App = () => (
               <Route path="/search" element={<SearchPage />} />
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/digital-reader/:seriesTitle" element={<DigitalReader />} />
+              <Route path="/digital-reader-specs" element={<DigitalReaderSpecs />} />
               <Route path="/coins" element={<Coins />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/auth" element={<AuthPage />} />

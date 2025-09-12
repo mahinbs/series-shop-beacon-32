@@ -1,111 +1,175 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Users, BookOpen, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { ComicService, type ComicSeries } from '@/services/comicService';
 
-const SeriesGrid = () => {
+interface SeriesGridProps {
+  appliedFilters?: string[];
+  searchTerm?: string;
+  sortBy?: string;
+}
+
+const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest First' }: SeriesGridProps) => {
   const navigate = useNavigate();
   const [hoveredSeries, setHoveredSeries] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'books' | 'merchandise'>('books');
+  const [seriesData, setSeriesData] = useState<ComicSeries[]>([]);
+  const [filteredSeries, setFilteredSeries] = useState<ComicSeries[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const series = [
-    {
-      id: 1,
-      title: "One Piece",
-      author: "Eiichiro Oda",
-      genre: "Adventure",
-      description: "Join Monkey D. Luffy on his epic adventure to become the Pirate King in this legendary manga series.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 98,
-      volumeCount: 108,
-      status: "Ongoing",
-      followers: "2.5M"
-    },
-    {
-      id: 2,
-      title: "Attack on Titan",
-      author: "Hajime Isayama",
-      genre: "Action",
-      description: "Humanity's last stand against the titans in this gripping and emotional saga.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 95,
-      volumeCount: 34,
-      status: "Completed",
-      followers: "2.1M"
-    },
-    {
-      id: 3,
-      title: "Demon Slayer",
-      author: "Koyoharu Gotouge",
-      genre: "Action",
-      description: "Follow Tanjiro's journey to save his sister and defeat demons in this beautifully illustrated series.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 92,
-      volumeCount: 23,
-      status: "Completed",
-      followers: "1.8M"
-    },
-    {
-      id: 4,
-      title: "Jujutsu Kaisen",
-      author: "Gege Akutami",
-      genre: "Action",
-      description: "Enter the world of curses and sorcery with Yuji Itadori in this supernatural thriller.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 90,
-      volumeCount: 24,
-      status: "Ongoing",
-      followers: "1.6M"
-    },
-    {
-      id: 5,
-      title: "Chainsaw Man",
-      author: "Tatsuki Fujimoto",
-      genre: "Horror",
-      description: "A dark and twisted tale of devils, contracts, and chainsaws in modern Japan.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 88,
-      volumeCount: 11,
-      status: "Completed",
-      followers: "1.4M"
-    },
-    {
-      id: 6,
-      title: "Spy x Family",
-      author: "Tatsuya Endo",
-      genre: "Comedy",
-      description: "A spy, an assassin, and a telepath form an unlikely family in this heartwarming comedy.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 85,
-      volumeCount: 12,
-      status: "Ongoing",
-      followers: "1.2M"
-    },
-    {
-      id: 7,
-      title: "Tokyo Revengers",
-      author: "Ken Wakui",
-      genre: "Drama",
-      description: "Time travel meets gang warfare in this intense story of redemption and friendship.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 82,
-      volumeCount: 31,
-      status: "Completed",
-      followers: "1.1M"
-    },
-    {
-      id: 8,
-      title: "My Hero Academia",
-      author: "Kohei Horikoshi",
-      genre: "Action",
-      description: "In a world where everyone has superpowers, one boy dreams of becoming a hero.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 80,
-      volumeCount: 38,
-      status: "Ongoing",
-      followers: "1.0M"
+  useEffect(() => {
+    loadSeries();
+  }, []);
+
+  useEffect(() => {
+    applyFiltersAndSearch();
+  }, [seriesData, appliedFilters, searchTerm, sortBy]);
+
+  const applyFiltersAndSearch = () => {
+    let filtered = [...seriesData];
+    
+    console.log('🔍 Starting filter process:');
+    console.log('📊 Total series:', seriesData.length);
+    console.log('🔍 Search term:', searchTerm);
+    console.log('🎯 Applied filters:', appliedFilters);
+    console.log('📋 Raw series data:', seriesData.map(s => ({ title: s.title, genre: s.genre, tags: s.tags })));
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(series => {
+        const titleMatch = series.title.toLowerCase().includes(searchLower);
+        const descMatch = series.description?.toLowerCase().includes(searchLower) || false;
+        const genreMatch = series.genre?.some(g => g.toLowerCase().includes(searchLower)) || false;
+        const tagsMatch = series.tags?.some(t => t.toLowerCase().includes(searchLower)) || false;
+        
+        const matches = titleMatch || descMatch || genreMatch || tagsMatch;
+        console.log(`🔍 "${series.title}" search match:`, { titleMatch, descMatch, genreMatch, tagsMatch, matches });
+        return matches;
+      });
+      console.log('🔍 After search filter:', filtered.length, 'series remain');
     }
-  ];
+
+    // Apply category/genre filters
+    if (appliedFilters.length > 0) {
+      filtered = filtered.filter(series => {
+        const hasMatchingGenre = series.genre?.some(g => 
+          appliedFilters.some(filter => g.toLowerCase() === filter.toLowerCase())
+        ) || false;
+        
+        const hasMatchingTag = series.tags?.some(t => 
+          appliedFilters.some(filter => t.toLowerCase() === filter.toLowerCase())
+        ) || false;
+        
+        const matches = hasMatchingGenre || hasMatchingTag;
+        console.log(`🎯 "${series.title}" filter match:`, { 
+          genres: series.genre, 
+          tags: series.tags, 
+          appliedFilters, 
+          hasMatchingGenre, 
+          hasMatchingTag, 
+          matches 
+        });
+        return matches;
+      });
+      console.log('🎯 After category filter:', filtered.length, 'series remain');
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'A-Z':
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'Z-A':
+        filtered.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case 'Newest First':
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case 'Oldest First':
+        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      default:
+        break;
+    }
+
+    setFilteredSeries(filtered);
+    console.log('✅ Final filtered series:', filtered.length, 'out of', seriesData.length);
+    console.log('📋 Final results:', filtered.map(s => s.title));
+  };
+
+  const loadSeries = async () => {
+    try {
+      const series = await ComicService.getSeries();
+      console.log('📚 Raw series from ComicService:', series);
+      // Filter for active series only
+      const activeSeries = series.filter(s => s.is_active);
+      console.log('📚 Active series:', activeSeries);
+      setSeriesData(activeSeries);
+    } catch (error) {
+      console.error('Error loading series:', error);
+      // Fallback to dummy data if database fails
+      setSeriesData([
+        {
+          id: "1",
+      title: "One Piece",
+          slug: "one-piece",
+      description: "Join Monkey D. Luffy on his epic adventure to become the Pirate King in this legendary manga series.",
+          cover_image_url: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
+          status: "ongoing",
+          genre: ["Adventure"],
+          tags: ["Adventure"],
+          age_rating: "all",
+          total_episodes: 108,
+          total_pages: 0,
+          is_featured: false,
+          is_active: true,
+          display_order: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: "2",
+      title: "Attack on Titan",
+          slug: "attack-on-titan",
+      description: "Humanity's last stand against the titans in this gripping and emotional saga.",
+          cover_image_url: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
+          status: "completed",
+          genre: ["Action"],
+          tags: ["Action"],
+          age_rating: "all",
+          total_episodes: 34,
+          total_pages: 0,
+          is_featured: false,
+          is_active: true,
+          display_order: 2,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: "3",
+      title: "Demon Slayer",
+          slug: "demon-slayer",
+      description: "Follow Tanjiro's journey to save his sister and defeat demons in this beautifully illustrated series.",
+          cover_image_url: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
+          status: "completed",
+          genre: ["Action"],
+          tags: ["Action"],
+          age_rating: "all",
+          total_episodes: 23,
+          total_pages: 0,
+          is_featured: false,
+          is_active: true,
+          display_order: 3,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const merchandise = [
     {
@@ -143,49 +207,13 @@ const SeriesGrid = () => {
       price: "$129.99",
       inStock: false,
       reviews: "890"
-    },
-    {
-      id: 4,
-      title: "Jujutsu Kaisen Poster Set",
-      category: "Posters",
-      type: "Art",
-      description: "Set of 6 high-quality posters featuring main characters and iconic scenes.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 85,
-      price: "$24.99",
-      inStock: true,
-      reviews: "1.2K"
-    },
-    {
-      id: 5,
-      title: "Chainsaw Man Keychain",
-      category: "Accessories",
-      type: "Keychain",
-      description: "Detailed Pochita keychain made from premium materials with LED eyes.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 78,
-      price: "$19.99",
-      inStock: true,
-      reviews: "650"
-    },
-    {
-      id: 6,
-      title: "Spy x Family Plushie Set",
-      category: "Plushies",
-      type: "Collectibles",
-      description: "Adorable plushie set featuring Anya, Loid, and Yor in their casual outfits.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 90,
-      price: "$69.99",
-      inStock: true,
-      reviews: "980"
     }
   ];
 
-  const handleSeriesClick = (seriesId: number) => {
+  const handleSeriesClick = (seriesId: string) => {
     console.log('🔍 Series clicked:', seriesId);
-    console.log('🚀 Navigating to pre-order page:', `/pre-order/${seriesId}`);
-    navigate(`/pre-order/${seriesId}`);
+    // Navigate to a series detail page instead of pre-order
+    navigate(`/series/${seriesId}`);
   };
 
   const handleMerchandiseClick = (merchandiseId: number) => {
@@ -214,7 +242,7 @@ const SeriesGrid = () => {
             >
               <BookOpen className="w-4 h-4" />
               Books
-              <span className="text-xs opacity-75">({series.length})</span>
+              <span className="text-xs opacity-75">({seriesData.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('merchandise')}
@@ -233,12 +261,38 @@ const SeriesGrid = () => {
 
         {/* Books Grid */}
         {activeTab === 'books' && (
+          <>
+            {isLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="bg-gray-800 rounded-xl overflow-hidden animate-pulse">
+                    <div className="w-full h-80 bg-gray-700"></div>
+                    <div className="p-5 space-y-3">
+                      <div className="h-4 bg-gray-700 rounded w-1/4"></div>
+                      <div className="h-6 bg-gray-700 rounded"></div>
+                      <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-700 rounded w-full"></div>
+                      <div className="h-3 bg-gray-700 rounded w-2/3"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredSeries.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-400 text-lg">
+                  {appliedFilters.length > 0 || searchTerm ? 'No series found matching your criteria' : 'No series available'}
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  {appliedFilters.length > 0 || searchTerm ? 'Try adjusting your filters or search term' : 'Add some series in the admin panel'}
+                </p>
+              </div>
+            ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {series.map((seriesItem, index) => (
+                {filteredSeries.map((seriesItem, index) => (
               <div
                 key={seriesItem.id}
                 className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
-                onMouseEnter={() => setHoveredSeries(seriesItem.id)}
+                    onMouseEnter={() => setHoveredSeries(index)}
                 onMouseLeave={() => setHoveredSeries(null)}
                 onClick={() => handleSeriesClick(seriesItem.id)}
                 style={{ 
@@ -249,7 +303,7 @@ const SeriesGrid = () => {
               >
                 <div className="relative overflow-hidden">
                   <img 
-                    src={seriesItem.imageUrl} 
+                        src={seriesItem.cover_image_url || "/placeholder.svg"} 
                     alt={seriesItem.title}
                     className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
                   />
@@ -257,7 +311,7 @@ const SeriesGrid = () => {
                   {/* Status Badge */}
                   <div className="absolute top-3 left-3">
                     <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
-                      seriesItem.status === 'Ongoing' 
+                          seriesItem.status === 'ongoing' 
                         ? 'bg-gradient-to-r from-green-600 to-green-700 text-white animate-pulse' 
                         : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
                     }`}>
@@ -265,24 +319,24 @@ const SeriesGrid = () => {
                     </span>
                   </div>
 
-                  {/* Popularity Badge */}
+                      {/* Episodes Badge */}
                   <div className="absolute top-3 right-3">
                     <span className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                      #{seriesItem.popularity}% Popular
+                          {seriesItem.total_episodes} Episodes
                     </span>
                   </div>
 
                   {/* Hover overlay with stats */}
-                  {hoveredSeries === seriesItem.id && (
+                      {hoveredSeries === index && (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="space-y-2">
                         <div className="flex items-center text-white text-sm">
                           <BookOpen className="w-4 h-4 mr-2" />
-                          {seriesItem.volumeCount} Volumes
+                              {seriesItem.total_episodes} Episodes
                         </div>
                         <div className="flex items-center text-white text-sm">
                           <Users className="w-4 h-4 mr-2" />
-                          {seriesItem.followers} Followers
+                              {seriesItem.age_rating} Rating
                         </div>
                       </div>
                     </div>
@@ -291,22 +345,19 @@ const SeriesGrid = () => {
                 
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <span className="text-red-400 text-xs font-semibold uppercase tracking-wide">{seriesItem.genre}</span>
+                        <span className="text-red-400 text-xs font-semibold uppercase tracking-wide">{seriesItem.genre?.[0] || 'Action'}</span>
                   </div>
                   
                   <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-300 transition-colors duration-300">
                     {seriesItem.title}
                   </h3>
-                  <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">
-                    {seriesItem.author}
-                  </p>
                   <p className="text-gray-500 text-xs line-clamp-2 group-hover:text-gray-400 transition-colors duration-300">
                     {seriesItem.description}
                   </p>
                   
                   <div className="flex items-center justify-between pt-2">
                     <div className="text-gray-400 text-xs">
-                      {seriesItem.volumeCount} volumes
+                          {seriesItem.total_episodes} episodes
                     </div>
                     <Button 
                       size="sm" 
@@ -316,13 +367,15 @@ const SeriesGrid = () => {
                         handleSeriesClick(seriesItem.id);
                       }}
                     >
-                      Add to Cart
+                          Read Now
                     </Button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+            )}
+          </>
         )}
 
         {/* Merchandise Grid */}
@@ -348,27 +401,6 @@ const SeriesGrid = () => {
                     className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   
-                  {/* Enhanced hover overlay with series details */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
-                    <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      <h3 className="text-lg font-bold text-red-300">{item.title}</h3>
-                      <p className="text-sm text-gray-300">by {item.author}</p>
-                      <p className="text-xs text-gray-400 uppercase tracking-wide">{item.genre}</p>
-                      <p className="text-xs text-gray-300 line-clamp-2">{item.description}</p>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="text-yellow-400">★</span>
-                          <span className="text-sm font-semibold">{item.popularity}%</span>
-                        </div>
-                        <span className="text-sm text-gray-300">{item.volumeCount} volumes</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 uppercase">{item.status}</span>
-                        <span className="text-xs text-gray-400">{item.followers} followers</span>
-                      </div>
-                    </div>
-                  </div>
-                  
                   {/* Stock Status Badge */}
                   <div className="absolute top-3 left-3">
                     <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
@@ -391,7 +423,6 @@ const SeriesGrid = () => {
                   {hoveredSeries === item.id && (
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="space-y-2">
-
                         <div className="flex items-center text-white text-sm">
                           <Users className="w-4 h-4 mr-2" />
                           {item.reviews} Reviews

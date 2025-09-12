@@ -52,63 +52,84 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // IMMEDIATELY clear any old user data that doesn't have the local- prefix
-    try {
-      const oldUserData = localStorage.getItem('user');
-      if (oldUserData) {
-        const user = JSON.parse(oldUserData);
-        if (user.id && !user.id.startsWith('local-')) {
-          console.log('🚨 CLEARING OLD USER DATA - User ID does not start with local-');
-          localStorage.removeItem('user');
-          localStorage.removeItem('isAuthenticated');
-          localStorage.removeItem('anonymous_cart'); // Also clear cart data
-          console.log('✅ Old user data cleared successfully');
-        }
-      }
-    } catch (error) {
-      console.error('Error checking old user data:', error);
-      // Clear corrupted data
-      localStorage.removeItem('user');
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('anonymous_cart');
-    }
-
-    // Check local storage first for bypass authentication
-    const checkLocalAuth = () => {
+    const initializeAuth = async () => {
+      // IMMEDIATELY clear any old user data that doesn't have the local- prefix
       try {
-        const isAuthenticated = localStorage.getItem('isAuthenticated');
-        const userData = localStorage.getItem('user');
-        
-        if (isAuthenticated === 'true' && userData) {
-          const user = JSON.parse(userData);
-          console.log('Restoring user from local storage:', user);
-          setUser(user);
-          setProfile({
-            id: user.id,
-            user_id: user.id,
-            email: user.email,
-            full_name: user.full_name,
-            avatar_url: user.avatar_url
-          });
-          setIsAdmin(user.role === 'admin');
-          setIsLoading(false);
-          return true;
+        const oldUserData = localStorage.getItem('user');
+        if (oldUserData) {
+          const user = JSON.parse(oldUserData);
+          if (user.id && !user.id.startsWith('local-')) {
+            console.log('🚨 CLEARING OLD USER DATA - User ID does not start with local-');
+            localStorage.removeItem('user');
+            localStorage.removeItem('isAuthenticated');
+            localStorage.removeItem('anonymous_cart'); // Also clear cart data
+            console.log('✅ Old user data cleared successfully');
+          }
         }
       } catch (error) {
-        console.error('Error restoring auth from local storage:', error);
-        localStorage.removeItem('isAuthenticated');
+        console.error('Error checking old user data:', error);
+        // Clear corrupted data
         localStorage.removeItem('user');
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('anonymous_cart');
       }
-      return false;
+
+      // Check local storage first for bypass authentication
+      const checkLocalAuth = () => {
+        try {
+          const isAuthenticated = localStorage.getItem('isAuthenticated');
+          const userData = localStorage.getItem('user');
+          
+          if (isAuthenticated === 'true' && userData) {
+            const user = JSON.parse(userData);
+            console.log('Restoring user from local storage:', user);
+            setUser(user);
+            setProfile({
+              id: user.id,
+              user_id: user.id,
+              email: user.email,
+              full_name: user.full_name,
+              avatar_url: user.avatar_url
+            });
+            setIsAdmin(user.role === 'admin');
+            setIsLoading(false);
+            return true;
+          }
+        } catch (error) {
+          console.error('Error restoring auth from local storage:', error);
+          localStorage.removeItem('isAuthenticated');
+          localStorage.removeItem('user');
+        }
+        return false;
+      };
+
+      // Try Supabase first (prioritize real authentication)
+      console.log('Checking Supabase authentication...');
+      
+      // Only use local storage as fallback if Supabase fails
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession?.user) {
+          console.log('Found Supabase session, using Supabase auth');
+          setSession(currentSession);
+          setUser(currentSession.user);
+          await loadUserProfile(currentSession.user);
+          return;
+        }
+      } catch (error) {
+        console.log('Supabase auth check failed:', error);
+      }
+      
+      // Fallback to local storage only if no Supabase session
+      if (checkLocalAuth()) {
+        console.log('No Supabase session, using local storage auth');
+        return;
+      }
+      
+      console.log('No authentication found, user needs to login');
     };
 
-    // Try local storage first
-    if (checkLocalAuth()) {
-      console.log('Authentication restored from local storage');
-      return;
-    }
-    
-    console.log('No local storage auth found, falling back to Supabase');
+    initializeAuth();
 
     // Fallback to Supabase auth if local storage fails
     const { data: { subscription } } = supabase.auth.onAuthStateChange(

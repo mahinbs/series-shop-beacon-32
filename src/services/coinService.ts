@@ -12,6 +12,11 @@ export class CoinService {
         .single();
 
       if (error) {
+        // If table doesn't exist (404), return null without logging error
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+          console.log('⚠️ Coin system tables not found, using local storage fallback');
+          return null;
+        }
         console.error('Error fetching user coins:', error);
         return null;
       }
@@ -41,6 +46,11 @@ export class CoinService {
         .single();
 
       if (error) {
+        // If table doesn't exist (404), return null without logging error
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+          console.log('⚠️ Coin system tables not found, using local storage fallback');
+          return null;
+        }
         console.error('Error initializing user coins:', error);
         return null;
       }
@@ -165,6 +175,11 @@ export class CoinService {
         .limit(limit);
 
       if (error) {
+        // If table doesn't exist (404), return empty array without logging error
+        if (error.code === 'PGRST116' || error.message?.includes('relation "coin_transactions" does not exist')) {
+          console.warn('Coin system tables not found. Please run the database migration.');
+          return [];
+        }
         console.error('Error fetching transaction history:', error);
         return [];
       }
@@ -204,6 +219,11 @@ export class CoinService {
         .order('price', { ascending: true });
 
       if (error) {
+        // If table doesn't exist (404), return empty array without logging error
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+          console.log('⚠️ Coin system tables not found, using local storage fallback');
+          return [];
+        }
         console.error('Error fetching coin packages:', error);
         return [];
       }

@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { UserService } from './userService';
 
 interface User {
   user_id: string;
@@ -78,52 +79,27 @@ export interface CartItemWithProduct extends CartItem {
 export class AuthService {
   // User authentication methods
   static async signUp(credentials: RegisterCredentials): Promise<AuthUser> {
-    const { data, error } = await supabase.auth.signUp({
-      email: credentials.email,
-      password: credentials.password,
-      options: {
-        data: {
-          full_name: credentials.full_name,
-        },
-      },
-    });
-
-    if (error) throw error;
-
-    if (!data.user) throw new Error('Failed to create user');
-
-    // Create profile
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .insert([
-        {
-          user_id: data.user.id,
-          email: credentials.email,
-          full_name: credentials.full_name,
-        },
-      ]);
-
-    if (profileError) throw profileError;
-
-    // Create user role
-    const { error: roleError } = await supabase
-      .from('user_roles')
-      .insert([
-        {
-          user_id: data.user.id,
-          role: 'user',
-        },
-      ]);
-
-    if (roleError) throw roleError;
-
-    return {
-      id: data.user.id,
-      email: credentials.email,
-      full_name: credentials.full_name,
-      avatar_url: null,
-      role: 'user',
-    };
+    try {
+      console.log('🌐 Public user signup:', credentials.email);
+      
+      // Use UserService to handle the signup process
+      const newUser = await UserService.handlePublicSignup(credentials);
+      
+      // Convert to AuthUser format
+      const authUser: AuthUser = {
+        id: newUser.id,
+        email: newUser.email,
+        full_name: newUser.full_name,
+        avatar_url: newUser.avatar_url,
+        role: newUser.role,
+      };
+      
+      console.log('✅ Public signup completed:', authUser);
+      return authUser;
+    } catch (error) {
+      console.error('❌ Error in public signup:', error);
+      throw error;
+    }
   }
 
   static async signIn(credentials: LoginCredentials): Promise<AuthUser> {

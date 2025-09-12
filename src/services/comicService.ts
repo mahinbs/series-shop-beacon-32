@@ -113,8 +113,16 @@ export class ComicService {
   static async getCreators(): Promise<Creator[]> {
     try {
       if (shouldUseLocalStorage()) {
-        // Return mock data for local auth
-        return [
+        // Load from localStorage first
+        const storedCreators = localStorage.getItem('creators');
+        if (storedCreators) {
+          const creators = JSON.parse(storedCreators);
+          console.log('👥 Loaded creators from localStorage:', creators);
+          return creators;
+        }
+        
+        // If no creators in localStorage, return expanded mock data
+        const mockCreators = [
           {
             id: 'creator-1',
             name: 'Alex Chen',
@@ -129,8 +137,73 @@ export class ComicService {
             is_active: true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
+          },
+          {
+            id: 'creator-2',
+            name: 'Sarah Johnson',
+            bio: 'Renowned colorist and digital artist specializing in sci-fi and cyberpunk themes.',
+            avatar_url: 'https://picsum.photos/101/101',
+            website_url: 'https://sarahjohnson.com',
+            social_links: {
+              twitter: '@sarahj_art',
+              instagram: '@sarahjohnson_art'
+            },
+            specialties: ['colorist', 'artist'],
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: 'creator-3',
+            name: 'Michael Rodriguez',
+            bio: 'Experienced letterer and editor with over 15 years in the comic industry.',
+            avatar_url: 'https://picsum.photos/102/102',
+            website_url: 'https://michaelrodriguez.com',
+            social_links: {
+              twitter: '@mrodriguez',
+              linkedin: 'michael-rodriguez'
+            },
+            specialties: ['letterer', 'editor'],
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: 'creator-4',
+            name: 'Emma Thompson',
+            bio: 'Creative writer and publisher known for innovative storytelling techniques.',
+            avatar_url: 'https://picsum.photos/103/103',
+            website_url: 'https://emmathompson.com',
+            social_links: {
+              twitter: '@emmathompson',
+              instagram: '@emma_writes'
+            },
+            specialties: ['writer', 'publisher'],
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          {
+            id: 'creator-5',
+            name: 'David Kim',
+            bio: 'Versatile artist and writer with expertise in manga and webcomics.',
+            avatar_url: 'https://picsum.photos/104/104',
+            website_url: 'https://davidkim.com',
+            social_links: {
+              twitter: '@davidkim_art',
+              instagram: '@davidkim_comics'
+            },
+            specialties: ['artist', 'writer'],
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           }
         ];
+        
+        // Save mock creators to localStorage
+        localStorage.setItem('creators', JSON.stringify(mockCreators));
+        console.log('👥 Created mock creators in localStorage:', mockCreators);
+        return mockCreators;
       }
 
       const { data, error } = await supabase
@@ -156,6 +229,13 @@ export class ComicService {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
+        
+        // Save to localStorage
+        const existingCreators = await this.getCreators();
+        const updatedCreators = [...existingCreators, newCreator];
+        localStorage.setItem('creators', JSON.stringify(updatedCreators));
+        
+        console.log('✅ Creator created in localStorage:', newCreator);
         return newCreator;
       }
 
@@ -219,64 +299,109 @@ export class ComicService {
   // Series Management
   static async getSeries(): Promise<ComicSeries[]> {
     try {
-      if (shouldUseLocalStorage()) {
-        // Return mock data for local auth
-        return [
-          {
-            id: 'series-1',
-            title: 'Shadow Hunter Chronicles',
-            slug: 'shadow-hunter-chronicles',
-            description: 'An epic fantasy adventure following the journey of a young shadow hunter.',
-            cover_image_url: 'https://picsum.photos/300/400',
-            banner_image_url: 'https://picsum.photos/800/300',
-            status: 'ongoing',
-            genre: ['Fantasy', 'Adventure', 'Action'],
-            tags: ['magic', 'heroes', 'quest'],
-            age_rating: 'teen',
-            total_episodes: 5,
-            total_pages: 120,
-            is_featured: true,
-            is_active: true,
-            display_order: 1,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            creators: [
-              {
-                id: 'sc-1',
-                series_id: 'series-1',
-                creator_id: 'creator-1',
-                role: 'writer',
-                is_primary: true,
-                creator: {
-                  id: 'creator-1',
-                  name: 'Alex Chen',
-                  bio: 'Award-winning comic book writer and artist.',
-                  avatar_url: 'https://picsum.photos/100/100',
-                  specialties: ['writer', 'artist'],
-                  is_active: true,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                }
-              }
-            ]
-          }
-        ];
+      console.log('📖 Getting series...');
+      
+      // Try Supabase first
+      try {
+        const { data, error } = await supabase
+          .from('comic_series')
+          .select(`
+            *,
+            creators:series_creators(
+              *,
+              creator:creators(*)
+            )
+          `)
+          .order('display_order');
+
+        if (!error && data) {
+          console.log('✅ Successfully loaded series from Supabase:', data);
+          return data;
+        } else {
+          console.log('⚠️ Supabase error, falling back to local storage:', error);
+        }
+      } catch (supabaseError) {
+        console.log('⚠️ Supabase connection failed, using local storage:', supabaseError);
+      }
+      
+      // Fallback to local storage
+      console.log('📖 Getting series from localStorage...');
+      const storedSeries = localStorage.getItem('comic_series');
+      console.log('💾 Stored series from localStorage:', storedSeries);
+      
+      if (storedSeries) {
+        const parsedSeries = JSON.parse(storedSeries);
+        console.log('📚 Parsed series:', parsedSeries);
+        return parsedSeries;
       }
 
-      const { data, error } = await supabase
-        .from('comic_series')
-        .select(`
-          *,
-          creators:series_creators(
-            *,
-            creator:creators(*)
-          )
-        `)
-        .eq('is_active', true)
-        .order('display_order');
+      console.log('🆕 No stored series found, returning default data');
+      
+      // Return default mock data
+      const defaultSeries = [
+        {
+          id: 'series-1',
+          title: 'Shadow Hunter Chronicles',
+          slug: 'shadow-hunter-chronicles',
+          description: 'An epic fantasy adventure following the journey of a young shadow hunter.',
+          cover_image_url: 'https://picsum.photos/300/400',
+          banner_image_url: 'https://picsum.photos/800/300',
+          status: 'ongoing' as const,
+          genre: ['Fantasy', 'Adventure', 'Action'],
+          tags: ['magic', 'heroes', 'quest'],
+          age_rating: 'teen' as const,
+          total_episodes: 5,
+          total_pages: 120,
+          is_featured: true,
+          is_active: true,
+          display_order: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          creators: [
+            {
+              id: 'sc-1',
+              series_id: 'series-1',
+              creator_id: 'creator-1',
+              role: 'writer' as const,
+              is_primary: true,
+              creator: {
+                id: 'creator-1',
+                name: 'Alex Chen',
+                bio: 'Award-winning comic book writer and artist.',
+                avatar_url: 'https://picsum.photos/100/100',
+                specialties: ['writer', 'artist'],
+                is_active: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }
+            }
+          ]
+        },
+        {
+          id: 'series-2',
+          title: 'Cyber City Warriors',
+          slug: 'cyber-city-warriors',
+          description: 'A cyberpunk tale of hackers and rebels fighting against corporate control.',
+          cover_image_url: 'https://picsum.photos/300/400',
+          banner_image_url: 'https://picsum.photos/800/300',
+          status: 'ongoing' as const,
+          genre: ['Sci-Fi', 'Action', 'Cyberpunk'],
+          tags: ['technology', 'rebellion', 'future'],
+          age_rating: 'mature' as const,
+          total_episodes: 3,
+          total_pages: 72,
+          is_featured: false,
+          is_active: true,
+          display_order: 2,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          creators: []
+        }
+      ];
 
-      if (error) throw error;
-      return data || [];
+      // Store default data in localStorage
+      localStorage.setItem('comic_series', JSON.stringify(defaultSeries));
+      return defaultSeries;
     } catch (error) {
       console.error('Error fetching series:', error);
       return [];
@@ -313,26 +438,48 @@ export class ComicService {
 
   static async createSeries(series: Omit<ComicSeries, 'id' | 'created_at' | 'updated_at' | 'total_episodes' | 'total_pages'>): Promise<ComicSeries> {
     try {
-      if (shouldUseLocalStorage()) {
-        const newSeries: ComicSeries = {
-          id: `series-${Date.now()}`,
-          ...series,
-          total_episodes: 0,
-          total_pages: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        };
-        return newSeries;
+      console.log('➕ Creating new series:', series);
+      
+      // Try Supabase first
+      try {
+        const { data, error } = await supabase
+          .from('comic_series')
+          .insert(series)
+          .select()
+          .single();
+
+        if (!error && data) {
+          console.log('✅ Successfully created series in Supabase:', data);
+          return data;
+        } else {
+          console.log('⚠️ Supabase error, falling back to local storage:', error);
+        }
+      } catch (supabaseError) {
+        console.log('⚠️ Supabase connection failed, using local storage:', supabaseError);
       }
+      
+      // Fallback to local storage
+      const existingSeries = await this.getSeries();
+      console.log('📚 Existing series before adding:', existingSeries);
+      
+      const newSeries: ComicSeries = {
+        id: `series-${Date.now()}`,
+        ...series,
+        total_episodes: 0,
+        total_pages: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      const { data, error } = await supabase
-        .from('comic_series')
-        .insert(series)
-        .select()
-        .single();
+      console.log('🆕 New series created:', newSeries);
 
-      if (error) throw error;
-      return data;
+      const updatedSeries = [...existingSeries, newSeries];
+      console.log('📝 Updated series array:', updatedSeries);
+      
+      localStorage.setItem('comic_series', JSON.stringify(updatedSeries));
+      console.log('💾 Series saved to localStorage');
+      
+      return newSeries;
     } catch (error) {
       console.error('Error creating series:', error);
       throw error;
@@ -341,23 +488,34 @@ export class ComicService {
 
   static async updateSeries(id: string, updates: Partial<ComicSeries>): Promise<ComicSeries> {
     try {
-      if (shouldUseLocalStorage()) {
-        return {
-          id,
-          ...updates,
-          updated_at: new Date().toISOString()
-        } as ComicSeries;
+      console.log('🔄 Updating series with ID:', id);
+      console.log('📝 Updates:', updates);
+      
+      // Use local storage instead of database
+      const existingSeries = await this.getSeries();
+      console.log('📚 Existing series:', existingSeries);
+      
+      const seriesIndex = existingSeries.findIndex(s => s.id === id);
+      console.log('🔍 Series index:', seriesIndex);
+      
+      if (seriesIndex === -1) {
+        console.error('❌ Series not found with ID:', id);
+        throw new Error('Series not found');
       }
 
-      const { data, error } = await supabase
-        .from('comic_series')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
+      const updatedSeries = {
+        ...existingSeries[seriesIndex],
+        ...updates,
+        updated_at: new Date().toISOString()
+      };
 
-      if (error) throw error;
-      return data;
+      console.log('✅ Updated series:', updatedSeries);
+
+      existingSeries[seriesIndex] = updatedSeries;
+      localStorage.setItem('comic_series', JSON.stringify(existingSeries));
+      
+      console.log('💾 Series saved to localStorage');
+      return updatedSeries;
     } catch (error) {
       console.error('Error updating series:', error);
       throw error;
@@ -367,6 +525,10 @@ export class ComicService {
   static async deleteSeries(id: string): Promise<void> {
     try {
       if (shouldUseLocalStorage()) {
+        const existingSeries = await this.getSeries();
+        const filteredSeries = existingSeries.filter(s => s.id !== id);
+        localStorage.setItem('comic_series', JSON.stringify(filteredSeries));
+        console.log('✅ Series deleted from localStorage:', id);
         return;
       }
 
@@ -386,43 +548,23 @@ export class ComicService {
   static async getEpisodes(seriesId?: string): Promise<ComicEpisode[]> {
     try {
       if (shouldUseLocalStorage()) {
-        // Return mock data for local auth
-        return [
-          {
-            id: 'episode-1',
-            series_id: 'series-1',
-            episode_number: 1,
-            title: 'The Beginning',
-            description: 'Our hero discovers their powers and embarks on their first adventure.',
-            cover_image_url: 'https://picsum.photos/200/300',
-            total_pages: 24,
-            is_free: true,
-            coin_price: 0,
-            is_published: true,
-            published_at: new Date().toISOString(),
-            is_active: true,
-            display_order: 1,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          {
-            id: 'episode-2',
-            series_id: 'series-1',
-            episode_number: 2,
-            title: 'The Journey Continues',
-            description: 'The adventure deepens as new challenges arise.',
-            cover_image_url: 'https://picsum.photos/200/300',
-            total_pages: 22,
-            is_free: false,
-            coin_price: 10,
-            is_published: true,
-            published_at: new Date().toISOString(),
-            is_active: true,
-            display_order: 2,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ];
+        // Load from localStorage
+        const storedEpisodes = localStorage.getItem('comic_episodes');
+        let episodes = storedEpisodes ? JSON.parse(storedEpisodes) : [];
+        
+        // If no episodes in localStorage, return empty array
+        if (episodes.length === 0) {
+          console.log('📖 No episodes found in localStorage');
+          return [];
+        }
+        
+        // Filter by series if specified
+        if (seriesId) {
+          episodes = episodes.filter((e: ComicEpisode) => e.series_id === seriesId);
+        }
+        
+        console.log('📖 Loaded episodes from localStorage:', episodes);
+        return episodes;
       }
 
       let query = supabase
@@ -486,6 +628,14 @@ export class ComicService {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
+        
+        // Save to localStorage
+        const storedEpisodes = localStorage.getItem('comic_episodes');
+        const episodes = storedEpisodes ? JSON.parse(storedEpisodes) : [];
+        episodes.push(newEpisode);
+        localStorage.setItem('comic_episodes', JSON.stringify(episodes));
+        
+        console.log('✅ Episode created in localStorage:', newEpisode);
         return newEpisode;
       }
 
@@ -506,11 +656,22 @@ export class ComicService {
   static async updateEpisode(id: string, updates: Partial<ComicEpisode>): Promise<ComicEpisode> {
     try {
       if (shouldUseLocalStorage()) {
-        return {
-          id,
-          ...updates,
-          updated_at: new Date().toISOString()
-        } as ComicEpisode;
+        const storedEpisodes = localStorage.getItem('comic_episodes');
+        const episodes = storedEpisodes ? JSON.parse(storedEpisodes) : [];
+        const episodeIndex = episodes.findIndex((e: ComicEpisode) => e.id === id);
+        
+        if (episodeIndex !== -1) {
+          episodes[episodeIndex] = {
+            ...episodes[episodeIndex],
+            ...updates,
+            updated_at: new Date().toISOString()
+          };
+          localStorage.setItem('comic_episodes', JSON.stringify(episodes));
+          console.log('✅ Episode updated in localStorage:', episodes[episodeIndex]);
+          return episodes[episodeIndex];
+        }
+        
+        throw new Error('Episode not found');
       }
 
       const { data, error } = await supabase
@@ -531,6 +692,11 @@ export class ComicService {
   static async deleteEpisode(id: string): Promise<void> {
     try {
       if (shouldUseLocalStorage()) {
+        const storedEpisodes = localStorage.getItem('comic_episodes');
+        const episodes = storedEpisodes ? JSON.parse(storedEpisodes) : [];
+        const filteredEpisodes = episodes.filter((e: ComicEpisode) => e.id !== id);
+        localStorage.setItem('comic_episodes', JSON.stringify(filteredEpisodes));
+        console.log('✅ Episode deleted from localStorage:', id);
         return;
       }
 
@@ -550,18 +716,15 @@ export class ComicService {
   static async getPages(episodeId: string): Promise<ComicPage[]> {
     try {
       if (shouldUseLocalStorage()) {
-        // Return mock data for local auth
-        return Array.from({ length: 24 }, (_, i) => ({
-          id: `page-${i + 1}`,
-          episode_id: episodeId,
-          page_number: i + 1,
-          image_url: `/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png`,
-          thumbnail_url: `/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png`,
-          alt_text: `Page ${i + 1}`,
-          is_active: true,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }));
+        // Load from localStorage
+        const storedPages = localStorage.getItem('comic_pages');
+        let pages = storedPages ? JSON.parse(storedPages) : [];
+        
+        // Filter by episode
+        pages = pages.filter((p: ComicPage) => p.episode_id === episodeId);
+        
+        console.log('📄 Loaded pages from localStorage for episode:', episodeId, pages);
+        return pages;
       }
 
       const { data, error } = await supabase
@@ -588,6 +751,14 @@ export class ComicService {
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
+        
+        // Save to localStorage
+        const storedPages = localStorage.getItem('comic_pages');
+        const pages = storedPages ? JSON.parse(storedPages) : [];
+        pages.push(newPage);
+        localStorage.setItem('comic_pages', JSON.stringify(pages));
+        
+        console.log('✅ Page created in localStorage:', newPage);
         return newPage;
       }
 
@@ -608,11 +779,22 @@ export class ComicService {
   static async updatePage(id: string, updates: Partial<ComicPage>): Promise<ComicPage> {
     try {
       if (shouldUseLocalStorage()) {
-        return {
-          id,
-          ...updates,
-          updated_at: new Date().toISOString()
-        } as ComicPage;
+        const storedPages = localStorage.getItem('comic_pages');
+        const pages = storedPages ? JSON.parse(storedPages) : [];
+        const pageIndex = pages.findIndex((p: ComicPage) => p.id === id);
+        
+        if (pageIndex !== -1) {
+          pages[pageIndex] = {
+            ...pages[pageIndex],
+            ...updates,
+            updated_at: new Date().toISOString()
+          };
+          localStorage.setItem('comic_pages', JSON.stringify(pages));
+          console.log('✅ Page updated in localStorage:', pages[pageIndex]);
+          return pages[pageIndex];
+        }
+        
+        throw new Error('Page not found');
       }
 
       const { data, error } = await supabase
@@ -633,6 +815,11 @@ export class ComicService {
   static async deletePage(id: string): Promise<void> {
     try {
       if (shouldUseLocalStorage()) {
+        const storedPages = localStorage.getItem('comic_pages');
+        const pages = storedPages ? JSON.parse(storedPages) : [];
+        const filteredPages = pages.filter((p: ComicPage) => p.id !== id);
+        localStorage.setItem('comic_pages', JSON.stringify(filteredPages));
+        console.log('✅ Page deleted from localStorage:', id);
         return;
       }
 

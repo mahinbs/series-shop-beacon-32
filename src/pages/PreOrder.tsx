@@ -152,7 +152,6 @@ const PreOrder = () => {
     price: selectedVolume <= 4 ? selectedVolume * 11.99 : (selectedVolume * 11.99) + 2.99,
     originalPrice: selectedVolume <= 4 ? selectedVolume * 14.99 : (selectedVolume * 14.99) + 3.99,
     coins: `${Math.round((selectedVolume <= 4 ? selectedVolume * 11.99 : (selectedVolume * 11.99) + 2.99) * 100)} coins`,
-    rating: 4.5,
     heroImage: "/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png",
     coverImage: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
     images: [

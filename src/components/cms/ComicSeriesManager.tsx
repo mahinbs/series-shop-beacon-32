@@ -92,18 +92,31 @@ export const ComicSeriesManager = () => {
   const [newSpecialty, setNewSpecialty] = useState('');
   const [newSocialPlatform, setNewSocialPlatform] = useState('');
   const [newSocialUrl, setNewSocialUrl] = useState('');
+  const [showNewCreatorForm, setShowNewCreatorForm] = useState(false);
+  const [newCreatorForm, setNewCreatorForm] = useState({
+    name: '',
+    bio: '',
+    avatar_url: '',
+    website_url: '',
+    specialties: [] as string[],
+    social_links: {} as Record<string, string>
+  });
+  const [newCreatorSpecialty, setNewCreatorSpecialty] = useState('');
 
   useEffect(() => {
     loadData();
   }, []);
 
   const loadData = async () => {
+    console.log('🔄 Loading data in ComicSeriesManager...');
     setIsLoading(true);
     try {
       const [seriesData, creatorsData] = await Promise.all([
         ComicService.getSeries(),
         ComicService.getCreators()
       ]);
+      console.log('📚 Series data loaded:', seriesData);
+      console.log('👥 Creators data loaded:', creatorsData);
       setSeries(seriesData);
       setCreators(creatorsData);
     } catch (error) {
@@ -140,15 +153,44 @@ export const ComicSeriesManager = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('💾 Submitting series form...');
+    console.log('🆔 Editing ID:', editingId);
+    console.log('📝 Form data:', formData);
+    console.log('📝 Form data keys:', Object.keys(formData));
+    console.log('📝 Form data values:', Object.values(formData));
+    
+    // Basic validation
+    if (!formData.title.trim()) {
+      toast({
+        title: "Error",
+        description: "Series title is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    if (!formData.slug.trim()) {
+      toast({
+        title: "Error",
+        description: "URL slug is required",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     try {
       if (editingId) {
-        await ComicService.updateSeries(editingId, formData);
+        console.log('🔄 Updating existing series...');
+        const updatedSeries = await ComicService.updateSeries(editingId, formData);
+        console.log('✅ Series updated:', updatedSeries);
         toast({
           title: "Success",
           description: "Comic series updated successfully",
         });
       } else {
-        await ComicService.createSeries(formData);
+        console.log('➕ Creating new series...');
+        const newSeries = await ComicService.createSeries(formData);
+        console.log('✅ Series created:', newSeries);
         toast({
           title: "Success",
           description: "Comic series created successfully",
@@ -157,7 +199,7 @@ export const ComicSeriesManager = () => {
       resetForm();
       loadData();
     } catch (error) {
-      console.error('Error saving series:', error);
+      console.error('❌ Error saving series:', error);
       toast({
         title: "Error",
         description: "Failed to save comic series",
@@ -167,6 +209,9 @@ export const ComicSeriesManager = () => {
   };
 
   const handleEdit = (seriesItem: ComicSeries) => {
+    console.log('✏️ Editing series:', seriesItem);
+    console.log('🆔 Series ID:', seriesItem.id);
+    
     setFormData({
       title: seriesItem.title,
       slug: seriesItem.slug,
@@ -190,6 +235,9 @@ export const ComicSeriesManager = () => {
     );
     setEditingId(seriesItem.id);
     setShowAddForm(true);
+    
+    console.log('✅ Form data set, editing ID:', seriesItem.id);
+    console.log('📝 Form should be visible now');
   };
 
   const handleDelete = async (id: string) => {
@@ -255,6 +303,12 @@ export const ComicSeriesManager = () => {
   };
 
   const updateCreatorAssignment = (index: number, field: keyof CreatorAssignment, value: any) => {
+    if (field === 'creator_id' && value === 'create-new') {
+      // Show the new creator form
+      setShowNewCreatorForm(true);
+      return;
+    }
+    
     setCreatorAssignments(prev => prev.map((assignment, i) => 
       i === index ? { ...assignment, [field]: value } : assignment
     ));
@@ -340,6 +394,51 @@ export const ComicSeriesManager = () => {
     });
   };
 
+  const handleCreateNewCreator = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      console.log('👥 Creating new creator:', newCreatorForm);
+      
+      if (!newCreatorForm.name.trim()) {
+        toast({
+          title: "Error",
+          description: "Creator name is required",
+          variant: "destructive"
+        });
+        return;
+      }
+      
+      const newCreator = await ComicService.createCreator(newCreatorForm);
+      console.log('✅ New creator created:', newCreator);
+      
+      // Reload creators list
+      await loadData();
+      
+      // Reset form
+      setNewCreatorForm({
+        name: '',
+        bio: '',
+        avatar_url: '',
+        website_url: '',
+        specialties: [],
+        social_links: {}
+      });
+      setShowNewCreatorForm(false);
+      
+      toast({
+        title: "Success",
+        description: "New creator created successfully",
+      });
+    } catch (error) {
+      console.error('❌ Error creating creator:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create creator",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -367,10 +466,46 @@ export const ComicSeriesManager = () => {
                 Manage comic series, episodes, and content
               </p>
             </div>
-            <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Series
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  console.log('🔍 Debug - Current localStorage data:');
+                  console.log('📚 Comic series:', localStorage.getItem('comic_series'));
+                  console.log('👥 Creators:', localStorage.getItem('creators'));
+                  console.log('🎯 Current state - series:', series);
+                  console.log('🎯 Current state - creators:', creators);
+                }}
+                variant="outline" size="sm"
+              >
+                Debug
+              </Button>
+              <Button
+                onClick={() => {
+                  setFormData({
+                    title: 'Test Series',
+                    slug: 'test-series',
+                    description: 'This is a test series description for testing purposes.',
+                    cover_image_url: 'https://picsum.photos/300/400',
+                    banner_image_url: 'https://picsum.photos/800/200',
+                    status: 'ongoing',
+                    genre: ['Action', 'Adventure'],
+                    tags: ['Test', 'Demo'],
+                    age_rating: 'all',
+                    is_featured: false,
+                    is_active: true,
+                    display_order: 0
+                  });
+                  setShowAddForm(true);
+                }}
+                variant="outline" size="sm"
+              >
+                Test Data
+              </Button>
+              <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Series
+              </Button>
+            </div>
           </div>
 
           {showAddForm && (
@@ -553,6 +688,9 @@ export const ComicSeriesManager = () => {
                                   {creator.name}
                                 </SelectItem>
                               ))}
+                              <SelectItem value="create-new" className="text-blue-600 font-semibold">
+                                + Create New Creator
+                              </SelectItem>
                             </SelectContent>
                           </Select>
                           <Select
@@ -590,6 +728,71 @@ export const ComicSeriesManager = () => {
                       ))}
                     </div>
                   </div>
+
+                  {/* New Creator Form */}
+                  {showNewCreatorForm && (
+                    <div className="border-t pt-6">
+                      <h4 className="text-lg font-semibold mb-4">Create New Creator</h4>
+                      <form onSubmit={handleCreateNewCreator} className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="new-creator-name">Creator Name *</Label>
+                            <Input
+                              id="new-creator-name"
+                              value={newCreatorForm.name}
+                              onChange={(e) => setNewCreatorForm(prev => ({ ...prev, name: e.target.value }))}
+                              placeholder="Enter creator name"
+                              required
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="new-creator-avatar">Avatar URL</Label>
+                            <Input
+                              id="new-creator-avatar"
+                              value={newCreatorForm.avatar_url}
+                              onChange={(e) => setNewCreatorForm(prev => ({ ...prev, avatar_url: e.target.value }))}
+                              placeholder="https://example.com/avatar.jpg"
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="new-creator-bio">Bio</Label>
+                          <Textarea
+                            id="new-creator-bio"
+                            value={newCreatorForm.bio}
+                            onChange={(e) => setNewCreatorForm(prev => ({ ...prev, bio: e.target.value }))}
+                            placeholder="Enter creator biography"
+                            rows={3}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="new-creator-website">Website URL</Label>
+                          <Input
+                            id="new-creator-website"
+                            value={newCreatorForm.website_url}
+                            onChange={(e) => setNewCreatorForm(prev => ({ ...prev, website_url: e.target.value }))}
+                            placeholder="https://example.com"
+                          />
+                        </div>
+                        
+                        <div className="flex gap-3">
+                          <Button type="submit" className="flex items-center gap-2">
+                            <Save className="h-4 w-4" />
+                            Create Creator
+                          </Button>
+                          <Button 
+                            type="button" 
+                            onClick={() => setShowNewCreatorForm(false)} 
+                            variant="outline"
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
 
                   {/* Settings */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -714,10 +917,57 @@ export const ComicSeriesManager = () => {
                 Manage comic creators, writers, and artists
               </p>
             </div>
-            <Button onClick={() => setShowCreatorForm(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Creator
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={async () => {
+                  // Generate 20 more creators
+                  const newCreators = [];
+                  for (let i = 1; i <= 20; i++) {
+                    const creatorNames = [
+                      'John Smith', 'Maria Garcia', 'James Wilson', 'Sarah Davis', 'Robert Brown',
+                      'Jennifer Miller', 'William Jones', 'Linda Anderson', 'David Taylor', 'Patricia Thomas',
+                      'Michael Jackson', 'Elizabeth White', 'Christopher Harris', 'Barbara Martin', 'Daniel Thompson',
+                      'Susan Garcia', 'Matthew Martinez', 'Jessica Robinson', 'Anthony Clark', 'Nancy Rodriguez'
+                    ];
+                    const specialties = ['writer', 'artist', 'colorist', 'letterer', 'editor', 'publisher'];
+                    const randomSpecialties = specialties.sort(() => 0.5 - Math.random()).slice(0, 2);
+                    
+                    newCreators.push({
+                      name: creatorNames[i - 1] || `Creator ${i}`,
+                      bio: `Professional comic creator with expertise in ${randomSpecialties.join(' and ')}.`,
+                      avatar_url: `https://picsum.photos/${100 + i}/${100 + i}`,
+                      website_url: `https://creator${i}.com`,
+                      social_links: {
+                        twitter: `@creator${i}`,
+                        instagram: `@creator${i}_art`
+                      },
+                      specialties: randomSpecialties,
+                      is_active: true
+                    });
+                  }
+                  
+                  // Create all new creators
+                  for (const creatorData of newCreators) {
+                    await ComicService.createCreator(creatorData);
+                  }
+                  
+                  // Reload data
+                  await loadData();
+                  
+                  toast({
+                    title: "Success",
+                    description: "Generated 20 new creators successfully",
+                  });
+                }}
+                variant="outline" size="sm"
+              >
+                Generate 20 Creators
+              </Button>
+              <Button onClick={() => setShowCreatorForm(true)} className="flex items-center gap-2">
+                <Plus className="h-4 w-4" />
+                Add Creator
+              </Button>
+            </div>
           </div>
 
           {showCreatorForm && (
