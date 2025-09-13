@@ -27,10 +27,35 @@ export interface FeaturedSeriesBadge {
 }
 
 export class FeaturedSeriesService {
+  // Clear local storage cache
+  static clearCache(): void {
+    console.log('🗑️ Clearing Featured Series cache...');
+    localStorage.removeItem('featured_series_configs');
+    localStorage.removeItem('featured_series_badges');
+    console.log('✅ Featured Series cache cleared');
+  }
+
+  // Force local storage only mode (bypass Supabase completely)
+  static setLocalStorageOnlyMode(enabled: boolean): void {
+    localStorage.setItem('featured_series_local_only', enabled.toString());
+    console.log(`🔄 Featured Series local storage only mode: ${enabled ? 'ENABLED' : 'DISABLED'}`);
+  }
+
+  // Check if local storage only mode is enabled
+  static isLocalStorageOnlyMode(): boolean {
+    return localStorage.getItem('featured_series_local_only') === 'true';
+  }
+
   // Get featured series configurations
   static async getConfigs(): Promise<FeaturedSeriesConfig[]> {
     try {
       console.log('⭐ Getting featured series configs...');
+      
+      // Check if local storage only mode is enabled
+      if (this.isLocalStorageOnlyMode()) {
+        console.log('🔄 Local storage only mode enabled, skipping Supabase');
+        return this.getConfigsFromLocalStorage();
+      }
       
       // Try Supabase first
       try {
@@ -41,14 +66,14 @@ export class FeaturedSeriesService {
           .order('display_order');
 
         if (!error && data) {
-          console.log('✅ Successfully loaded configs from Supabase:', data);
+          console.log(`✅ Successfully loaded ${data.length} featured configs from Supabase`);
           return data;
         } else {
           // Check if it's a table not found error
           if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-            console.log('⚠️ Featured series tables not found, using local storage fallback');
+            console.log('📋 Featured series configs table not found - run FEATURED_SERIES_TABLES_SETUP.sql to create it');
           } else {
-            console.log('⚠️ Supabase error, falling back to local storage:', error);
+            console.log('⚠️ Supabase error loading configs, falling back to local storage:', error);
           }
         }
       } catch (supabaseError) {
@@ -56,41 +81,48 @@ export class FeaturedSeriesService {
       }
       
       // Fallback to local storage
-      const storedConfigs = localStorage.getItem('featured_series_configs');
-      
-      if (storedConfigs) {
-        const parsedConfigs = JSON.parse(storedConfigs);
-        console.log('⭐ Loaded configs from localStorage:', parsedConfigs.length, 'configs');
-        return parsedConfigs.filter((config: FeaturedSeriesConfig) => config.is_active);
-      }
-
-      console.log('🆕 No stored configs found, returning default data');
-      
-      // Return default mock data
-      const defaultConfigs: FeaturedSeriesConfig[] = [
-        {
-          id: 'config-1',
-          title: 'Featured Series',
-          description: 'Discover our most popular and trending series',
-          background_image_url: '/lovable-uploads/featured-series-bg.jpg',
-          primary_button_text: 'View All Series',
-          primary_button_link: '/our-series',
-          secondary_button_text: 'Start Reading',
-          secondary_button_link: '/digital-reader',
-          is_active: true,
-          display_order: 1,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }
-      ];
-      
-      // Store default data in localStorage
-      localStorage.setItem('featured_series_configs', JSON.stringify(defaultConfigs));
-      return defaultConfigs;
+      return this.getConfigsFromLocalStorage();
     } catch (error) {
       console.error('❌ Error getting configs:', error);
-      return [];
+      return this.getConfigsFromLocalStorage();
     }
+  }
+
+  // Helper method to get configs from local storage
+  private static getConfigsFromLocalStorage(): FeaturedSeriesConfig[] {
+    const storedConfigs = localStorage.getItem('featured_series_configs');
+    
+    if (storedConfigs) {
+      const parsedConfigs = JSON.parse(storedConfigs);
+      const activeConfigs = parsedConfigs.filter((config: FeaturedSeriesConfig) => config.is_active);
+      console.log(`✅ Loaded ${activeConfigs.length} active configs from local storage (${parsedConfigs.length} total)`);
+      console.log('🖼️ Background image URLs in local storage:', activeConfigs.map(c => ({ id: c.id, title: c.title, background_image_url: c.background_image_url })));
+      return activeConfigs;
+    }
+
+    console.log('🆕 No stored configs found, returning default data');
+    
+    // Return default mock data
+    const defaultConfigs: FeaturedSeriesConfig[] = [
+      {
+        id: 'config-1',
+        title: 'Featured Series',
+        description: 'Discover our most popular and trending series',
+        background_image_url: '',
+        primary_button_text: 'View All Series',
+        primary_button_link: '/our-series',
+        secondary_button_text: 'Start Reading',
+        secondary_button_link: '/digital-reader',
+        is_active: true,
+        display_order: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ];
+    
+    // Store default data in localStorage
+    localStorage.setItem('featured_series_configs', JSON.stringify(defaultConfigs));
+    return defaultConfigs;
   }
 
   // Get featured series badges
@@ -107,14 +139,14 @@ export class FeaturedSeriesService {
           .order('display_order');
 
         if (!error && data) {
-          console.log('✅ Successfully loaded badges from Supabase:', data);
+          console.log(`✅ Successfully loaded ${data.length} featured badges from Supabase`);
           return data;
         } else {
           // Check if it's a table not found error
           if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-            console.log('⚠️ Featured series tables not found, using local storage fallback');
+            console.log('🏷️ Featured series badges table not found - run FEATURED_SERIES_TABLES_SETUP.sql to create it');
           } else {
-            console.log('⚠️ Supabase error, falling back to local storage:', error);
+            console.log('⚠️ Supabase error loading badges, falling back to local storage:', error);
           }
         }
       } catch (supabaseError) {
@@ -192,9 +224,11 @@ export class FeaturedSeriesService {
       
       // Try Supabase first
       try {
+        // Remove the id from configData if it exists to let Supabase generate it
+        const { id: _, ...insertData } = configData;
         const { data, error } = await supabase
           .from('featured_series_configs')
-          .insert([configData])
+          .insert([insertData])
           .select()
           .single();
 
@@ -242,46 +276,109 @@ export class FeaturedSeriesService {
   static async updateConfig(id: string, configData: Partial<FeaturedSeriesConfig>): Promise<FeaturedSeriesConfig> {
     try {
       console.log('🔄 Updating featured series config...');
+      console.log('🆔 Config ID:', id);
+      console.log('📊 Update data:', configData);
       
       // Try Supabase first
       try {
+        // Only send valid fields that Supabase accepts
+        const validFields = {
+          title: configData.title,
+          description: configData.description,
+          background_image_url: configData.background_image_url,
+          primary_button_text: configData.primary_button_text,
+          primary_button_link: configData.primary_button_link,
+          secondary_button_text: configData.secondary_button_text,
+          secondary_button_link: configData.secondary_button_link,
+          is_active: configData.is_active,
+          display_order: configData.display_order,
+          updated_at: new Date().toISOString()
+        };
+        
+        // Remove undefined values
+        const cleanUpdateData = Object.fromEntries(
+          Object.entries(validFields).filter(([_, value]) => value !== undefined)
+        );
+        
+        console.log('🧹 Clean update data for Supabase:', cleanUpdateData);
+        
         const { data, error } = await supabase
           .from('featured_series_configs')
-          .update({ ...configData, updated_at: new Date().toISOString() })
+          .update(cleanUpdateData)
           .eq('id', id)
           .select()
           .single();
 
         if (!error && data) {
           console.log('✅ Successfully updated config in Supabase:', data);
+          // Also update local storage to keep them in sync
+          this.updateLocalStorageConfig(id, configData);
           return data;
         } else {
-          console.log('⚠️ Supabase error, falling back to local storage:', error);
+          // Check if it's a table not found error or no rows affected
+          if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+            console.log('📋 Featured series configs table not found - run FEATURED_SERIES_TABLES_SETUP.sql to create it');
+          } else if (error.code === 'PGRST116' || error.message?.includes('0 rows')) {
+            console.log('⚠️ No config found with that ID in Supabase, updating local storage only');
+          } else if (error.code === 'PGRST301' || error.message?.includes('406')) {
+            console.log('⚠️ 406 Not Acceptable - Request format issue, using local storage');
+          } else {
+            console.log('⚠️ Supabase error, falling back to local storage:', error);
+            console.log('🔍 Error details:', { code: error.code, message: error.message, details: error.details });
+          }
+          // Always fall back to local storage when Supabase fails
+          console.log('🔄 Falling back to local storage due to Supabase error');
         }
       } catch (supabaseError) {
         console.log('⚠️ Supabase connection failed, using local storage:', supabaseError);
       }
       
-      // Fallback to local storage
-      const storedConfigs = localStorage.getItem('featured_series_configs');
-      const existingConfigs = storedConfigs ? JSON.parse(storedConfigs) : [];
-      const configIndex = existingConfigs.findIndex((config: FeaturedSeriesConfig) => config.id === id);
-      
-      if (configIndex !== -1) {
-        existingConfigs[configIndex] = {
-          ...existingConfigs[configIndex],
-          ...configData,
-          updated_at: new Date().toISOString()
-        };
-        localStorage.setItem('featured_series_configs', JSON.stringify(existingConfigs));
-        console.log('✅ Updated config in local storage:', existingConfigs[configIndex]);
-        return existingConfigs[configIndex];
-      }
-      
-      throw new Error('Config not found');
+      // Always update local storage
+      return this.updateLocalStorageConfig(id, configData);
     } catch (error) {
       console.error('❌ Error updating config:', error);
       throw error;
+    }
+  }
+
+  // Helper method to update local storage config
+  private static updateLocalStorageConfig(id: string, configData: Partial<FeaturedSeriesConfig>): FeaturedSeriesConfig {
+    const storedConfigs = localStorage.getItem('featured_series_configs');
+    const existingConfigs = storedConfigs ? JSON.parse(storedConfigs) : [];
+    const configIndex = existingConfigs.findIndex((config: FeaturedSeriesConfig) => config.id === id);
+    
+    if (configIndex !== -1) {
+      // Update existing config
+      existingConfigs[configIndex] = {
+        ...existingConfigs[configIndex],
+        ...configData,
+        updated_at: new Date().toISOString()
+      };
+      localStorage.setItem('featured_series_configs', JSON.stringify(existingConfigs));
+      console.log('✅ Updated config in local storage:', existingConfigs[configIndex]);
+      return existingConfigs[configIndex];
+    } else {
+      // If config not found, create a new one with the provided ID
+      console.log('⚠️ Config not found in local storage, creating new one with ID:', id);
+      const newConfig: FeaturedSeriesConfig = {
+        id: id,
+        title: configData.title || '',
+        description: configData.description || '',
+        background_image_url: configData.background_image_url || '',
+        primary_button_text: configData.primary_button_text || '',
+        primary_button_link: configData.primary_button_link || '',
+        secondary_button_text: configData.secondary_button_text || '',
+        secondary_button_link: configData.secondary_button_link || '',
+        is_active: configData.is_active ?? true,
+        display_order: configData.display_order || 0,
+        created_at: configData.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      existingConfigs.push(newConfig);
+      localStorage.setItem('featured_series_configs', JSON.stringify(existingConfigs));
+      console.log('✅ Created new config in local storage:', newConfig);
+      return newConfig;
     }
   }
 

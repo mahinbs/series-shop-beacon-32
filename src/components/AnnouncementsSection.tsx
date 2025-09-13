@@ -8,15 +8,15 @@ const AnnouncementsSection = () => {
   const { elementRef, isVisible } = useScrollAnimation(0.1);
   const { announcements, isLoading } = useAnnouncements();
 
-  // Debug logging
-  console.log('AnnouncementsSection rendering:', { 
-    announcementsCount: announcements?.length || 0, 
-    isLoading, 
-    announcements: announcements 
-  });
+  // Debug logging (commented out for cleaner console)
+  // console.log('AnnouncementsSection rendering:', { 
+  //   announcementsCount: announcements?.length || 0, 
+  //   isLoading, 
+  //   announcements: announcements 
+  // });
 
   if (isLoading) {
-    console.log('AnnouncementsSection: Showing loading state');
+    // console.log('AnnouncementsSection: Showing loading state');
     return (
       <section className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 py-16">
         <div className="container mx-auto px-4 text-center">
@@ -28,7 +28,7 @@ const AnnouncementsSection = () => {
   }
 
   if (announcements.length === 0) {
-    console.log('AnnouncementsSection: Showing no announcements state');
+    // console.log('AnnouncementsSection: Showing no announcements state');
     return (
       <section className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 py-16">
         <div className="container mx-auto px-4 text-center">
@@ -39,7 +39,7 @@ const AnnouncementsSection = () => {
     );
   }
 
-  console.log('AnnouncementsSection: Showing announcements list');
+  // console.log('AnnouncementsSection: Showing announcements list');
   return (
     <section 
       ref={elementRef}

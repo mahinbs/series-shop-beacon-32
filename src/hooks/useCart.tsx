@@ -62,7 +62,6 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         if (isAuthenticated && user) {
           // For local storage auth, skip backend cart loading
           if (user.id && user.id.startsWith('local-')) {
-            console.log('Using local storage auth, skipping backend cart loading');
             setCartItems([]);
           } else {
             // Load from backend for authenticated users
@@ -82,19 +81,16 @@ export const CartProvider = ({ children }: CartProviderProps) => {
         } else {
           // Load from localStorage for anonymous users
           const savedCart = localStorage.getItem('anonymous_cart');
-          console.log('Loading cart from localStorage:', savedCart);
           if (savedCart) {
             try {
               const parsedCart = JSON.parse(savedCart);
               // Validate cart data structure
               if (Array.isArray(parsedCart) && parsedCart.length > 0) {
                 setCartItems(parsedCart);
-                console.log('Cart loaded from localStorage:', parsedCart);
               } else {
                 // Clear invalid cart data
                 localStorage.removeItem('anonymous_cart');
                 setCartItems([]);
-                console.log('Invalid cart data cleared');
               }
             } catch (error) {
               console.error('Error loading cart from localStorage:', error);
@@ -104,7 +100,6 @@ export const CartProvider = ({ children }: CartProviderProps) => {
             }
           } else {
             setCartItems([]);
-            console.log('No cart data in localStorage');
           }
         }
       } catch (error) {
@@ -127,10 +122,8 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     if (!isAuthenticated || (user && user.id && user.id.startsWith('local-'))) {
       if (cartItems.length > 0) {
         localStorage.setItem('anonymous_cart', JSON.stringify(cartItems));
-        console.log('Cart saved to localStorage:', cartItems);
       } else {
         localStorage.removeItem('anonymous_cart');
-        console.log('Cart cleared from localStorage');
       }
     }
   }, [cartItems, isAuthenticated, user]);

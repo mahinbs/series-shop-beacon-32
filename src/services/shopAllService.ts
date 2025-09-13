@@ -19,7 +19,7 @@ export interface ShopAllFilter {
   id: string;
   name: string;
   type: 'category' | 'price' | 'status' | 'type' | 'genre' | 'age_rating' | 'author' | 'publisher';
-  options: string[];
+  options: string[] | object | string; // Can be array, object, or string (JSON)
   is_active: boolean;
   display_order: number;
   created_at: string;

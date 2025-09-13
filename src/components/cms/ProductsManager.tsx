@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useBooks } from '@/hooks/useBooks';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,11 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Trash2, Plus, Save, Edit, Upload, Package, BookOpen, ShoppingBag, Search, Filter, Grid, List } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Trash2, Plus, Save, Edit, Upload, Package, BookOpen, ShoppingBag, Search, Filter, Grid, List, Copy, Download, BarChart3, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { StorageService } from '@/services/storageService';
 
 interface ProductForm {
   title: string;
@@ -68,6 +71,10 @@ export const ProductsManager = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<{ [key: string]: string }>({});
+  
   const [formData, setFormData] = useState<ProductForm>({
     title: '',
     author: '',
@@ -93,7 +100,28 @@ export const ProductsManager = () => {
     tags: [],
   });
 
+  // Cleanup function for component unmount
+  useEffect(() => {
+    return () => {
+      // Clean up any preview URLs when component unmounts
+      if (formData.image_url && StorageService.isPreviewUrl(formData.image_url)) {
+        StorageService.revokePreviewUrl(formData.image_url);
+      }
+      if (formData.hover_image_url && StorageService.isPreviewUrl(formData.hover_image_url)) {
+        StorageService.revokePreviewUrl(formData.hover_image_url);
+      }
+    };
+  }, [formData.image_url, formData.hover_image_url]);
+
   const resetForm = () => {
+    // Clean up any preview URLs
+    if (formData.image_url && StorageService.isPreviewUrl(formData.image_url)) {
+      StorageService.revokePreviewUrl(formData.image_url);
+    }
+    if (formData.hover_image_url && StorageService.isPreviewUrl(formData.hover_image_url)) {
+      StorageService.revokePreviewUrl(formData.hover_image_url);
+    }
+
     setFormData({
       title: '',
       author: '',
@@ -120,21 +148,58 @@ export const ProductsManager = () => {
     });
     setEditingId(null);
     setShowAddForm(false);
+    setUploadedFiles({});
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting product data:', formData);
+    
+    // Validation
+    if (!formData.title.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Product title is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!formData.category) {
+      toast({
+        title: "Validation Error",
+        description: "Product category is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!formData.image_url.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Product image is required",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (formData.price <= 0) {
+      toast({
+        title: "Validation Error",
+        description: "Product price must be greater than 0",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setSubmitting(true);
     try {
       if (editingId) {
-        console.log('Updating product with ID:', editingId);
         await updateBook(editingId, formData as any);
         toast({
           title: "Success",
           description: "Product updated successfully",
         });
       } else {
-        console.log('Creating new product');
         await createBook(formData as any);
         toast({
           title: "Success",
@@ -150,6 +215,8 @@ export const ProductsManager = () => {
         description: "Failed to save product",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -185,7 +252,26 @@ export const ProductsManager = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this product?')) {
       try {
+        // Find the product to get its image URLs
+        const product = books.find(p => p.id === id);
+        
+        // Delete the product from database
         await deleteBook(id);
+        
+        // Clean up uploaded files from storage
+        if (product) {
+          const imagePath = StorageService.extractPathFromUrl(product.image_url);
+          const hoverImagePath = product.hover_image_url ? StorageService.extractPathFromUrl(product.hover_image_url) : null;
+          
+          // Delete files from storage (don't wait for completion)
+          if (imagePath) {
+            StorageService.deleteFile(imagePath).catch(console.error);
+          }
+          if (hoverImagePath) {
+            StorageService.deleteFile(hoverImagePath).catch(console.error);
+          }
+        }
+        
         toast({
           title: "Success",
           description: "Product deleted successfully",
@@ -204,23 +290,58 @@ export const ProductsManager = () => {
   const handleImageUpload = async (file: File, isHoverImage = false) => {
     setUploading(true);
     try {
-      const tempUrl = URL.createObjectURL(file);
+      // Create temporary preview URL for immediate display
+      const previewUrl = StorageService.createPreviewUrl(file);
+      
+      // Set preview URL immediately for user feedback
       if (isHoverImage) {
-        setFormData(prev => ({ ...prev, hover_image_url: tempUrl }));
+        setFormData(prev => ({ ...prev, hover_image_url: previewUrl }));
       } else {
-        setFormData(prev => ({ ...prev, image_url: tempUrl }));
+        setFormData(prev => ({ ...prev, image_url: previewUrl }));
       }
+
+      // Upload to Supabase Storage
+      const folder = `products/${formData.product_type || 'book'}`;
+      const result = await StorageService.uploadFile(file, folder);
+      
+      if (result.error) {
+        // Check if it's a storage configuration issue
+        if (result.error.includes('bucket') || result.error.includes('storage')) {
+          throw new Error(`Storage not configured: ${result.error}. Please check Supabase Storage setup.`);
+        }
+        throw new Error(result.error);
+      }
+
+      // Update with permanent URL
+      if (isHoverImage) {
+        setFormData(prev => ({ ...prev, hover_image_url: result.url }));
+        setUploadedFiles(prev => ({ ...prev, hover_image_url: result.path }));
+      } else {
+        setFormData(prev => ({ ...prev, image_url: result.url }));
+        setUploadedFiles(prev => ({ ...prev, image_url: result.path }));
+      }
+
+      // Clean up preview URL
+      StorageService.revokePreviewUrl(previewUrl);
       
       toast({
         title: "Image uploaded",
-        description: "Image has been uploaded successfully",
+        description: "Image has been uploaded successfully to cloud storage",
       });
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to upload image. Please try again.",
         variant: "destructive",
       });
+      
+      // Reset to empty on error
+      if (isHoverImage) {
+        setFormData(prev => ({ ...prev, hover_image_url: '' }));
+      } else {
+        setFormData(prev => ({ ...prev, image_url: '' }));
+      }
     } finally {
       setUploading(false);
     }
@@ -244,12 +365,10 @@ export const ProductsManager = () => {
   const getProductsByType = (type: string) => {
     let filteredProducts = books;
     
-    // Filter by product type
     if (type !== 'all') {
       filteredProducts = filteredProducts.filter(book => (book.product_type || 'book') === type);
     }
     
-    // Filter by search term
     if (searchTerm) {
       filteredProducts = filteredProducts.filter(product => 
         product.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -258,7 +377,6 @@ export const ProductsManager = () => {
       );
     }
     
-    // Filter by category
     if (filterCategory && filterCategory !== 'all') {
       filteredProducts = filteredProducts.filter(product => 
         product.category === filterCategory
@@ -273,6 +391,113 @@ export const ProductsManager = () => {
     return productType ? productType.label : type;
   };
 
+  // Bulk operations
+  const handleSelectProduct = (productId: string) => {
+    setSelectedProducts(prev => 
+      prev.includes(productId) 
+        ? prev.filter(id => id !== productId)
+        : [...prev, productId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    const currentProducts = getProductsByType(activeTab);
+    if (selectedProducts.length === currentProducts.length) {
+      setSelectedProducts([]);
+    } else {
+      setSelectedProducts(currentProducts.map(p => p.id));
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedProducts.length === 0) return;
+    
+    try {
+      await Promise.all(selectedProducts.map(id => deleteBook(id)));
+      toast({
+        title: "Success",
+        description: `${selectedProducts.length} products deleted successfully`,
+      });
+      setSelectedProducts([]);
+      await loadBooks();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete some products",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleBulkStatusChange = async (isActive: boolean) => {
+    if (selectedProducts.length === 0) return;
+    
+    try {
+      await Promise.all(selectedProducts.map(id => updateBook(id, { is_active: isActive })));
+      toast({
+        title: "Success",
+        description: `${selectedProducts.length} products ${isActive ? 'activated' : 'deactivated'} successfully`,
+      });
+      setSelectedProducts([]);
+      await loadBooks();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update some products",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDuplicate = async (product: any) => {
+    try {
+      const duplicateData = {
+        ...product,
+        title: `${product.title} (Copy)`,
+        id: undefined,
+        created_at: undefined,
+        updated_at: undefined,
+      };
+      await createBook(duplicateData);
+      toast({
+        title: "Success",
+        description: "Product duplicated successfully",
+      });
+      await loadBooks();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to duplicate product",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Statistics
+  const getProductStats = () => {
+    const total = books.length;
+    const active = books.filter(p => p.is_active).length;
+    const inactive = total - active;
+    
+    return { total, active, inactive };
+  };
+
+  const exportProducts = () => {
+    const dataStr = JSON.stringify(books, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `products-export-${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    
+    toast({
+      title: "Success",
+      description: "Products exported successfully",
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -284,8 +509,61 @@ export const ProductsManager = () => {
     );
   }
 
+  const stats = getProductStats();
+
   return (
     <div className="space-y-6">
+      {/* Statistics Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Total Products</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
+              </div>
+              <Package className="h-8 w-8 text-blue-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active Products</p>
+                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+              </div>
+              <Eye className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Inactive Products</p>
+                <p className="text-2xl font-bold text-red-600">{stats.inactive}</p>
+              </div>
+              <Package className="h-8 w-8 text-red-500" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Selected</p>
+                <p className="text-2xl font-bold text-purple-600">{selectedProducts.length}</p>
+              </div>
+              <BarChart3 className="h-8 w-8 text-purple-500" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
@@ -297,13 +575,23 @@ export const ProductsManager = () => {
               Manage all products including books, merchandise, and digital items
             </p>
           </div>
-          <Button 
-            onClick={() => setShowAddForm(true)}
-            className="flex items-center gap-2"
-          >
-            <Plus className="h-4 w-4" />
-            Add Product
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline"
+              onClick={exportProducts}
+              className="flex items-center gap-2"
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+            <Button 
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center gap-2"
+            >
+              <Plus className="h-4 w-4" />
+              Add Product
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {/* Search and Filter Bar */}
@@ -349,6 +637,64 @@ export const ProductsManager = () => {
             </div>
           </div>
 
+          {/* Bulk Actions */}
+          {selectedProducts.length > 0 && (
+            <div className="mb-4 p-4 bg-muted rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <span className="text-sm font-medium">
+                    {selectedProducts.length} product{selectedProducts.length !== 1 ? 's' : ''} selected
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleBulkStatusChange(true)}
+                    >
+                      Activate
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleBulkStatusChange(false)}
+                    >
+                      Deactivate
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="destructive" size="sm">
+                          <Trash2 className="h-4 w-4 mr-1" />
+                          Delete
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Products</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete {selectedProducts.length} product{selectedProducts.length !== 1 ? 's' : ''}? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleBulkDelete}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedProducts([])}
+                >
+                  Clear Selection
+                </Button>
+              </div>
+            </div>
+          )}
+
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="all">All Products</TabsTrigger>
@@ -374,133 +720,217 @@ export const ProductsManager = () => {
                     </p>
                   </div>
                 ) : (
-                  <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
-                    {getProductsByType(tab).map((product) => (
-                      <Card key={product.id} className="border hover:shadow-md transition-shadow">
-                        <CardContent className="p-4">
-                          {viewMode === 'grid' ? (
-                            // Grid View
-                            <div className="space-y-3">
-                              <div className="relative">
-                                <img 
-                                  src={product.image_url} 
-                                  alt={product.title}
-                                  className="w-full h-48 object-cover rounded border"
-                                />
-                                {product.hover_image_url && (
-                                  <img 
-                                    src={product.hover_image_url} 
-                                    alt={`${product.title} hover`}
-                                    className="absolute inset-0 w-full h-full object-cover rounded border opacity-0 hover:opacity-100 transition-opacity"
+                  <div className="space-y-4">
+                    {/* Select All Checkbox */}
+                    {getProductsByType(tab).length > 0 && (
+                      <div className="flex items-center space-x-2 p-2 border rounded-lg">
+                        <Checkbox
+                          id="select-all"
+                          checked={selectedProducts.length === getProductsByType(tab).length && getProductsByType(tab).length > 0}
+                          onCheckedChange={handleSelectAll}
+                        />
+                        <Label htmlFor="select-all" className="text-sm font-medium">
+                          Select All ({getProductsByType(tab).length} products)
+                        </Label>
+                      </div>
+                    )}
+                    
+                    <div className={viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'space-y-4'}>
+                      {getProductsByType(tab).map((product) => (
+                        <Card key={product.id} className={`border hover:shadow-md transition-shadow ${selectedProducts.includes(product.id) ? 'ring-2 ring-primary' : ''}`}>
+                          <CardContent className="p-4">
+                            {viewMode === 'grid' ? (
+                              <div className="space-y-3">
+                                <div className="flex items-start justify-between">
+                                  <Checkbox
+                                    checked={selectedProducts.includes(product.id)}
+                                    onCheckedChange={() => handleSelectProduct(product.id)}
                                   />
-                                )}
-                                <div className="absolute top-2 right-2 flex gap-1">
-                                  {product.is_new && <Badge variant="secondary" className="text-xs">🆕 New</Badge>}
-                                  {product.is_on_sale && <Badge variant="destructive" className="text-xs">🏷️ Sale</Badge>}
+                                  <div className="flex gap-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDuplicate(product)}
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <Copy className="h-3 w-3" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEdit(product)}
+                                      className="h-6 w-6 p-0"
+                                    >
+                                      <Edit className="h-3 w-3" />
+                                    </Button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button
+                                          variant="ghost"
+                                          size="sm"
+                                          className="h-6 w-6 p-0 text-destructive hover:text-destructive"
+                                        >
+                                          <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            Are you sure you want to delete "{product.title}"? This action cannot be undone.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => handleDelete(product.id)}>
+                                            Delete
+                                          </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </div>
                                 </div>
-                              </div>
-                              <div>
-                                <div className="flex items-center justify-between mb-1">
-                                  <h4 className="font-semibold text-sm line-clamp-1">{product.title}</h4>
-                                  <Badge variant="outline" className="text-xs">
-                                    {getProductTypeLabel(product.product_type || 'book')}
-                                  </Badge>
-                                </div>
-                                {product.author && (
-                                  <p className="text-xs text-muted-foreground">by {product.author}</p>
-                                )}
-                                <p className="text-sm font-medium">
-                                  ${product.price}
-                                  {product.original_price && (
-                                    <span className="line-through text-muted-foreground ml-2">${product.original_price}</span>
-                                  )}
-                                </p>
-                                <p className="text-xs text-muted-foreground">{product.category}</p>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleEdit(product)}
-                                  className="flex-1"
-                                >
-                                  <Edit className="h-3 w-3 mr-1" />
-                                  Edit
-                                </Button>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  onClick={() => handleDelete(product.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          ) : (
-                            // List View
-                            <div className="flex items-start justify-between">
-                              <div className="flex gap-4">
-                                <div className="flex gap-2">
+                                
+                                <div className="relative">
                                   <img 
                                     src={product.image_url} 
                                     alt={product.title}
-                                    className="w-16 h-20 object-cover rounded border"
+                                    className="w-full h-48 object-cover rounded border"
                                   />
                                   {product.hover_image_url && (
                                     <img 
                                       src={product.hover_image_url} 
                                       alt={`${product.title} hover`}
-                                      className="w-16 h-20 object-cover rounded border opacity-70"
+                                      className="absolute inset-0 w-full h-full object-cover rounded border opacity-0 hover:opacity-100 transition-opacity"
                                     />
                                   )}
+                                  <div className="absolute top-2 right-2 flex gap-1">
+                                    {product.is_new && <Badge variant="secondary" className="text-xs">🆕 New</Badge>}
+                                    {product.is_on_sale && <Badge variant="destructive" className="text-xs">🏷️ Sale</Badge>}
+                                    {!product.is_active && <Badge variant="outline" className="text-xs">Inactive</Badge>}
+                                  </div>
                                 </div>
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <h4 className="font-semibold">{product.title}</h4>
-                                    <Badge variant="secondary">
+                                
+                                <div>
+                                  <div className="flex items-center justify-between mb-1">
+                                    <h4 className="font-semibold text-sm line-clamp-1">{product.title}</h4>
+                                    <Badge variant="outline" className="text-xs">
                                       {getProductTypeLabel(product.product_type || 'book')}
                                     </Badge>
                                   </div>
                                   {product.author && (
-                                    <p className="text-sm text-muted-foreground">by {product.author}</p>
+                                    <p className="text-xs text-muted-foreground">by {product.author}</p>
                                   )}
-                                  <p className="text-sm text-muted-foreground">
-                                    {product.category} • ${product.price}
+                                  <p className="text-sm font-medium">
+                                    ${product.price}
                                     {product.original_price && (
-                                      <span className="line-through ml-2">${product.original_price}</span>
+                                      <span className="line-through text-muted-foreground ml-2">${product.original_price}</span>
                                     )}
                                   </p>
-                                  <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
-                                    <span>Section: {product.section_type}</span>
-                                    <span>Order: {product.display_order}</span>
-                                    <span>Status: {product.is_active ? 'Active' : 'Inactive'}</span>
-                                    {product.can_unlock_with_coins && <span>🪙 Unlockable</span>}
-                                    {product.is_new && <span>🆕 New</span>}
-                                    {product.is_on_sale && <span>🏷️ On Sale</span>}
+                                  <p className="text-xs text-muted-foreground">{product.category}</p>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant={product.is_active ? 'default' : 'secondary'} className="text-xs">
+                                      {product.is_active ? 'Active' : 'Inactive'}
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">Order: {product.display_order}</span>
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex items-center gap-2">
-                                <Button 
-                                  variant="outline" 
-                                  size="sm"
-                                  onClick={() => handleEdit(product)}
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                                <Button 
-                                  variant="destructive" 
-                                  size="sm"
-                                  onClick={() => handleDelete(product.id)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                            ) : (
+                              <div className="flex items-start justify-between">
+                                <div className="flex gap-4">
+                                  <Checkbox
+                                    checked={selectedProducts.includes(product.id)}
+                                    onCheckedChange={() => handleSelectProduct(product.id)}
+                                  />
+                                  <div className="flex gap-2">
+                                    <img 
+                                      src={product.image_url} 
+                                      alt={product.title}
+                                      className="w-16 h-20 object-cover rounded border"
+                                    />
+                                    {product.hover_image_url && (
+                                      <img 
+                                        src={product.hover_image_url} 
+                                        alt={`${product.title} hover`}
+                                        className="w-16 h-20 object-cover rounded border opacity-70"
+                                      />
+                                    )}
+                                  </div>
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-2 mb-1">
+                                      <h4 className="font-semibold">{product.title}</h4>
+                                      <Badge variant="secondary">
+                                        {getProductTypeLabel(product.product_type || 'book')}
+                                      </Badge>
+                                      {!product.is_active && <Badge variant="outline">Inactive</Badge>}
+                                    </div>
+                                    {product.author && (
+                                      <p className="text-sm text-muted-foreground">by {product.author}</p>
+                                    )}
+                                    <p className="text-sm text-muted-foreground">
+                                      {product.category} • ${product.price}
+                                      {product.original_price && (
+                                        <span className="line-through ml-2">${product.original_price}</span>
+                                      )}
+                                    </p>
+                                    <div className="flex items-center gap-4 text-xs text-muted-foreground mt-1">
+                                      <span>Section: {product.section_type}</span>
+                                      <span>Order: {product.display_order}</span>
+                                      <span>Status: {product.is_active ? 'Active' : 'Inactive'}</span>
+                                      {product.can_unlock_with_coins && <span>🪙 Unlockable</span>}
+                                      {product.is_new && <span>🆕 New</span>}
+                                      {product.is_on_sale && <span>🏷️ On Sale</span>}
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDuplicate(product)}
+                                    className="h-8 w-8 p-0"
+                                  >
+                                    <Copy className="h-4 w-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="outline" 
+                                    size="sm"
+                                    onClick={() => handleEdit(product)}
+                                  >
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                  <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                      <Button 
+                                        variant="destructive" 
+                                        size="sm"
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete Product</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                          Are you sure you want to delete "{product.title}"? This action cannot be undone.
+                                        </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={() => handleDelete(product.id)}>
+                                          Delete
+                                        </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                  </AlertDialog>
+                                </div>
                               </div>
-                            </div>
-                          )}
-                        </CardContent>
-                      </Card>
-                    ))}
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
                   </div>
                 )}
               </TabsContent>
@@ -681,9 +1111,15 @@ export const ProductsManager = () => {
                       className="flex items-center gap-2"
                     >
                       <Upload className="h-4 w-4" />
-                      Upload
+                      {uploading ? 'Uploading...' : 'Upload'}
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    💡 Upload images to cloud storage for better performance. 
+                    <a href="/SUPABASE_STORAGE_SETUP.md" target="_blank" className="text-blue-500 hover:underline ml-1">
+                      Setup guide
+                    </a>
+                  </p>
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -719,9 +1155,12 @@ export const ProductsManager = () => {
                       className="flex items-center gap-2"
                     >
                       <Upload className="h-4 w-4" />
-                      Upload
+                      {uploading ? 'Uploading...' : 'Upload'}
                     </Button>
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    💡 Optional image that appears on hover for enhanced user experience
+                  </p>
                   <input
                     ref={hoverFileInputRef}
                     type="file"
@@ -825,11 +1264,20 @@ export const ProductsManager = () => {
               </div>
               
               <div className="flex gap-2">
-                <Button type="submit" className="flex items-center gap-2">
+                <Button 
+                  type="submit" 
+                  className="flex items-center gap-2"
+                  disabled={submitting}
+                >
                   <Save className="h-4 w-4" />
-                  {editingId ? 'Update' : 'Create'} Product
+                  {submitting ? 'Saving...' : (editingId ? 'Update' : 'Create')} Product
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={resetForm}
+                  disabled={submitting}
+                >
                   Cancel
                 </Button>
               </div>

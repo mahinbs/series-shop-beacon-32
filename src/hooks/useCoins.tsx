@@ -16,6 +16,20 @@ export const useCoins = () => {
   const loadUserCoins = useCallback(async () => {
     if (!user?.id) return;
 
+    // For local storage auth users, skip Supabase loading
+    if (user.id.startsWith('local-')) {
+      setUserCoins({
+        user_id: user.id,
+        balance: 1000, // Default balance for local users
+        total_earned: 1000,
+        total_spent: 0,
+        last_updated: new Date().toISOString()
+      });
+      setIsLoading(false);
+      setIsInitialized(true);
+      return;
+    }
+
     setIsLoading(true);
     try {
       const coins = await CoinService.getUserCoins(user.id);
@@ -44,6 +58,12 @@ export const useCoins = () => {
   const loadTransactions = useCallback(async () => {
     if (!user?.id) return;
 
+    // For local storage auth users, skip Supabase loading
+    if (user.id.startsWith('local-')) {
+      setTransactions([]);
+      return;
+    }
+
     try {
       const history = await CoinService.getTransactionHistory(user.id, 50);
       setTransactions(history);
@@ -54,6 +74,12 @@ export const useCoins = () => {
 
   // Load available coin packages
   const loadPackages = useCallback(async () => {
+    // For local storage auth users, skip Supabase loading
+    if (user?.id && user.id.startsWith('local-')) {
+      setPackages([]);
+      return;
+    }
+
     try {
       const coinPackages = await CoinService.getCoinPackages();
       if (coinPackages.length > 0) {
@@ -103,7 +129,7 @@ export const useCoins = () => {
     } catch (error) {
       console.error('Error loading packages:', error);
     }
-  }, []);
+  }, [user?.id]);
 
   // Add coins to user balance
   const addCoins = useCallback(async (amount: number, type: 'purchase' | 'earn', description: string, reference?: string) => {

@@ -4,6 +4,7 @@ import { Filter, Search, ArrowUpDown, X, RefreshCw } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ShopAllService, type ShopAllFilter, type ShopAllSort } from '@/services/shopAllService';
+import { useToast } from '@/hooks/use-toast';
 
 interface ShopFiltersProps {
   viewMode: 'series' | 'volume';
@@ -14,6 +15,7 @@ interface ShopFiltersProps {
 }
 
 const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSearchChange }: ShopFiltersProps) => {
+  const { toast } = useToast();
   const [activeCategory, setActiveCategory] = useState('All');
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState('Newest First');
@@ -21,6 +23,7 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
   const [dynamicFilters, setDynamicFilters] = useState<ShopAllFilter[]>([]);
   const [dynamicSorts, setDynamicSorts] = useState<ShopAllSort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const categories = [
     'All', 'Action', 'Adventure', 'Romance', 'Fantasy', 'Sci-Fi', 
@@ -50,9 +53,13 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
     loadShopAllData();
   }, []);
 
-  const loadShopAllData = async () => {
+  const loadShopAllData = async (isRefresh = false) => {
     try {
-      setIsLoading(true);
+      if (isRefresh) {
+        setIsRefreshing(true);
+      } else {
+        setIsLoading(true);
+      }
       console.log('🛍️ Loading Shop All filters and sorts...');
       
       const [filtersData, sortsData] = await Promise.all([
@@ -64,16 +71,66 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
       setDynamicSorts(sortsData);
       console.log('✅ Loaded dynamic filters:', filtersData);
       console.log('✅ Loaded dynamic sorts:', sortsData);
+      
+      // Reset UI state on refresh
+      if (isRefresh) {
+        setActiveCategory('All');
+        setSelectedFilters([]);
+        setSearchTerm('');
+        onSearchChange?.('');
+        onFiltersApply?.([]);
+        console.log('🔄 Reset UI state on refresh');
+        
+        toast({
+          title: "Refreshed",
+          description: "Shop filters and sorts have been refreshed successfully",
+        });
+      }
     } catch (error) {
       console.error('❌ Error loading Shop All data:', error);
+      if (isRefresh) {
+        toast({
+          title: "Refresh Failed",
+          description: "Failed to refresh shop data. Please try again.",
+          variant: "destructive",
+        });
+      }
     } finally {
       setIsLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   // Convert dynamic filters to the format expected by the component
   const filterOptions = dynamicFilters.reduce((acc, filter) => {
-    acc[filter.name] = filter.options;
+    // Ensure options is always an array
+    let options: string[] = [];
+    
+    if (Array.isArray(filter.options)) {
+      options = filter.options;
+    } else if (typeof filter.options === 'object' && filter.options !== null) {
+      // If it's an object, convert it to an array of key-value pairs
+      options = Object.entries(filter.options).map(([key, value]) => `${key}: ${value}`);
+    } else if (typeof filter.options === 'string') {
+      // If it's a string, try to parse it as JSON
+      try {
+        const parsed = JSON.parse(filter.options);
+        if (Array.isArray(parsed)) {
+          options = parsed;
+        } else if (typeof parsed === 'object' && parsed !== null) {
+          options = Object.entries(parsed).map(([key, value]) => `${key}: ${value}`);
+        } else {
+          options = [filter.options];
+        }
+      } catch {
+        options = [filter.options];
+      }
+    } else {
+      // Fallback to empty array
+      options = [];
+    }
+    
+    acc[filter.name] = options;
     return acc;
   }, {} as Record<string, string[]>);
 
@@ -82,11 +139,14 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
 
   const handleSortChange = (sortOption: string) => {
     setSelectedSort(sortOption);
+    // Immediately apply the sort change
+    onSortChange?.(sortOption);
+    console.log('🔄 Sort option changed and applied:', sortOption);
   };
 
   const applySortOption = () => {
     onSortChange?.(selectedSort);
-    console.log('Applied sort option:', selectedSort);
+    console.log('✅ Applied sort option:', selectedSort);
   };
 
   const handleFilterChange = (filter: string, checked: boolean) => {
@@ -152,13 +212,14 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
           {/* Filter and Sort Buttons */}
           <div className="flex items-center gap-3">
             <Button
-              onClick={loadShopAllData}
+              onClick={() => loadShopAllData(true)}
               variant="outline"
               size="sm"
-              className="bg-blue-900/50 border-blue-700 text-white hover:bg-blue-800/60 px-4 py-2 rounded-lg"
+              disabled={isRefreshing}
+              className="bg-blue-900/50 border-blue-700 text-white hover:bg-blue-800/60 px-4 py-2 rounded-lg disabled:opacity-50"
             >
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
+              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -234,7 +295,7 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
                   className="bg-blue-900/50 border-blue-700 text-white hover:bg-blue-800/60 px-6 py-2 rounded-lg"
                 >
                   <ArrowUpDown className="h-4 w-4 mr-2" />
-                  Sort By
+                  Sort By: {selectedSort}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 bg-gray-800 border-gray-700 z-50">

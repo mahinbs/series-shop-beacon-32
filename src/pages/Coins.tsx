@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useCoins } from '@/hooks/useCoins';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { PaymentService, type PaymentMethod } from '@/services/paymentService';
 import { 
   Coins as CoinsIcon, 
   TrendingUp, 
@@ -34,6 +35,9 @@ const Coins = () => {
   
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [isPurchasing, setIsPurchasing] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
 
   if (!isAuthenticated || !user) {
     return (
@@ -49,16 +53,48 @@ const Coins = () => {
     );
   }
 
+  // Load payment methods on component mount
+  useEffect(() => {
+    const loadPaymentMethods = async () => {
+      const methods = await PaymentService.getPaymentMethods();
+      setPaymentMethods(methods);
+    };
+    loadPaymentMethods();
+  }, []);
+
   const handlePurchase = async (packageId: string) => {
+    setSelectedPackage(packageId);
+    setShowPaymentModal(true);
+  };
+
+  const handleProcessPayment = async () => {
+    if (!selectedPackage || !selectedPaymentMethod || !user) return;
+
     setIsPurchasing(true);
     try {
-      // For demo purposes, we'll simulate a successful purchase
-      // In a real implementation, this would integrate with a payment processor
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const pkg = COIN_PACKAGES.find(p => p.id === selectedPackage);
+      if (!pkg) return;
+
+      const paymentRequest = {
+        packageId: pkg.id,
+        userId: user.id,
+        amount: pkg.price,
+        coins: pkg.coins + pkg.bonus,
+        paymentMethod: selectedPaymentMethod,
+        currency: 'USD'
+      };
+
+      const result = await PaymentService.processCoinPurchase(paymentRequest);
       
-      const success = await purchaseCoins(packageId, 'credit_card');
-      if (success) {
+      if (result.success) {
+        // Add coins to user balance
+        await purchaseCoins(pkg.id, selectedPaymentMethod);
+        
+        setShowPaymentModal(false);
         setSelectedPackage(null);
+        setSelectedPaymentMethod('');
+      } else {
+        console.error('Payment failed:', result.error);
       }
     } catch (error) {
       console.error('Purchase failed:', error);
@@ -251,7 +287,7 @@ const Coins = () => {
                         {isPurchasing && selectedPackage === pkg.id ? (
                           'Processing...'
                         ) : (
-                          'Select Package'
+                          'Purchase Now'
                         )}
                       </Button>
                     </CardContent>
@@ -259,25 +295,6 @@ const Coins = () => {
                 ))}
               </div>
 
-              {selectedPackage && (
-                <div className="mt-8 text-center">
-                  <Button 
-                    size="lg"
-                    className="bg-yellow-600 hover:bg-yellow-700 text-white px-8 py-4 text-lg"
-                    onClick={() => handlePurchase(selectedPackage)}
-                    disabled={isPurchasing}
-                  >
-                    {isPurchasing ? (
-                      <div className="flex items-center gap-2">
-                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        Processing Purchase...
-                      </div>
-                    ) : (
-                      'Complete Purchase'
-                    )}
-                  </Button>
-                </div>
-              )}
             </TabsContent>
 
             <TabsContent value="history" className="mt-8">
@@ -371,6 +388,80 @@ const Coins = () => {
           </div>
         </div>
       </main>
+      
+      {/* Payment Modal */}
+      {showPaymentModal && selectedPackage && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md bg-gray-800 border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-white">Complete Your Purchase</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {(() => {
+                const pkg = COIN_PACKAGES.find(p => p.id === selectedPackage);
+                if (!pkg) return null;
+                
+                return (
+                  <>
+                    <div className="bg-gray-700 p-4 rounded-lg">
+                      <h3 className="font-semibold text-white">{pkg.name}</h3>
+                      <p className="text-sm text-gray-300">
+                        {pkg.coins.toLocaleString()} coins
+                        {pkg.bonus > 0 && ` + ${pkg.bonus} bonus`}
+                      </p>
+                      <p className="text-lg font-bold text-yellow-400">${pkg.price.toFixed(2)}</p>
+                    </div>
+                    
+                    <div>
+                      <label className="text-sm font-medium text-white">Payment Method</label>
+                      <select 
+                        value={selectedPaymentMethod} 
+                        onChange={(e) => setSelectedPaymentMethod(e.target.value)}
+                        className="w-full mt-2 p-3 bg-gray-700 border border-gray-600 rounded-lg text-white"
+                      >
+                        <option value="">Select payment method</option>
+                        {paymentMethods.filter(method => method.isEnabled).map((method) => (
+                          <option key={method.id} value={method.id}>
+                            {method.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowPaymentModal(false);
+                          setSelectedPackage(null);
+                          setSelectedPaymentMethod('');
+                        }}
+                        className="border-gray-600 text-gray-300 hover:bg-gray-700"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleProcessPayment}
+                        disabled={isPurchasing || !selectedPaymentMethod}
+                        className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                      >
+                        {isPurchasing ? (
+                          <div className="flex items-center gap-2">
+                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            Processing...
+                          </div>
+                        ) : (
+                          'Complete Purchase'
+                        )}
+                      </Button>
+                    </div>
+                  </>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        </div>
+      )}
       
       <Footer />
     </div>

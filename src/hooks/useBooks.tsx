@@ -14,49 +14,38 @@ export const useBooks = () => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log('Starting to load books...');
       
       // Try to get active books first, if that fails, get all books
       let data;
       try {
         data = await booksService.getActive();
-        console.log('Active books loaded:', data);
       } catch (activeError) {
-        console.log('Failed to load active books, trying to load all books:', activeError);
         data = await booksService.getAll();
-        console.log('All books loaded:', data);
       }
       
       setBooks(data);
     } catch (err) {
-      console.error('Error loading books:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
     } finally {
       setIsLoading(false);
-      console.log('Books loading finished');
     }
   };
 
   const createBook = async (book: Omit<Book, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log('Creating book:', book);
       const newBook = await booksService.create(book);
-      console.log('Book created:', newBook);
       
       // Update local state
       setBooks(prev => [...prev, newBook].sort((a, b) => a.display_order - b.display_order));
       return newBook;
     } catch (error) {
-      console.error('Error creating book:', error);
       throw error;
     }
   };
 
   const updateBook = async (id: string, updates: Partial<Book>) => {
     try {
-      console.log('Updating book:', id, updates);
       const updatedBook = await booksService.update(id, updates);
-      console.log('Book updated:', updatedBook);
       
       // Update local state
       setBooks(prev => 
@@ -66,21 +55,17 @@ export const useBooks = () => {
       );
       return updatedBook;
     } catch (error) {
-      console.error('Error updating book:', error);
       throw error;
     }
   };
 
   const deleteBook = async (id: string) => {
     try {
-      console.log('Deleting book:', id);
       await booksService.delete(id);
-      console.log('Book deleted:', id);
       
       // Update local state
       setBooks(prev => prev.filter(book => book.id !== id));
     } catch (error) {
-      console.error('Error deleting book:', error);
       throw error;
     }
   };

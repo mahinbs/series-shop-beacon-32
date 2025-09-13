@@ -25,7 +25,6 @@ export const useCMS = () => {
         
         // For local storage auth users, skip Supabase loading
         if (user && user.id && user.id.startsWith('local-')) {
-          console.log('Using local storage auth, skipping CMS data loading');
           setSections([]);
           setIsLoading(false);
           return;
@@ -60,7 +59,11 @@ export const useCMS = () => {
     loadData();
     
     // Set up real-time subscription (skip for local storage auth)
+    // Disable real-time subscription to prevent WebSocket errors
+    // Real-time updates are not critical for the application functionality
     let channel: any = null;
+    // Commented out to prevent WebSocket connection errors
+    /*
     if (!user || !user.id || !user.id.startsWith('local-')) {
       channel = supabase
         .channel('page_sections_changes')
@@ -91,16 +94,23 @@ export const useCMS = () => {
         )
         .subscribe();
     }
+    */
 
     // Add a timeout to prevent infinite loading (skip for local storage auth)
     let timeoutId: NodeJS.Timeout | null = null;
-    if (!user || !user.id || !user.id.startsWith('local-')) {
+    if (user && user.id && user.id.startsWith('local-')) {
+      // For local storage users, ensure loading is set to false immediately
+      if (isMounted) {
+        setIsLoading(false);
+      }
+    } else {
+      // For Supabase users, set timeout
       timeoutId = setTimeout(() => {
         if (isMounted && isLoading) {
-          console.warn('CMS loading timeout - forcing completion');
+          // CMS loading timeout - forcing completion
           setIsLoading(false);
         }
-      }, 5000); // 5 second timeout
+      }, 3000); // 3 second timeout
     }
 
     return () => {
@@ -132,7 +142,7 @@ export const useCMS = () => {
 
     // For local storage auth users, simulate success
     if (user.id && user.id.startsWith('local-')) {
-      console.log('Using local storage auth, simulating section creation');
+      // Using local storage auth, simulating section creation
       // Create a mock section object
       const newSection = {
         id: `local-${Date.now()}`,

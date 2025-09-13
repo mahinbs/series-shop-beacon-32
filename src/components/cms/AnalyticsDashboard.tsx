@@ -14,7 +14,9 @@ import {
   Eye,
   Download,
   Calendar,
-  Filter
+  Filter,
+  RefreshCw,
+  Clock
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AdminService, type AdminStats } from '@/services/adminService';
@@ -78,53 +80,32 @@ export const AnalyticsDashboard = () => {
   const { toast } = useToast();
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [timeRange, setTimeRange] = useState('30d');
   const [selectedMetric, setSelectedMetric] = useState('revenue');
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  useEffect(() => {
-    const loadAnalytics = async () => {
+  const loadAnalytics = async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else {
       setIsLoading(true);
-      try {
-        const [statsData, topProductsData, recentOrdersData] = await Promise.all([
-          AdminService.getStats(),
-          AdminService.getTopProducts(),
-          AdminService.getRecentOrders(5)
-        ]);
+    }
+    
+    try {
+      const [analyticsData, topProductsData, recentOrdersData] = await Promise.all([
+        AdminService.getAnalyticsData(timeRange),
+        AdminService.getTopProducts(),
+        AdminService.getRecentOrders(5)
+      ]);
         
         // Transform the data to match AnalyticsData interface
         const mockData: AnalyticsData = {
-          revenue: {
-            total: statsData.total_revenue,
-            monthly: statsData.total_revenue * 0.3, // Approximate monthly
-            daily: statsData.total_revenue * 0.01, // Approximate daily
-            growth: 12.5 // Mock growth percentage
-          },
-          orders: {
-            total: statsData.total_orders,
-            completed: statsData.completed_orders,
-            pending: statsData.pending_orders,
-            cancelled: Math.floor(statsData.total_orders * 0.05), // Approximate cancelled
-            growth: 8.3 // Mock growth percentage
-          },
-          products: {
-            total: 156, // Mock data - would need separate service
-            active: 142,
-            out_of_stock: 8,
-            low_stock: 6
-          },
-          users: {
-            total: statsData.total_users,
-            active: statsData.active_users,
-            new_today: statsData.new_users_today,
-            growth: 15.2 // Mock growth percentage
-          },
-          coins: {
-            total_users_with_coins: statsData.total_users_with_coins,
-            total_coins_in_circulation: statsData.total_coins_in_circulation,
-            total_revenue_from_coins: statsData.total_revenue_from_coins,
-            average_coins_per_user: statsData.average_coins_per_user,
-            transactions_today: statsData.coins_transactions_today
-          },
+          revenue: analyticsData.revenue,
+          orders: analyticsData.orders,
+          products: analyticsData.products,
+          users: analyticsData.users,
+          coins: analyticsData.coins,
           topProducts: topProductsData.map(product => ({
             id: product.id,
             title: product.title,
@@ -152,6 +133,14 @@ export const AnalyticsDashboard = () => {
         };
 
         setAnalyticsData(mockData);
+        setLastUpdated(new Date());
+        
+        if (isRefresh) {
+          toast({
+            title: "Refreshed",
+            description: "Analytics data has been updated",
+          });
+        }
       } catch (error) {
         console.error('Error loading analytics:', error);
         toast({
@@ -161,17 +150,63 @@ export const AnalyticsDashboard = () => {
         });
       } finally {
         setIsLoading(false);
+        setIsRefreshing(false);
       }
     };
 
+  useEffect(() => {
     loadAnalytics();
-  }, [timeRange, toast]);
+  }, [timeRange]);
+
+  // Auto-refresh every 5 minutes
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadAnalytics(true);
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
     }).format(amount);
+  };
+
+  const handleExport = () => {
+    if (!analyticsData) return;
+    
+    const exportData = {
+      timestamp: new Date().toISOString(),
+      timeRange,
+      metrics: {
+        revenue: analyticsData.revenue,
+        orders: analyticsData.orders,
+        products: analyticsData.products,
+        users: analyticsData.users,
+        coins: analyticsData.coins
+      },
+      topProducts: analyticsData.topProducts,
+      recentOrders: analyticsData.recentOrders,
+      salesChart: analyticsData.salesChart
+    };
+
+    const dataStr = JSON.stringify(exportData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `analytics-export-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast({
+      title: "Export Complete",
+      description: "Analytics data has been exported successfully",
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -199,13 +234,33 @@ export const AnalyticsDashboard = () => {
             <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
             <p className="text-muted-foreground">Track your business performance</p>
           </div>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" disabled>
+              <RefreshCw className="h-4 w-4 animate-spin" />
+              Loading...
+            </Button>
+          </div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {[...Array(4)].map((_, i) => (
             <Card key={i} className="animate-pulse">
               <CardContent className="p-6">
-                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                <div className="h-8 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-4 bg-muted rounded w-3/4 mb-2"></div>
+                <div className="h-8 bg-muted rounded w-1/2"></div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {[...Array(2)].map((_, i) => (
+            <Card key={i} className="animate-pulse">
+              <CardContent className="p-6">
+                <div className="h-6 bg-muted rounded w-1/3 mb-4"></div>
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, j) => (
+                    <div key={j} className="h-4 bg-muted rounded w-full"></div>
+                  ))}
+                </div>
               </CardContent>
             </Card>
           ))}
@@ -222,8 +277,24 @@ export const AnalyticsDashboard = () => {
         <div>
           <h2 className="text-2xl font-bold">Analytics Dashboard</h2>
           <p className="text-muted-foreground">Track your business performance</p>
+          {lastUpdated && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <Clock className="h-3 w-3" />
+              Last updated: {lastUpdated.toLocaleTimeString()}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => loadAnalytics(true)}
+            disabled={isRefreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
           <Select value={timeRange} onValueChange={setTimeRange}>
             <SelectTrigger className="w-[140px]">
               <Calendar className="h-4 w-4 mr-2" />
@@ -236,7 +307,7 @@ export const AnalyticsDashboard = () => {
               <SelectItem value="1y">Last year</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button variant="outline" className="flex items-center gap-2" onClick={handleExport}>
             <Download className="h-4 w-4" />
             Export
           </Button>

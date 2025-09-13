@@ -24,6 +24,12 @@ export interface DigitalReaderSpec {
 }
 
 export class DigitalReaderService {
+  // Clear cache
+  static clearCache(): void {
+    localStorage.removeItem('digital_reader_specs');
+    console.log('🧹 Cleared digital reader specs cache');
+  }
+
   // Get all digital reader specifications
   static async getSpecs(): Promise<DigitalReaderSpec[]> {
     try {
@@ -172,9 +178,31 @@ export class DigitalReaderService {
       
       // Try Supabase first
       try {
+        // Filter out fields that shouldn't be updated
+        const { id: _, created_at, updated_at, ...cleanUpdates } = updates;
+        
+        // Only include defined fields
+        const validFields = [
+          'title', 'creator', 'creator_image_url', 'creator_bio', 'artist', 
+          'artist_image_url', 'release_date', 'category', 'age_rating', 
+          'genre', 'length', 'description', 'cover_image_url', 'banner_image_url', 
+          'is_featured', 'is_active', 'display_order'
+        ];
+        
+        const cleanUpdateData: any = {};
+        validFields.forEach(field => {
+          if (updates[field as keyof DigitalReaderSpec] !== undefined) {
+            cleanUpdateData[field] = updates[field as keyof DigitalReaderSpec];
+          }
+        });
+        
+        cleanUpdateData.updated_at = new Date().toISOString();
+        
+        console.log('🧹 Clean update data:', cleanUpdateData);
+        
         const { data, error } = await supabase
           .from('digital_reader_specs')
-          .update({ ...updates, updated_at: new Date().toISOString() })
+          .update(cleanUpdateData)
           .eq('id', id)
           .select()
           .single();
@@ -184,6 +212,30 @@ export class DigitalReaderService {
           return data;
         } else {
           console.log('⚠️ Supabase error, falling back to local storage:', error);
+          
+          // If it's a "not found" error, try to create the record instead
+          if (error?.code === 'PGRST116') {
+            console.log('🔄 Record not found in Supabase, attempting to create new one...');
+            try {
+              const { data: newData, error: createError } = await supabase
+                .from('digital_reader_specs')
+                .insert({
+                  id,
+                  ...cleanUpdateData
+                })
+                .select()
+                .single();
+              
+              if (!createError && newData) {
+                console.log('✅ Successfully created spec in Supabase:', newData);
+                return newData;
+              } else {
+                console.log('⚠️ Failed to create spec in Supabase:', createError);
+              }
+            } catch (createSupabaseError) {
+              console.log('⚠️ Supabase create failed, using local storage:', createSupabaseError);
+            }
+          }
         }
       } catch (supabaseError) {
         console.log('⚠️ Supabase connection failed, using local storage:', supabaseError);
@@ -196,8 +248,37 @@ export class DigitalReaderService {
       console.log('🔍 Spec index:', specIndex);
       
       if (specIndex === -1) {
-        console.error('❌ Spec not found with ID:', id);
-        throw new Error('Specification not found');
+        console.log('⚠️ Spec not found in local storage, creating new one with ID:', id);
+        // Create a new spec with the provided ID and updates
+        const newSpec: DigitalReaderSpec = {
+          id,
+          title: updates.title || 'Untitled Spec',
+          creator: updates.creator || 'Unknown Creator',
+          creator_image_url: updates.creator_image_url || '',
+          creator_bio: updates.creator_bio || '',
+          artist: updates.artist || 'Unknown Artist',
+          artist_image_url: updates.artist_image_url || '',
+          release_date: updates.release_date || new Date().toISOString().split('T')[0],
+          category: updates.category || 'manga',
+          age_rating: updates.age_rating || 'all',
+          genre: updates.genre || 'action',
+          length: updates.length || 0,
+          description: updates.description || '',
+          cover_image_url: updates.cover_image_url || '',
+          banner_image_url: updates.banner_image_url || '',
+          is_featured: updates.is_featured || false,
+          is_active: updates.is_active !== undefined ? updates.is_active : true,
+          display_order: updates.display_order || 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
+        console.log('✅ Created new spec in local storage:', newSpec);
+        const updatedSpecs = [...existingSpecs, newSpec];
+        localStorage.setItem('digital_reader_specs', JSON.stringify(updatedSpecs));
+        console.log('💾 New spec saved to localStorage');
+        
+        return newSpec;
       }
       
       const updatedSpec = {

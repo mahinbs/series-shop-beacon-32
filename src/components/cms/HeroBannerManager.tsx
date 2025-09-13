@@ -33,7 +33,7 @@ export const HeroBannerManager = () => {
   });
 
   // Debug logging
-  console.log('HeroBannerManager render:', { banners, isLoading, bannersLength: banners.length });
+  // HeroBannerManager render
 
   const resetForm = () => {
     setFormData({

@@ -23,7 +23,8 @@ import {
   Palette,
   Tag,
   FileText,
-  Settings
+  Settings,
+  RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DigitalReaderService, type DigitalReaderSpec } from '@/services/digitalReaderService';
@@ -211,10 +212,10 @@ export const DigitalReaderManager = () => {
       resetForm();
       setActiveTab('specs'); // Switch back to specs tab
       console.log('🔄 Reloading specs after save...');
-      // Small delay to ensure localStorage is updated
-      setTimeout(async () => {
-        await loadSpecs(); // Reload specs to get updated data
-      }, 100);
+      
+      // Clear cache and reload fresh data
+      DigitalReaderService.clearCache();
+      await loadSpecs();
     } catch (error) {
       console.error('❌ Error saving spec:', error);
       toast({
@@ -280,13 +281,29 @@ export const DigitalReaderManager = () => {
             Manage digital reader specifications and content
           </p>
         </div>
-        <Button onClick={() => {
-          setActiveTab('form');
-          resetForm();
-        }}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Specification
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={async () => {
+              DigitalReaderService.clearCache();
+              await loadSpecs();
+              toast({
+                title: "Cache Cleared",
+                description: "Digital reader specs cache cleared and data reloaded"
+              });
+            }}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Force Refresh
+          </Button>
+          <Button onClick={() => {
+            setActiveTab('form');
+            resetForm();
+          }}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Specification
+          </Button>
+        </div>
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>

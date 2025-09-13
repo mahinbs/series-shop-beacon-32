@@ -217,10 +217,12 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
   };
 
   const handleMerchandiseClick = (merchandiseId: number) => {
-    console.log('🛍️ Merchandise clicked:', merchandiseId);
-    console.log('🚀 Navigating to product page:', `/product/${merchandiseId}`);
+    console.log('🛍️ SeriesGrid: Merchandise clicked:', merchandiseId);
+    console.log('🚀 SeriesGrid: Navigating to product page:', `/product/${merchandiseId}`);
+    console.log('📦 SeriesGrid: Available merchandise:', merchandise.map(item => ({ id: item.id, title: item.title })));
     
     const product = merchandise.find(item => item.id === merchandiseId);
+    console.log('🔍 SeriesGrid: Found product:', product);
     navigate(`/product/${merchandiseId}`, {
       state: { product }
     });

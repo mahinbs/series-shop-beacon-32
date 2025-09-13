@@ -21,7 +21,9 @@ import {
   Download,
   Calendar,
   User,
-  MapPin
+  MapPin,
+  RefreshCw,
+  X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AdminService, type AdminOrder, type AdminStats } from '@/services/adminService';
@@ -38,6 +40,8 @@ export const OrderManagement = () => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [paymentFilter, setPaymentFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [showOrderDetails, setShowOrderDetails] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [stats, setStats] = useState<OrderStats>({
     total_orders: 0,
     pending_orders: 0,
@@ -48,29 +52,42 @@ export const OrderManagement = () => {
   });
 
   // Load real data from database
-  useEffect(() => {
-    const loadOrders = async () => {
+  const loadOrders = async (isRefresh = false) => {
+    if (isRefresh) {
+      setIsRefreshing(true);
+    } else {
       setIsLoading(true);
-      try {
-        const [ordersData, statsData] = await Promise.all([
-          AdminService.getOrders(),
-          AdminService.getStats()
-        ]);
-        
-        setOrders(ordersData);
-        setStats(statsData);
-      } catch (error) {
-        console.error('Error loading orders:', error);
+    }
+    
+    try {
+      const [ordersData, statsData] = await Promise.all([
+        AdminService.getOrders(),
+        AdminService.getStats()
+      ]);
+      
+      setOrders(ordersData);
+      setStats(statsData);
+      
+      if (isRefresh) {
         toast({
-          title: "Error",
-          description: "Failed to load orders",
-          variant: "destructive"
+          title: "Refreshed",
+          description: "Order data has been refreshed successfully",
         });
-      } finally {
-        setIsLoading(false);
       }
-    };
+    } catch (error) {
+      console.error('❌ Error loading orders:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load orders",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+    }
+  };
 
+  useEffect(() => {
     loadOrders();
   }, [toast]);
 
@@ -88,17 +105,23 @@ export const OrderManagement = () => {
     try {
       await AdminService.updateOrderStatus(orderId, newStatus);
       
+      // Update local state
       setOrders(prev => prev.map(order => 
         order.id === orderId 
           ? { ...order, status: newStatus as any, updated_at: new Date().toISOString() }
           : order
       ));
       
+      // Refresh stats to reflect changes
+      const updatedStats = await AdminService.getStats();
+      setStats(updatedStats);
+      
       toast({
         title: "Success",
         description: `Order status updated to ${newStatus}`,
       });
     } catch (error) {
+      console.error('❌ Error updating order status:', error);
       toast({
         title: "Error",
         description: "Failed to update order status",
@@ -149,6 +172,49 @@ export const OrderManagement = () => {
     });
   };
 
+  const handleViewOrderDetails = (order: Order) => {
+    setSelectedOrder(order);
+    setShowOrderDetails(true);
+  };
+
+  const handleCloseOrderDetails = () => {
+    setSelectedOrder(null);
+    setShowOrderDetails(false);
+  };
+
+  const handleExportOrders = () => {
+    // Create CSV data
+    const csvData = filteredOrders.map(order => ({
+      'Order Number': order.order_number,
+      'Customer': order.user_name,
+      'Email': order.user_email,
+      'Status': order.status,
+      'Payment Status': order.payment_status,
+      'Total': order.total_amount,
+      'Date': formatDate(order.created_at)
+    }));
+
+    // Convert to CSV
+    const csvContent = [
+      Object.keys(csvData[0]).join(','),
+      ...csvData.map(row => Object.values(row).join(','))
+    ].join('\n');
+
+    // Download CSV
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `orders-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+
+    toast({
+      title: "Export Complete",
+      description: `Exported ${filteredOrders.length} orders to CSV`,
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -180,9 +246,23 @@ export const OrderManagement = () => {
           <p className="text-muted-foreground">Manage orders and track shipments</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => loadOrders(true)}
+            disabled={isRefreshing}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          <Button 
+            variant="outline" 
+            onClick={handleExportOrders}
+            disabled={filteredOrders.length === 0}
+            className="flex items-center gap-2"
+          >
             <Download className="h-4 w-4" />
-            Export
+            Export ({filteredOrders.length})
           </Button>
         </div>
       </div>
@@ -368,7 +448,7 @@ export const OrderManagement = () => {
                     <Button 
                       variant="outline" 
                       size="sm"
-                      onClick={() => setSelectedOrder(order)}
+                      onClick={() => handleViewOrderDetails(order)}
                     >
                       <Eye className="h-4 w-4" />
                     </Button>
@@ -410,6 +490,125 @@ export const OrderManagement = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Order Details Modal */}
+      {showOrderDetails && selectedOrder && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold">Order Details - {selectedOrder.order_number}</h3>
+              <Button variant="outline" onClick={handleCloseOrderDetails}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Order Information */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Order Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Order Number:</span>
+                      <span>{selectedOrder.order_number}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Status:</span>
+                      <Badge className={getStatusColor(selectedOrder.status)}>
+                        {selectedOrder.status}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Payment Status:</span>
+                      <Badge className={getPaymentStatusColor(selectedOrder.payment_status)}>
+                        {selectedOrder.payment_status}
+                      </Badge>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Total Amount:</span>
+                      <span className="font-bold">${selectedOrder.total_amount.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Created:</span>
+                      <span>{formatDate(selectedOrder.created_at)}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Updated:</span>
+                      <span>{formatDate(selectedOrder.updated_at)}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Customer Information */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Customer Information</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Name:</span>
+                      <span>{selectedOrder.user_name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="font-medium">Email:</span>
+                      <span>{selectedOrder.user_email}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Order Items */}
+              <div className="space-y-4">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-lg">Order Items</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {selectedOrder.items.map((item) => (
+                        <div key={item.id} className="flex items-center space-x-3 p-3 border rounded-lg">
+                          <img 
+                            src={item.product_image_url} 
+                            alt={item.product_title}
+                            className="w-12 h-16 object-cover rounded"
+                          />
+                          <div className="flex-1">
+                            <h4 className="font-medium">{item.product_title}</h4>
+                            <p className="text-sm text-muted-foreground">by {item.product_author}</p>
+                            <p className="text-sm">Qty: {item.quantity} × ${item.unit_price.toFixed(2)}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium">${item.total_price.toFixed(2)}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Shipping Address */}
+                {selectedOrder.shipping_address && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Shipping Address</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-1">
+                        <p>{selectedOrder.shipping_address.name}</p>
+                        <p>{selectedOrder.shipping_address.street}</p>
+                        <p>{selectedOrder.shipping_address.city}, {selectedOrder.shipping_address.state} {selectedOrder.shipping_address.zip}</p>
+                        <p>{selectedOrder.shipping_address.country}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

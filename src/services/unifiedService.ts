@@ -13,7 +13,6 @@ export class UnifiedService {
         .limit(1);
       
       if (error) {
-        console.log('Supabase connection failed:', error);
         this.isSupabaseAvailable = false;
         return false;
       }
@@ -21,7 +20,6 @@ export class UnifiedService {
       this.isSupabaseAvailable = true;
       return true;
     } catch (error) {
-      console.log('Supabase connection error:', error);
       this.isSupabaseAvailable = false;
       return false;
     }
@@ -41,14 +39,11 @@ export class UnifiedService {
           .select(query || '*');
         
         if (!error && data) {
-          console.log(`✅ Successfully loaded ${tableName} from Supabase:`, data);
           return data;
-        } else {
-          console.log(`⚠️ Supabase error for ${tableName}, falling back to local storage:`, error);
         }
       }
     } catch (error) {
-      console.log(`⚠️ Supabase connection failed for ${tableName}, using local storage:`, error);
+      // Supabase connection failed, using local storage
     }
     
     // Fallback to local storage
@@ -56,7 +51,6 @@ export class UnifiedService {
       const storedData = localStorage.getItem(localStorageKey);
       if (storedData) {
         const parsedData = JSON.parse(storedData);
-        console.log(`📚 Loaded ${tableName} from localStorage:`, parsedData);
         return parsedData;
       }
     } catch (error) {
@@ -81,14 +75,14 @@ export class UnifiedService {
           .single();
         
         if (!error && newData) {
-          console.log(`✅ Successfully created ${tableName} in Supabase:`, newData);
+          // Successfully created in Supabase
           return newData;
         } else {
-          console.log(`⚠️ Supabase error creating ${tableName}, falling back to local storage:`, error);
+          // Supabase error, falling back to local storage
         }
       }
     } catch (error) {
-      console.log(`⚠️ Supabase connection failed for ${tableName}, using local storage:`, error);
+      // Supabase connection failed, using local storage
     }
     
     // Fallback to local storage
@@ -124,14 +118,14 @@ export class UnifiedService {
           .single();
         
         if (!error && updatedData) {
-          console.log(`✅ Successfully updated ${tableName} in Supabase:`, updatedData);
+          // Successfully updated in Supabase
           return updatedData;
         } else {
-          console.log(`⚠️ Supabase error updating ${tableName}, falling back to local storage:`, error);
+          // Supabase error, falling back to local storage
         }
       }
     } catch (error) {
-      console.log(`⚠️ Supabase connection failed for ${tableName}, using local storage:`, error);
+      // Supabase connection failed, using local storage
     }
     
     // Fallback to local storage
@@ -169,14 +163,14 @@ export class UnifiedService {
           .eq('id', id);
         
         if (!error) {
-          console.log(`✅ Successfully deleted ${tableName} from Supabase`);
+          // Successfully deleted from Supabase
           return;
         } else {
-          console.log(`⚠️ Supabase error deleting ${tableName}, falling back to local storage:`, error);
+          // Supabase error, falling back to local storage
         }
       }
     } catch (error) {
-      console.log(`⚠️ Supabase connection failed for ${tableName}, using local storage:`, error);
+      // Supabase connection failed, using local storage
     }
     
     // Fallback to local storage

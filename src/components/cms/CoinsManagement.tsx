@@ -26,6 +26,9 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AdminService } from '@/services/adminService';
+import { PaymentService, type PaymentMethod } from '@/services/paymentService';
+import { CoinService } from '@/services/coinService';
+import { UserService } from '@/services/userService';
 
 interface CoinPackage {
   id: string;
@@ -82,6 +85,12 @@ export const CoinsManagement = () => {
   const [typeFilter, setTypeFilter] = useState('all');
   const [showAddPackage, setShowAddPackage] = useState(false);
   const [editingPackage, setEditingPackage] = useState<CoinPackage | null>(null);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethod[]>([]);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [selectedPackageForPayment, setSelectedPackageForPayment] = useState<CoinPackage | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string>('');
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
   const [packageForm, setPackageForm] = useState({
     name: '',
     coins: 0,
@@ -92,13 +101,80 @@ export const CoinsManagement = () => {
     active: true
   });
 
-  // Load data
-  useEffect(() => {
-    const loadData = async () => {
-      setIsLoading(true);
-      try {
-        // Load mock data for now - will be replaced with real API calls
-        const mockPackages: CoinPackage[] = [
+
+  // Load data function
+  const loadData = async () => {
+    if (isDataLoaded) return; // Prevent multiple calls
+    
+    setIsLoading(true);
+    try {
+      // Clear cache to ensure fresh data
+      CoinService.clearCache();
+      
+      // Load payment methods
+      const methods = await PaymentService.getPaymentMethods();
+      setPaymentMethods(methods);
+      
+      // Load real data from database directly
+      console.log('🔄 Loading fresh live data from Supabase...');
+      const realPackages = await CoinService.getCoinPackages();
+      const realTransactions = await CoinService.getAllTransactions(50);
+      const allTransactions = await CoinService.getAllTransactions(1000);
+      const allUsers = await CoinService.getAllUsersWithCoins();
+      
+      console.log('📊 Real data loaded:', {
+        packages: realPackages.length,
+        transactions: realTransactions.length,
+        allTransactions: allTransactions.length,
+        users: allUsers.length
+      });
+      
+      // Set real data if available
+      if (realPackages.length > 0) {
+        console.log('✅ Setting real packages:', realPackages);
+        setPackages(realPackages);
+      } else {
+        console.log('⚠️ No real packages found, will use mock data');
+      }
+      
+      if (realTransactions.length > 0) {
+        console.log('✅ Setting real transactions:', realTransactions);
+        setTransactions(realTransactions);
+      } else {
+        console.log('⚠️ No real transactions found, will use mock data');
+      }
+      
+      // Calculate real statistics
+      const totalCoinsInCirculation = allUsers.reduce((sum, user) => sum + user.balance, 0);
+      const purchaseTransactions = allTransactions.filter(t => t.type === 'purchase');
+      const totalRevenue = purchaseTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0) / 10;
+      const avgCoinsPerUser = allUsers.length > 0 ? totalCoinsInCirculation / allUsers.length : 0;
+      const transactionsToday = allTransactions.filter(t => {
+        const today = new Date().toDateString();
+        return new Date(t.timestamp).toDateString() === today;
+      }).length;
+      
+      const realStats: CoinStats = {
+        total_users_with_coins: allUsers.length,
+        total_coins_in_circulation: totalCoinsInCirculation,
+        total_revenue_from_coins: totalRevenue,
+        average_coins_per_user: avgCoinsPerUser,
+        transactions_today: transactionsToday,
+        top_spenders: allUsers
+          .sort((a, b) => b.total_spent - a.total_spent)
+          .slice(0, 5)
+          .map(user => ({
+            user_id: user.user_id,
+            user_name: user.user_name || 'Unknown User',
+            total_spent: user.total_spent
+          }))
+      };
+      
+      console.log('📊 Calculated real stats:', realStats);
+      setStats(realStats);
+      
+      // Define mock data for fallback
+      const mockPackages: CoinPackage[] = [
           {
             id: '1',
             name: 'Starter Pack',
@@ -156,7 +232,7 @@ export const CoinsManagement = () => {
           }
         ];
 
-        const mockTransactions: CoinTransaction[] = [
+      const mockTransactions: CoinTransaction[] = [
           {
             id: '1',
             user_id: 'user-1',
@@ -207,10 +283,35 @@ export const CoinsManagement = () => {
             { user_id: 'user-3', user_name: 'Bob Johnson', total_spent: 650 }
           ]
         };
-
+      
+      // Only use mock data if no real data is available
+      if (realPackages.length === 0) {
+        console.log('📦 No coin packages found in database - using fallback packages');
         setPackages(mockPackages);
-        setTransactions(mockTransactions);
-        setStats(mockStats);
+      } else {
+        console.log(`✅ Loaded ${realPackages.length} coin packages from database`);
+      }
+        
+      if (realTransactions.length === 0) {
+        console.log('📊 No transactions found in database - showing empty state');
+        setTransactions([]); // Use empty array instead of mock data
+      } else {
+        console.log(`✅ Loaded ${realTransactions.length} real transactions from database`);
+      }
+      
+      if (allUsers.length === 0) {
+        console.log('👥 No users with coins found in database - showing empty stats');
+        setStats({
+          total_users_with_coins: 0,
+          total_coins_in_circulation: 0,
+          total_revenue_from_coins: 0,
+          average_coins_per_user: 0,
+          transactions_today: 0,
+          top_spenders: []
+        }); // Use empty stats instead of mock data
+      } else {
+        console.log(`✅ Loaded ${allUsers.length} users with coins from database`);
+      }
       } catch (error) {
         console.error('Error loading coins data:', error);
         toast({
@@ -218,13 +319,16 @@ export const CoinsManagement = () => {
           description: "Failed to load coins data",
           variant: "destructive"
         });
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    } finally {
+      setIsLoading(false);
+      setIsDataLoaded(true);
+    }
+  };
 
+  // Load data on component mount
+  useEffect(() => {
     loadData();
-  }, [toast]);
+  }, []); // Remove toast dependency to prevent multiple calls
 
   const filteredTransactions = transactions.filter(transaction => {
     const matchesSearch = transaction.user_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -319,6 +423,75 @@ export const CoinsManagement = () => {
     });
   };
 
+  const handlePurchasePackage = (pkg: CoinPackage) => {
+    setSelectedPackageForPayment(pkg);
+    setShowPaymentModal(true);
+  };
+
+  const handleProcessPayment = async () => {
+    if (!selectedPackageForPayment || !selectedPaymentMethod) {
+      toast({
+        title: "Error",
+        description: "Please select a payment method",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsProcessingPayment(true);
+    try {
+      const paymentRequest = {
+        packageId: selectedPackageForPayment.id,
+        userId: 'admin', // In real app, this would be the actual user ID
+        amount: selectedPackageForPayment.price,
+        coins: selectedPackageForPayment.coins + selectedPackageForPayment.bonus,
+        paymentMethod: selectedPaymentMethod,
+        currency: 'USD'
+      };
+
+      const result = await PaymentService.processCoinPurchase(paymentRequest);
+      
+      if (result.success) {
+        toast({
+          title: "Payment Successful!",
+          description: `You've received ${paymentRequest.coins} coins`,
+        });
+        
+        // Add coins to user balance
+        await CoinService.addCoins(
+          paymentRequest.userId,
+          paymentRequest.coins,
+          'purchase',
+          `Purchased ${selectedPackageForPayment.name}`,
+          result.transactionId
+        );
+        
+        // Refresh data
+        loadData();
+        
+        setShowPaymentModal(false);
+        setSelectedPackageForPayment(null);
+        setSelectedPaymentMethod('');
+      } else {
+        toast({
+          title: "Payment Failed",
+          description: result.error || "Payment could not be processed",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Payment processing error:', error);
+      toast({
+        title: "Error",
+        description: "Payment processing failed",
+        variant: "destructive"
+      });
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'purchase': return <ShoppingCart className="h-4 w-4 text-green-500" />;
@@ -360,6 +533,16 @@ export const CoinsManagement = () => {
             Manage coin packages, transactions, and user balances
           </p>
         </div>
+        <Button 
+          onClick={() => {
+            setIsDataLoaded(false);
+            loadData();
+          }}
+          variant="outline" 
+          className="flex items-center gap-2"
+        >
+          🔄 Refresh Data
+        </Button>
         <Button onClick={() => setShowAddPackage(true)} className="flex items-center gap-2">
           <Plus className="h-4 w-4" />
           Add Package
@@ -374,7 +557,9 @@ export const CoinsManagement = () => {
               <Users className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Users with Coins</p>
-                <p className="text-2xl font-bold">{stats.total_users_with_coins.toLocaleString()}</p>
+                <p className="text-2xl font-bold">
+                  {stats.total_users_with_coins > 0 ? stats.total_users_with_coins.toLocaleString() : '0'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -386,7 +571,9 @@ export const CoinsManagement = () => {
               <Coins className="h-4 w-4 text-yellow-500" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Coins in Circulation</p>
-                <p className="text-2xl font-bold">{stats.total_coins_in_circulation.toLocaleString()}</p>
+                <p className="text-2xl font-bold">
+                  {stats.total_coins_in_circulation > 0 ? stats.total_coins_in_circulation.toLocaleString() : '0'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -398,7 +585,9 @@ export const CoinsManagement = () => {
               <DollarSign className="h-4 w-4 text-green-500" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                <p className="text-2xl font-bold">${stats.total_revenue_from_coins.toLocaleString()}</p>
+                <p className="text-2xl font-bold">
+                  ${stats.total_revenue_from_coins > 0 ? stats.total_revenue_from_coins.toLocaleString() : '0.00'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -410,7 +599,9 @@ export const CoinsManagement = () => {
               <TrendingUp className="h-4 w-4 text-blue-500" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Avg per User</p>
-                <p className="text-2xl font-bold">{stats.average_coins_per_user.toFixed(1)}</p>
+                <p className="text-2xl font-bold">
+                  {stats.average_coins_per_user > 0 ? stats.average_coins_per_user.toFixed(1) : '0.0'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -422,7 +613,9 @@ export const CoinsManagement = () => {
               <Calendar className="h-4 w-4 text-purple-500" />
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Transactions Today</p>
-                <p className="text-2xl font-bold">{stats.transactions_today}</p>
+                <p className="text-2xl font-bold">
+                  {stats.transactions_today > 0 ? stats.transactions_today : '0'}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -472,6 +665,14 @@ export const CoinsManagement = () => {
                         </p>
                       </div>
                       <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handlePurchasePackage(pkg)}
+                          className="bg-green-600 hover:bg-green-700 text-white"
+                        >
+                          <ShoppingCart className="h-4 w-4" />
+                        </Button>
                         <Button
                           variant="outline"
                           size="sm"
@@ -532,7 +733,13 @@ export const CoinsManagement = () => {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {filteredTransactions.map((transaction) => (
+                {filteredTransactions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="text-lg font-medium">No transactions found</p>
+                    <p className="text-sm">Transactions will appear here when users make coin purchases or spend coins.</p>
+                  </div>
+                ) : (
+                  filteredTransactions.map((transaction) => (
                   <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
                     <div className="flex items-center space-x-4">
                       {getTransactionIcon(transaction.type)}
@@ -557,7 +764,8 @@ export const CoinsManagement = () => {
                       {getTransactionBadge(transaction.type)}
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -711,6 +919,70 @@ export const CoinsManagement = () => {
                   onClick={editingPackage ? () => handleUpdatePackage(editingPackage.id) : handleAddPackage}
                 >
                   {editingPackage ? 'Update' : 'Add'} Package
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Payment Modal */}
+      {showPaymentModal && selectedPackageForPayment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Purchase Coin Package</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="font-semibold">{selectedPackageForPayment.name}</h3>
+                <p className="text-sm text-muted-foreground">
+                  {selectedPackageForPayment.coins.toLocaleString()} coins
+                  {selectedPackageForPayment.bonus > 0 && ` + ${selectedPackageForPayment.bonus} bonus`}
+                </p>
+                <p className="text-lg font-bold">${selectedPackageForPayment.price.toFixed(2)}</p>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium">Payment Method</label>
+                <Select value={selectedPaymentMethod} onValueChange={setSelectedPaymentMethod}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select payment method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.filter(method => method.isEnabled).map((method) => (
+                      <SelectItem key={method.id} value={method.id}>
+                        {method.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowPaymentModal(false);
+                    setSelectedPackageForPayment(null);
+                    setSelectedPaymentMethod('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleProcessPayment}
+                  disabled={isProcessingPayment || !selectedPaymentMethod}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {isProcessingPayment ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Processing...
+                    </div>
+                  ) : (
+                    'Complete Purchase'
+                  )}
                 </Button>
               </div>
             </CardContent>

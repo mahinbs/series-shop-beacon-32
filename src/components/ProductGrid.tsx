@@ -11,12 +11,6 @@ const ProductGrid = () => {
   const [showAll, setShowAll] = useState(false);
 
   // Always render something visible - this ensures the component shows up
-  console.log('ProductGrid rendering with:', { 
-    booksCount: books?.length || 0, 
-    isLoading, 
-    activeSection,
-    showAll 
-  });
 
   // Transform books data to match ProductCard interface
   const transformBooksToProducts = (booksList: any[]) => {
@@ -49,26 +43,14 @@ const ProductGrid = () => {
   };
 
   const products = getProductsForSection();
-  
-  // Debug logging
-  console.log('ProductGrid Debug:', {
-    totalBooks: books?.length || 0,
-    activeSection,
-    showAll,
-    booksInActiveSection: books ? getBooksBySection(activeSection).length : 0,
-    allBooks: books,
-    products: products
-  });
 
   const handleSectionChange = (section: string) => {
     setActiveSection(section);
     setShowAll(false);
-    console.log(`Switched to ${section} section`);
   };
 
   const handleViewAll = () => {
     setShowAll(true);
-    console.log('Showing all products');
   };
 
   const sectionOrder = ['new-releases', 'best-sellers', 'leaving-soon'];

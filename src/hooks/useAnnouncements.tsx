@@ -27,49 +27,66 @@ export const useAnnouncements = () => {
   useEffect(() => {
     loadAnnouncements();
     
-    // Set up real-time subscription
-    const channel = supabase
-      .channel('announcements_changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'announcements'
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT' && payload.new.is_active) {
-            setAnnouncements(prev => [...prev, payload.new as Announcement].sort((a, b) => a.display_order - b.display_order));
-          } else if (payload.eventType === 'UPDATE') {
-            if (payload.new.is_active) {
+    // Disable real-time subscription to prevent WebSocket errors
+    // Real-time updates are not critical for the application functionality
+    let channel: any = null;
+    // Commented out to prevent WebSocket connection errors
+    /*
+    if (!user || !user.id || !user.id.startsWith('local-')) {
+      channel = supabase
+        .channel('announcements_changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'announcements'
+          },
+          (payload) => {
+            if (payload.eventType === 'INSERT' && payload.new.is_active) {
+              setAnnouncements(prev => [...prev, payload.new as Announcement].sort((a, b) => a.display_order - b.display_order));
+            } else if (payload.eventType === 'UPDATE') {
+              if (payload.new.is_active) {
+                setAnnouncements(prev => 
+                  prev.map(announcement => 
+                    announcement.id === payload.new.id ? payload.new as Announcement : announcement
+                  ).sort((a, b) => a.display_order - b.display_order)
+                );
+              } else {
+                // If announcement becomes inactive, remove it
+                setAnnouncements(prev => 
+                  prev.filter(announcement => announcement.id !== payload.new.id)
+                );
+              }
+            } else if (payload.eventType === 'DELETE') {
               setAnnouncements(prev => 
-                prev.map(announcement => 
-                  announcement.id === payload.new.id ? payload.new as Announcement : announcement
-                ).sort((a, b) => a.display_order - b.display_order)
-              );
-            } else {
-              // If announcement becomes inactive, remove it
-              setAnnouncements(prev => 
-                prev.filter(announcement => announcement.id !== payload.new.id)
+                prev.filter(announcement => announcement.id !== payload.old.id)
               );
             }
-          } else if (payload.eventType === 'DELETE') {
-            setAnnouncements(prev => 
-              prev.filter(announcement => announcement.id !== payload.old.id)
-            );
           }
-        }
-      )
-      .subscribe();
+        )
+        .subscribe();
+    }
+    */
 
     return () => {
-      supabase.removeChannel(channel);
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  }, []);
+  }, [user]);
 
   const loadAnnouncements = async () => {
     try {
       setError(null);
+      
+      // For local storage auth users, skip Supabase loading
+      if (user && user.id && user.id.startsWith('local-')) {
+        setAnnouncements([]);
+        setIsLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from('announcements')
         .select('*')

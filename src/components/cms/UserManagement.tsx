@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { 
   Users, 
   UserPlus, 
@@ -22,15 +23,16 @@ import {
   Trash2,
   Crown,
   UserCheck,
+  RefreshCw,
   Save,
   X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { UserService, type User, type UserStats, type CreateUserData } from '@/services/userService';
+import { UserService, type User as UserType, type UserStats, type CreateUserData } from '@/services/userService';
 
 export const UserManagement = () => {
   const { toast } = useToast();
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState('all');
@@ -41,6 +43,8 @@ export const UserManagement = () => {
     admin_users: 0,
     new_users_today: 0
   });
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [showBulkActions, setShowBulkActions] = useState(false);
 
   // Add User Form State
   const [showAddUserForm, setShowAddUserForm] = useState(false);
@@ -64,8 +68,6 @@ export const UserManagement = () => {
         
         setUsers(usersData);
         setStats(statsData);
-        console.log('👥 Loaded users:', usersData.length);
-        console.log('📊 Loaded stats:', statsData);
       } catch (error) {
         console.error('Error loading users:', error);
         toast({
@@ -92,6 +94,87 @@ export const UserManagement = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
+  // Bulk operations
+  const handleSelectUser = (userId: string) => {
+    setSelectedUsers(prev => 
+      prev.includes(userId) 
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUsers.length === filteredUsers.length) {
+      setSelectedUsers([]);
+    } else {
+      setSelectedUsers(filteredUsers.map(user => user.id));
+    }
+  };
+
+  const handleBulkStatusChange = async (isActive: boolean) => {
+    if (selectedUsers.length === 0) return;
+    
+    try {
+      await Promise.all(selectedUsers.map(userId => 
+        UserService.updateUserStatus(userId, isActive)
+      ));
+      
+      // Update local state
+      setUsers(prev => prev.map(user => 
+        selectedUsers.includes(user.id) ? { ...user, is_active: isActive } : user
+      ));
+      
+      // Update stats
+      const updatedStats = await UserService.getUserStats();
+      setStats(updatedStats);
+      
+      toast({
+        title: "Success",
+        description: `${selectedUsers.length} users ${isActive ? 'activated' : 'deactivated'}`,
+      });
+      
+      setSelectedUsers([]);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user status",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleBulkRoleChange = async (newRole: 'admin' | 'user') => {
+    if (selectedUsers.length === 0) return;
+    
+    try {
+      await Promise.all(selectedUsers.map(userId => 
+        UserService.updateUserRole(userId, newRole)
+      ));
+      
+      // Update local state
+      setUsers(prev => prev.map(user => 
+        selectedUsers.includes(user.id) ? { ...user, role: newRole } : user
+      ));
+      
+      // Update stats
+      const updatedStats = await UserService.getUserStats();
+      setStats(updatedStats);
+      
+      toast({
+        title: "Success",
+        description: `${selectedUsers.length} users updated to ${newRole} role`,
+      });
+      
+      setSelectedUsers([]);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update user roles",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Add User Handlers
   const handleAddUser = () => {
     setShowAddUserForm(true);
@@ -116,11 +199,33 @@ export const UserManagement = () => {
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Basic validation
+    // Enhanced validation
     if (!newUserData.email || !newUserData.password || !newUserData.full_name) {
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newUserData.email)) {
+      toast({
+        title: "Validation Error",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Check if email already exists
+    const existingUser = users.find(user => user.email.toLowerCase() === newUserData.email.toLowerCase());
+    if (existingUser) {
+      toast({
+        title: "Validation Error",
+        description: "A user with this email already exists",
         variant: "destructive"
       });
       return;
@@ -135,9 +240,17 @@ export const UserManagement = () => {
       return;
     }
 
+    if (newUserData.full_name.trim().length < 2) {
+      toast({
+        title: "Validation Error",
+        description: "Full name must be at least 2 characters long",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsCreatingUser(true);
     try {
-      console.log('➕ Creating new user:', newUserData);
       const newUser = await UserService.createUser(newUserData);
       
       // Add to local state
@@ -259,14 +372,24 @@ export const UserManagement = () => {
           <h2 className="text-2xl font-bold">User Management</h2>
           <p className="text-muted-foreground">Manage users and their roles</p>
         </div>
-        <Button 
-          className="flex items-center gap-2"
-          onClick={handleAddUser}
-          disabled={showAddUserForm}
-        >
-          <UserPlus className="h-4 w-4" />
-          Add User
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button 
+            variant="outline"
+            onClick={() => window.location.reload()}
+            className="flex items-center gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Refresh
+          </Button>
+          <Button 
+            className="flex items-center gap-2"
+            onClick={handleAddUser}
+            disabled={showAddUserForm}
+          >
+            <UserPlus className="h-4 w-4" />
+            Add User
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
@@ -452,6 +575,58 @@ export const UserManagement = () => {
         </CardContent>
       </Card>
 
+      {/* Bulk Actions */}
+      {selectedUsers.length > 0 && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium">
+                  {selectedUsers.length} user{selectedUsers.length !== 1 ? 's' : ''} selected
+                </span>
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleBulkStatusChange(true)}
+                  >
+                    Activate
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleBulkStatusChange(false)}
+                  >
+                    Deactivate
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleBulkRoleChange('admin')}
+                  >
+                    Make Admin
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleBulkRoleChange('user')}
+                  >
+                    Make User
+                  </Button>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setSelectedUsers([])}
+              >
+                Clear Selection
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Users Table */}
       <Card>
         <CardHeader>
@@ -459,9 +634,26 @@ export const UserManagement = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {filteredUsers.length > 0 && (
+              <div className="flex items-center space-x-2 p-2 border rounded-lg bg-muted/50">
+                <Checkbox
+                  id="select-all"
+                  checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                  onCheckedChange={handleSelectAll}
+                />
+                <Label htmlFor="select-all" className="text-sm font-medium">
+                  Select All ({filteredUsers.length} users)
+                </Label>
+              </div>
+            )}
+            
             {filteredUsers.map((user) => (
-              <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={user.id} className={`flex items-center justify-between p-4 border rounded-lg ${selectedUsers.includes(user.id) ? 'ring-2 ring-primary' : ''}`}>
                 <div className="flex items-center space-x-4">
+                  <Checkbox
+                    checked={selectedUsers.includes(user.id)}
+                    onCheckedChange={() => handleSelectUser(user.id)}
+                  />
                   <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
                     {user.role === 'admin' ? (
                       <Crown className="h-5 w-5 text-primary" />

@@ -59,11 +59,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (oldUserData) {
           const user = JSON.parse(oldUserData);
           if (user.id && !user.id.startsWith('local-')) {
-            console.log('🚨 CLEARING OLD USER DATA - User ID does not start with local-');
             localStorage.removeItem('user');
             localStorage.removeItem('isAuthenticated');
             localStorage.removeItem('anonymous_cart'); // Also clear cart data
-            console.log('✅ Old user data cleared successfully');
           }
         }
       } catch (error) {
@@ -79,54 +77,60 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         try {
           const isAuthenticated = localStorage.getItem('isAuthenticated');
           const userData = localStorage.getItem('user');
+          const adminSession = localStorage.getItem('admin_session');
+          
           
           if (isAuthenticated === 'true' && userData) {
             const user = JSON.parse(userData);
-            console.log('Restoring user from local storage:', user);
-            setUser(user);
-            setProfile({
-              id: user.id,
-              user_id: user.id,
-              email: user.email,
-              full_name: user.full_name,
-              avatar_url: user.avatar_url
-            });
-            setIsAdmin(user.role === 'admin');
-            setIsLoading(false);
-            return true;
+            
+            // Validate user data structure
+            if (user.id && user.email && user.role) {
+              setUser(user);
+              setProfile({
+                id: user.id,
+                user_id: user.id,
+                email: user.email,
+                full_name: user.full_name,
+                avatar_url: user.avatar_url
+              });
+              setIsAdmin(user.role === 'admin');
+              setIsLoading(false);
+              return true;
+            } else {
+              localStorage.removeItem('isAuthenticated');
+              localStorage.removeItem('user');
+              localStorage.removeItem('admin_session');
+            }
+          } else {
           }
         } catch (error) {
-          console.error('Error restoring auth from local storage:', error);
+          console.error('❌ Error restoring auth from local storage:', error);
           localStorage.removeItem('isAuthenticated');
           localStorage.removeItem('user');
+          localStorage.removeItem('admin_session');
         }
         return false;
       };
 
       // Try Supabase first (prioritize real authentication)
-      console.log('Checking Supabase authentication...');
       
       // Only use local storage as fallback if Supabase fails
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (currentSession?.user) {
-          console.log('Found Supabase session, using Supabase auth');
           setSession(currentSession);
           setUser(currentSession.user);
           await loadUserProfile(currentSession.user);
           return;
         }
       } catch (error) {
-        console.log('Supabase auth check failed:', error);
       }
       
       // Fallback to local storage only if no Supabase session
       if (checkLocalAuth()) {
-        console.log('No Supabase session, using local storage auth');
         return;
       }
       
-      console.log('No authentication found, user needs to login');
     };
 
     initializeAuth();
@@ -134,7 +138,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     // Fallback to Supabase auth if local storage fails
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state change:', event, session?.user?.id);
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -156,7 +159,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     // THEN check for existing session
     supabase.auth.getSession().then(async ({ data: { session } }) => {
-      console.log('Initial session:', session?.user?.id);
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
@@ -174,7 +176,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const loadUserProfile = async (userId: string) => {
     try {
-      console.log('Loading profile for user:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -188,7 +189,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       if (data) {
-        console.log('Profile loaded:', data);
         setProfile(data);
       } else {
         // Create profile if it doesn't exist
@@ -207,7 +207,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (createError) {
           console.error('Error creating profile:', createError);
         } else {
-          console.log('Profile created:', createdProfile);
           setProfile(createdProfile);
         }
       }
@@ -220,7 +219,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const checkAdminRole = async (userId: string) => {
     try {
-      console.log('Checking admin role for user:', userId);
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -235,7 +233,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
 
       const adminStatus = !!data;
-      console.log('Admin status:', adminStatus, data);
       setIsAdmin(adminStatus);
     } catch (error) {
       console.error('Error in checkAdminRole:', error);
@@ -262,7 +259,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(userData);
       setIsAdmin(userData.role === 'admin');
       
-      console.log('Local signup successful:', userData);
       
     } catch (error: any) {
       console.error('Signup failed:', error);
@@ -281,15 +277,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         created_at: new Date().toISOString()
       };
 
-      // Store in localStorage
+      // Store in localStorage with enhanced data
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('admin_session', 'true'); // Additional admin session flag
       
       // Set user state
       setUser(userData);
       setIsAdmin(userData.role === 'admin');
       
-      console.log('Local signin successful:', userData);
+      
+      // Return user data for consistency
+      return userData;
       
     } catch (error: any) {
       console.error('Signin failed:', error);
@@ -299,15 +298,17 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signOut = async () => {
     try {
-      // Clear localStorage
+      // Clear localStorage completely
       localStorage.removeItem('user');
       localStorage.removeItem('isAuthenticated');
+      localStorage.removeItem('admin_session');
+      localStorage.removeItem('anonymous_cart');
       
       // Clear state
       setUser(null);
       setIsAdmin(false);
+      setProfile(null);
       
-      console.log('Local signout successful');
     } catch (error) {
       console.error('Signout failed:', error);
     }
@@ -323,7 +324,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
       setIsAdmin(false);
       
-      console.log('Local logout successful');
     } catch (error) {
       console.error('Logout failed:', error);
     }

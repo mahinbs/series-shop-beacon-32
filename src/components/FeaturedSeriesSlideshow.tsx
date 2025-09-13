@@ -31,6 +31,18 @@ const FeaturedSeriesSlideshow = () => {
       const configData = await FeaturedSeriesService.getConfigs();
       setConfigs(configData);
       console.log('⭐ Configs loaded for slideshow:', configData);
+      console.log('🖼️ Background image URLs in configs:', configData.map(c => ({ id: c.id, title: c.title, background_image_url: c.background_image_url })));
+      
+      // Log the active config details
+      const activeConfig = configData.find(config => config.is_active) || configData[0];
+      if (activeConfig) {
+        console.log('🎯 Active config for slideshow:', {
+          id: activeConfig.id,
+          title: activeConfig.title,
+          background_image_url: activeConfig.background_image_url,
+          hasBackgroundImage: !!activeConfig.background_image_url
+        });
+      }
 
       // Load badges
       const badgeData = await FeaturedSeriesService.getBadges();
@@ -125,6 +137,23 @@ const FeaturedSeriesSlideshow = () => {
               className="border-white/30 text-white hover:bg-white/10"
             >
               Debug
+            </Button>
+            <Button
+              onClick={async () => {
+                console.log('🗑️ Force clearing all caches from website...');
+                FeaturedSeriesService.clearCache();
+                // Also clear any other related caches
+                localStorage.removeItem('comic_series');
+                localStorage.removeItem('featured_series_templates');
+                localStorage.removeItem('featured_series_template_history');
+                await loadFeaturedSeriesData();
+                console.log('✅ All caches cleared and data reloaded');
+              }}
+              variant="outline"
+              size="sm"
+              className="border-white/30 text-white hover:bg-white/10"
+            >
+              Force Refresh
             </Button>
             <Button
               onClick={loadFeaturedSeriesData}

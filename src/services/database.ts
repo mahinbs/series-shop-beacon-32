@@ -36,7 +36,6 @@ export type UserRoleUpdate = UserRolesTable['Update'];
 // Test function to verify database connectivity
 export const testDatabaseConnection = async () => {
   try {
-    console.log('Testing database connection...');
     
     // Test if books table exists
     const { data, error } = await supabase
@@ -53,7 +52,6 @@ export const testDatabaseConnection = async () => {
       };
     }
     
-    console.log('Database connection test successful');
     return {
       success: true,
       message: 'Database connection successful'
@@ -127,7 +125,6 @@ export const booksService = {
 
   async create(book: BookInsert) {
     try {
-      console.log('Creating book with data:', book);
       
       // Ensure required fields are present
       const bookData = {
@@ -172,7 +169,6 @@ export const booksService = {
         }
       }
       
-      console.log('Book created successfully:', data);
       return data;
     } catch (error) {
       console.error('Books service create error:', error);
@@ -182,7 +178,6 @@ export const booksService = {
 
   async update(id: string, updates: BookUpdate) {
     try {
-      console.log('Updating book with ID:', id, 'updates:', updates);
       
       const { data, error } = await supabase
         .from('books')
@@ -202,7 +197,6 @@ export const booksService = {
         }
       }
       
-      console.log('Book updated successfully:', data);
       return data;
     } catch (error) {
       console.error('Books service update error:', error);
@@ -212,7 +206,6 @@ export const booksService = {
 
   async delete(id: string) {
     try {
-      console.log('Deleting book with ID:', id);
       
       const { error } = await supabase
         .from('books')
@@ -230,7 +223,6 @@ export const booksService = {
         }
       }
       
-      console.log('Book deleted successfully');
     } catch (error) {
       console.error('Books service delete error:', error);
       throw error;

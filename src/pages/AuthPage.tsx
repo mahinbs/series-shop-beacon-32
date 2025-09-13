@@ -31,14 +31,11 @@ const AuthPage = () => {
   // Redirect logged in users
   useEffect(() => {
     if (user && !authLoading) {
-      console.log('User logged in, redirecting...', { user: user.id, isAdmin });
-      if (isAdmin) {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      // Use the intended destination or default based on role
+      const destination = fromPath || (isAdmin ? '/admin' : '/');
+      navigate(destination, { replace: true });
     }
-  }, [user, isAdmin, authLoading, navigate]);
+  }, [user, isAdmin, authLoading, navigate, fromPath]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -92,12 +89,10 @@ const AuthPage = () => {
         title: "Welcome back!",
         description: "Successfully signed in",
       });
-      // If user intended to visit admin, send them there and let AdminPanel gate by role
-      if (fromPath === '/admin') {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      // Use the intended destination or default based on role
+      const destination = fromPath || (isAdmin ? '/admin' : '/');
+      // Sign in successful, redirecting
+      navigate(destination, { replace: true });
     } catch (error: any) {
       toast({
         title: "Sign in failed",

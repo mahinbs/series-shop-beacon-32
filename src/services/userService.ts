@@ -45,11 +45,11 @@ export class UserService {
   // Get all users (for admin panel)
   static async getUsers(): Promise<User[]> {
     try {
-      console.log('👥 Getting users...');
+      // Getting users
       
       // Check if we should use local storage first
       if (shouldUseLocalStorage()) {
-        console.log('📱 Using local storage for users');
+        // Using local storage for users
         const localUser = localStorage.getItem('user');
         if (localUser) {
           const user = JSON.parse(localUser);
@@ -83,7 +83,6 @@ export class UserService {
           .order('created_at', { ascending: false });
 
         if (!error && data) {
-          console.log('✅ Successfully loaded users from Supabase:', data.length, 'users');
           return data.map((profile: any) => ({
             id: profile.user_id,
             user_id: profile.user_id,
@@ -95,18 +94,15 @@ export class UserService {
             is_active: true,
             avatar_url: profile.avatar_url
           }));
-        } else {
-          console.log('⚠️ Supabase error, falling back to local storage:', error);
         }
       } catch (supabaseError) {
-        console.log('⚠️ Supabase connection failed, using local storage:', supabaseError);
+        // Supabase connection failed, using local storage
       }
 
       // Fallback to local storage
       const storedUsers = localStorage.getItem('admin_users');
       if (storedUsers) {
         const parsedUsers = JSON.parse(storedUsers);
-        console.log('👥 Loaded users from localStorage:', parsedUsers.length, 'users');
         return parsedUsers;
       }
 
@@ -122,7 +118,7 @@ export class UserService {
         avatar_url: undefined
       }];
     } catch (error) {
-      console.error('❌ Error fetching users:', error);
+      console.error('Error fetching users:', error);
       return [];
     }
   }
@@ -152,7 +148,7 @@ export class UserService {
         const updatedUsers = [...existingUsers, newUser];
         localStorage.setItem('admin_users', JSON.stringify(updatedUsers));
         
-        console.log('✅ Created user in local storage:', newUser);
+        // Created user in local storage
         return newUser;
       }
 
@@ -171,7 +167,7 @@ export class UserService {
         if (authError) throw authError;
         if (!authData.user) throw new Error('Failed to create user');
 
-        console.log('✅ Created user in Supabase Auth:', authData.user.id);
+        // Created user in Supabase Auth
 
         // Create profile
         const { error: profileError } = await supabase

@@ -1,13 +1,15 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Heart, ShoppingCart, Package, Truck, Shield, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, Package, Truck, Shield, RotateCcw, Loader2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
+import { useBooks } from '@/hooks/useBooks';
+import { ComicService } from '@/services/comicService';
 
 const MerchandiseDetail = () => {
   const { productId } = useParams();
@@ -16,42 +18,147 @@ const MerchandiseDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('M');
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const [product, setProduct] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { books, loadBooks } = useBooks();
 
-  // Get product data from location state or use mock data
-  const product = location.state?.product || {
-    id: parseInt(productId || '1'),
-    title: "One Piece Figure Set",
-    category: "Figures",
-    type: "Collectibles",
-    description: "Premium quality figures featuring Luffy, Zoro, and Sanji from the Straw Hat Pirates.",
-    imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-    popularity: 95,
-    price: "$89.99",
-    priceValue: 89.99,
-    inStock: true,
-    reviews: "2.1K"
+  // Debug logging for all navigation attempts
+  console.log('🎯 MerchandiseDetail: Component loaded');
+  console.log('🆔 MerchandiseDetail: Product ID from URL:', productId);
+  console.log('📍 MerchandiseDetail: Current URL:', window.location.href);
+  console.log('📦 MerchandiseDetail: Location state:', location.state);
+  console.log('📚 MerchandiseDetail: Books loaded:', books.length);
+  console.log('📚 MerchandiseDetail: Books data:', books);
+
+  // Load product data
+  useEffect(() => {
+    const loadProduct = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        // First try to get from location state (if navigated from a product list)
+        if (location.state?.product) {
+          console.log('📦 Using product from location state:', location.state.product);
+          setProduct(location.state.product);
+          setIsLoading(false);
+          return;
+        }
+
+        // If no product in state, fetch from database
+        if (productId) {
+          console.log('🔍 Fetching product from database with ID:', productId);
+          await loadBooks();
+          
+          // If books are empty, try comic series directly
+          if (books.length === 0) {
+            console.log('📚 No books loaded, trying comic series directly...');
+            await searchInComicSeries();
+          }
+        } else {
+          setError('No product ID provided');
+          setIsLoading(false);
+        }
+      } catch (err) {
+        console.error('❌ Error loading product:', err);
+        setError('Failed to load product');
+        setIsLoading(false);
+      }
+    };
+
+    loadProduct();
+  }, [productId, location.state]); // Only depend on productId and location.state
+
+  // Separate effect to handle books state changes
+  useEffect(() => {
+    if (productId && books.length > 0 && !product && !location.state?.product) {
+      console.log('🔍 Looking for product with ID:', productId);
+      console.log('📚 Available books:', books.map(book => ({ id: book.id, title: book.title })));
+      
+      const foundProduct = books.find(book => book.id === productId);
+      if (foundProduct) {
+        console.log('✅ Found product in books:', foundProduct);
+        setProduct(foundProduct);
+        setIsLoading(false);
+      } else {
+        console.log('❌ Product not found in books, checking comic series...');
+        // Try to find in comic series
+        searchInComicSeries();
+      }
+    }
+  }, [books, productId, product, location.state]);
+
+  // Function to search in comic series
+  const searchInComicSeries = async () => {
+    try {
+      console.log('🔍 Searching in comic series for ID:', productId);
+      const series = await ComicService.getSeries();
+      console.log('📚 Available comic series:', series.map(s => ({ id: s.id, title: s.title })));
+      
+      const foundSeries = series.find(s => s.id === productId);
+      if (foundSeries) {
+        console.log('✅ Found product in comic series:', foundSeries);
+        // Transform comic series data to match product format
+        const transformedProduct = {
+          id: foundSeries.id,
+          title: foundSeries.title,
+          author: foundSeries.creator || foundSeries.author,
+          category: foundSeries.category || 'Comic',
+          product_type: 'book',
+          price: foundSeries.price || 0,
+          original_price: foundSeries.original_price,
+          image_url: foundSeries.cover_image_url || foundSeries.image_url,
+          hover_image_url: foundSeries.hover_image_url,
+          description: foundSeries.description,
+          is_new: foundSeries.is_new || false,
+          is_on_sale: foundSeries.is_on_sale || false,
+          stock_quantity: foundSeries.stock_quantity || 0,
+          display_order: foundSeries.display_order || 0,
+          is_active: foundSeries.is_active || true,
+          created_at: foundSeries.created_at,
+          updated_at: foundSeries.updated_at
+        };
+        setProduct(transformedProduct);
+        setIsLoading(false);
+      } else {
+        console.log('❌ Product not found in comic series either');
+        console.log('🔍 Available comic series IDs:', series.map(s => s.id));
+        setError(`Product not found. Searched for ID: ${productId}`);
+        setIsLoading(false);
+      }
+    } catch (error) {
+      console.error('❌ Error searching comic series:', error);
+      setError(`Product not found. Searched for ID: ${productId}`);
+      setIsLoading(false);
+    }
   };
 
   const sizes = ['S', 'M', 'L', 'XL'];
-  const images = [
-    product.imageUrl,
-    product.imageUrl,
-    product.imageUrl,
-    product.imageUrl
-  ];
+  
+  // Create images array from product data
+  const images = product ? [
+    product.image_url || product.imageUrl,
+    product.hover_image_url || product.image_url || product.imageUrl,
+    product.image_url || product.imageUrl,
+    product.image_url || product.imageUrl
+  ] : [];
 
   const handleAddToCart = () => {
+    if (!product) return;
+    
     try {
       const cartItem = {
         id: product.id.toString(),
         title: product.title,
-        price: product.priceValue || parseFloat(product.price.replace('$', '')),
-        imageUrl: product.imageUrl,
+        author: product.author || undefined,
+        price: product.price || parseFloat(product.price?.toString().replace('$', '') || '0'),
+        imageUrl: product.image_url || product.imageUrl,
         category: product.category,
-        product_type: 'merchandise' as const,
-        inStock: product.inStock,
+        product_type: (product.product_type || 'merchandise') as const,
+        inStock: product.stock_quantity !== undefined ? product.stock_quantity > 0 : true,
         quantity: quantity
       };
       
@@ -73,23 +180,66 @@ const MerchandiseDetail = () => {
   };
 
   const handleCheckout = () => {
+    if (!product) return;
+    
     console.log('🛍️ Proceeding to checkout for merchandise');
     console.log('📦 Product:', product);
     console.log('📊 Quantity:', quantity);
+    
+    const price = product.price || parseFloat(product.price?.toString().replace('$', '') || '0');
     
     navigate(`/checkout/${productId}`, {
       state: {
         product: {
           ...product,
-          price: product.priceValue || parseFloat(product.price.replace('$', ''))
+          price: price
         },
         quantity,
-        totalPrice: (product.priceValue || parseFloat(product.price.replace('$', ''))) * quantity
+        totalPrice: price * quantity
       }
     });
   };
 
-  const totalPrice = (product.priceValue || parseFloat(product.price.replace('$', ''))) * quantity;
+  const totalPrice = product ? (product.price || parseFloat(product.price?.toString().replace('$', '') || '0')) * quantity : 0;
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-red-600 mx-auto mb-4" />
+              <p className="text-white">Loading product details...</p>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !product) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <p className="text-red-500 text-xl mb-4">Product not found</p>
+              <Button onClick={() => navigate('/shop-all')} variant="outline">
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Shop
+              </Button>
+            </div>
+          </div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900">
@@ -111,7 +261,7 @@ const MerchandiseDetail = () => {
           <div className="space-y-4">
             <div className="aspect-square bg-gray-800 rounded-lg overflow-hidden">
               <img
-                src={product.imageUrl}
+                src={product.image_url || product.imageUrl || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png'}
                 alt={product.title}
                 className="w-full h-full object-cover"
               />
@@ -137,16 +287,26 @@ const MerchandiseDetail = () => {
                   {product.category}
                 </Badge>
                 <Badge variant="outline" className="border-gray-600 text-gray-300">
-                  {product.type}
+                  {product.product_type || product.type || 'Product'}
                 </Badge>
+                {product.is_new && <Badge variant="secondary" className="bg-green-600 text-white">🆕 New</Badge>}
+                {product.is_on_sale && <Badge variant="destructive" className="text-white">🏷️ Sale</Badge>}
               </div>
               <h1 className="text-3xl font-bold text-white mb-2">{product.title}</h1>
+              {product.author && (
+                <p className="text-lg text-gray-400 mb-2">by {product.author}</p>
+              )}
               <div className="flex items-center gap-4 mb-4">
                 <div className="flex items-center">
-                  <span className="text-gray-400">({product.reviews} reviews)</span>
+                  <span className="text-gray-400">({product.reviews || '0'} reviews)</span>
                 </div>
               </div>
-              <p className="text-xl font-bold text-white mb-4">{product.price}</p>
+              <div className="flex items-center gap-4 mb-4">
+                <p className="text-xl font-bold text-white">${product.price}</p>
+                {product.original_price && product.original_price > product.price && (
+                  <p className="text-lg text-gray-400 line-through">${product.original_price}</p>
+                )}
+              </div>
               <p className="text-gray-300 leading-relaxed">{product.description}</p>
             </div>
 
@@ -196,16 +356,16 @@ const MerchandiseDetail = () => {
             <div className="space-y-3">
               <Button
                 onClick={handleAddToCart}
-                disabled={!product.inStock}
+                disabled={product.stock_quantity !== undefined ? product.stock_quantity <= 0 : false}
                 className="w-full bg-red-600 hover:bg-red-700 text-white py-6 text-lg font-semibold"
               >
                 <ShoppingCart className="w-5 h-5 mr-2" />
-                {product.inStock ? 'Add to Cart' : 'Out of Stock'}
+                {(product.stock_quantity !== undefined ? product.stock_quantity > 0 : true) ? 'Add to Cart' : 'Out of Stock'}
               </Button>
               
               <Button
                 onClick={handleCheckout}
-                disabled={!product.inStock}
+                disabled={product.stock_quantity !== undefined ? product.stock_quantity <= 0 : false}
                 variant="outline"
                 className="w-full border-red-600 text-red-400 hover:bg-red-600 hover:text-white py-6 text-lg font-semibold"
               >

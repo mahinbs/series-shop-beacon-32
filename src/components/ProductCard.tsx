@@ -84,6 +84,11 @@ const ProductCard = ({
 
   const handleViewProduct = () => {
     const productId = id || `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`;
+    console.log('🛍️ ProductCard: Navigating to product detail');
+    console.log('📝 ProductCard: Title:', title);
+    console.log('📝 ProductCard: Author:', author);
+    console.log('🆔 ProductCard: Using ID:', productId);
+    console.log('🆔 ProductCard: Provided ID:', id);
     navigate(`/product/${productId}`);
   };
 

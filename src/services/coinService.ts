@@ -2,6 +2,18 @@ import { supabase } from '@/integrations/supabase/client';
 import { UserCoins, CoinTransaction, CoinPurchase, CoinPackage } from '@/types/coins';
 
 export class CoinService {
+  // Cache to prevent multiple API calls
+  private static coinPackagesCache: CoinPackage[] | null = null;
+  private static cacheTimestamp: number = 0;
+  private static CACHE_DURATION = 30 * 1000; // 30 seconds (reduced for live data)
+
+  // Clear cache to force fresh data
+  static clearCache(): void {
+    this.coinPackagesCache = null;
+    this.cacheTimestamp = 0;
+    console.log('🔄 Coin service cache cleared');
+  }
+
   // Get user's coin balance
   static async getUserCoins(userId: string): Promise<UserCoins | null> {
     try {
@@ -13,8 +25,7 @@ export class CoinService {
 
       if (error) {
         // If table doesn't exist (404), return null without logging error
-        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-          console.log('⚠️ Coin system tables not found, using local storage fallback');
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table') || error.message?.includes('relation') || error.message?.includes('does not exist')) {
           return null;
         }
         console.error('Error fetching user coins:', error);
@@ -47,8 +58,7 @@ export class CoinService {
 
       if (error) {
         // If table doesn't exist (404), return null without logging error
-        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-          console.log('⚠️ Coin system tables not found, using local storage fallback');
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table') || error.message?.includes('relation') || error.message?.includes('does not exist')) {
           return null;
         }
         console.error('Error initializing user coins:', error);
@@ -191,6 +201,38 @@ export class CoinService {
     }
   }
 
+  // Get all transactions (for admin view)
+  static async getAllTransactions(limit: number = 50): Promise<CoinTransaction[]> {
+    try {
+      const { data, error } = await supabase
+        .from('coin_transactions')
+        .select('*')
+        .order('timestamp', { ascending: false })
+        .limit(limit);
+
+      if (error) {
+        if (error.code === 'PGRST116' || error.message?.includes('relation "coin_transactions" does not exist')) {
+          console.warn('Coin system tables not found. Please run the database migration.');
+          return [];
+        }
+        console.error('Error fetching all transactions:', error);
+        return [];
+      }
+
+      const result = data?.map(transaction => ({
+        ...transaction,
+        user_name: `User ${transaction.user_id.slice(0, 8)}`, // Use partial UUID as name
+        user_email: `${transaction.user_id.slice(0, 8)}@example.com` // Generate email from UUID
+      })) || [];
+
+      console.log('✅ Successfully loaded transactions from Supabase:', result.length, 'transactions');
+      return result;
+    } catch (error) {
+      console.error('Error in getAllTransactions:', error);
+      return [];
+    }
+  }
+
   // Record a coin purchase
   static async recordPurchase(purchase: Partial<CoinPurchase>): Promise<boolean> {
     try {
@@ -213,6 +255,12 @@ export class CoinService {
   // Get available coin packages
   static async getCoinPackages(): Promise<CoinPackage[]> {
     try {
+      // Check cache first
+      const now = Date.now();
+      if (this.coinPackagesCache && (now - this.cacheTimestamp) < this.CACHE_DURATION) {
+        return this.coinPackagesCache;
+      }
+
       const { data, error } = await supabase
         .from('coin_packages')
         .select('*')
@@ -220,17 +268,65 @@ export class CoinService {
 
       if (error) {
         // If table doesn't exist (404), return empty array without logging error
-        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-          console.log('⚠️ Coin system tables not found, using local storage fallback');
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table') || error.message?.includes('relation') || error.message?.includes('does not exist')) {
+          console.warn('⚠️ Coin packages table not found. Please run the database migration.');
           return [];
         }
         console.error('Error fetching coin packages:', error);
         return [];
       }
 
-      return data || [];
+      // Cache the result
+      this.coinPackagesCache = data || [];
+      this.cacheTimestamp = now;
+      
+      console.log('✅ Successfully loaded coin packages from Supabase:', this.coinPackagesCache.length, 'packages');
+      return this.coinPackagesCache;
     } catch (error) {
       console.error('Error in getCoinPackages:', error);
+      return [];
+    }
+  }
+
+  // Get all users with coins
+  static async getAllUsersWithCoins(): Promise<Array<{
+    user_id: string;
+    user_name: string;
+    balance: number;
+    total_earned: number;
+    total_spent: number;
+  }>> {
+    try {
+      const { data, error } = await supabase
+        .from('user_coins')
+        .select(`
+          user_id,
+          balance,
+          total_earned,
+          total_spent
+        `);
+
+      if (error) {
+        if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
+          console.warn('⚠️ User coins table not found. Please run the database migration.');
+          return [];
+        }
+        console.error('Error fetching all users with coins:', error);
+        return [];
+      }
+
+      const result = data?.map(item => ({
+        user_id: item.user_id,
+        user_name: `User ${item.user_id.slice(0, 8)}`, // Use partial UUID as name
+        balance: item.balance,
+        total_earned: item.total_earned,
+        total_spent: item.total_spent
+      })) || [];
+
+      console.log('✅ Successfully loaded users with coins from Supabase:', result.length, 'users');
+      return result;
+    } catch (error) {
+      console.error('Error in getAllUsersWithCoins:', error);
       return [];
     }
   }

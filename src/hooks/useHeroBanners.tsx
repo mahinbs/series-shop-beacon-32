@@ -10,7 +10,6 @@ export const useHeroBanners = () => {
   const loadTemporaryBanners = () => {
     try {
       const storedBanners = JSON.parse(localStorage.getItem('tempHeroBanners') || '[]');
-      console.log('Loaded temporary banners from localStorage:', storedBanners);
       return storedBanners;
     } catch (error) {
       console.error('Error loading temporary banners from localStorage:', error);
@@ -22,24 +21,19 @@ export const useHeroBanners = () => {
     try {
       setIsLoading(true);
       setError(null);
-      console.log('Loading hero banners...');
       
       const data = await heroBannersService.getActive();
-      console.log('Database banners:', data);
       
       // Combine database banners with temporary banners
       const tempBanners = loadTemporaryBanners();
-      console.log('Temporary banners:', tempBanners);
       const combinedBanners = [...data, ...tempBanners];
       const sortedBanners = combinedBanners.sort((a, b) => a.display_order - b.display_order);
-      console.log('Combined and sorted banners:', sortedBanners);
       setBanners(sortedBanners);
     } catch (err) {
       console.error('Error loading hero banners:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
       // Load temporary banners from localStorage on error
       const tempBanners = loadTemporaryBanners();
-      console.log('Loaded temporary banners on error:', tempBanners);
       setBanners(tempBanners);
     } finally {
       setIsLoading(false);
@@ -52,12 +46,12 @@ export const useHeroBanners = () => {
 
   const createBanner = async (banner: Omit<HeroBanner, 'id' | 'created_at' | 'updated_at'>) => {
     try {
-      console.log('Creating banner:', banner);
+      // Creating banner
       
       // Try to create in database first
       try {
         const newBanner = await heroBannersService.create(banner);
-        console.log('Banner created in database:', newBanner);
+        // Banner created in database
         
         // Update local state
         setBanners(prev => [...prev, newBanner].sort((a, b) => a.display_order - b.display_order));
@@ -91,7 +85,7 @@ export const useHeroBanners = () => {
 
   const updateBanner = async (id: string, updates: Partial<HeroBanner>) => {
     try {
-      console.log('Updating banner:', id, updates);
+      // Updating banner
       
       // Check if it's a temporary banner
       if (id.startsWith('temp-')) {
@@ -113,7 +107,7 @@ export const useHeroBanners = () => {
       } else {
         // Update in database
         const updatedBanner = await heroBannersService.update(id, updates);
-        console.log('Banner updated in database:', updatedBanner);
+        // Banner updated in database
         
         // Update local state
         setBanners(prev => 
@@ -132,7 +126,7 @@ export const useHeroBanners = () => {
 
   const deleteBanner = async (id: string) => {
     try {
-      console.log('Deleting banner:', id);
+      // Deleting banner
       
       // Check if it's a temporary banner
       if (id.startsWith('temp-')) {
@@ -146,7 +140,7 @@ export const useHeroBanners = () => {
       } else {
         // Delete from database
         await heroBannersService.delete(id);
-        console.log('Banner deleted from database:', id);
+        // Banner deleted from database
         
         // Update local state
         setBanners(prev => prev.filter(banner => banner.id !== id));

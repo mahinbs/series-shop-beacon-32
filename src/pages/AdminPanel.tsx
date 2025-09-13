@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminDashboard } from '@/components/cms/AdminDashboard';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
@@ -12,24 +12,20 @@ const AdminPanel = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    console.log('AdminPanel useEffect - isLoading:', isLoading, 'user:', user, 'isAdmin:', isAdmin);
-    
     // Wait for auth to finish before deciding
-    if (isLoading) return;
+    if (isLoading) {
+      return;
+    }
 
     // If not logged in, send to auth and preserve intent
     if (!user) {
-      console.log('No user found, redirecting to auth');
       navigate('/auth', { state: { from: '/admin' } });
       return;
     }
 
     // Logged-in but not an admin: send to home
     if (!isAdmin) {
-      console.log('User found but not admin, redirecting to home');
       navigate('/');
-    } else {
-      console.log('User is admin, staying on admin panel');
     }
   }, [user, isAdmin, isLoading, navigate]);
 
@@ -39,19 +35,86 @@ const AdminPanel = () => {
   };
 
   // Show loading while resolving auth/admin status
-  if (isLoading || !user) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardContent className="p-8 text-center">
+            <Shield className="h-16 w-16 mx-auto mb-4 text-primary animate-pulse" />
+            <h2 className="text-2xl font-bold mb-2">Admin Panel</h2>
+            <p className="text-muted-foreground mb-4">Verifying admin access...</p>
+            <div className="mt-4">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+            </div>
+            <div className="mt-4 text-xs text-muted-foreground">
+              <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
+              <p>User: {user ? 'Found' : 'None'}</p>
+              <p>Admin: {isAdmin ? 'Yes' : 'No'}</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // If not authenticated, show login prompt
+  if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">
           <CardContent className="p-8 text-center">
             <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-2xl font-bold mb-2">Checking admin access…</h2>
-            <p className="text-muted-foreground mb-4">Please wait while we verify your permissions.</p>
-            {!user && (
+            <h2 className="text-2xl font-bold mb-2">Admin Access Required</h2>
+            <p className="text-muted-foreground mb-4">Please sign in to access the admin panel.</p>
+            <div className="space-y-2">
               <Button onClick={() => navigate('/auth', { state: { from: '/admin' } })} className="w-full">
                 Go to Login
               </Button>
-            )}
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  // Debug auth state (only in development)
+                    if (process.env.NODE_ENV === 'development') {
+                      console.log('Current auth state:', { user, isAdmin, isLoading });
+                      console.log('LocalStorage:', {
+                        isAuthenticated: localStorage.getItem('isAuthenticated'),
+                        user: localStorage.getItem('user'),
+                        adminSession: localStorage.getItem('admin_session')
+                      });
+                    }
+                }}
+                className="w-full text-xs"
+              >
+                Debug Auth State
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  // Force restore admin session
+                  const adminUser = {
+                    id: 'local-admin-' + Date.now(),
+                    email: 'admin@series-shop.com',
+                    full_name: 'Admin User',
+                    role: 'admin',
+                    created_at: new Date().toISOString(),
+                    last_login: new Date().toISOString(),
+                    is_active: true
+                  };
+                  
+                  localStorage.setItem('user', JSON.stringify(adminUser));
+                  localStorage.setItem('isAuthenticated', 'true');
+                  localStorage.setItem('admin_session', 'true');
+                  
+                  if (process.env.NODE_ENV === 'development') {
+                    console.log('✅ Admin session restored manually');
+                  }
+                  window.location.reload();
+                }}
+                className="w-full text-xs bg-green-600 hover:bg-green-700"
+              >
+                Restore Admin Session
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

@@ -318,10 +318,16 @@ export class ComicService {
           console.log('✅ Successfully loaded series from Supabase:', data);
           return data;
         } else {
-          console.log('⚠️ Supabase error, falling back to local storage:', error);
+          // Don't log error if table doesn't exist (PGRST205)
+          if (error?.code !== 'PGRST205' && !error?.message?.includes('relation') && !error?.message?.includes('does not exist')) {
+            console.log('⚠️ Supabase error, falling back to local storage:', error);
+          }
         }
       } catch (supabaseError) {
-        console.log('⚠️ Supabase connection failed, using local storage:', supabaseError);
+        // Don't log error if table doesn't exist
+        if (!supabaseError?.message?.includes('relation') && !supabaseError?.message?.includes('does not exist')) {
+          console.log('⚠️ Supabase connection failed, using local storage:', supabaseError);
+        }
       }
       
       // Fallback to local storage
@@ -428,10 +434,19 @@ export class ComicService {
         .eq('is_active', true)
         .single();
 
-      if (error) throw error;
+      if (error) {
+        // Don't throw error if table doesn't exist
+        if (error.code === 'PGRST205' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
+          return null;
+        }
+        throw error;
+      }
       return data;
     } catch (error) {
-      console.error('Error fetching series by slug:', error);
+      // Don't log error if table doesn't exist
+      if (!error?.message?.includes('relation') && !error?.message?.includes('does not exist')) {
+        console.error('Error fetching series by slug:', error);
+      }
       return null;
     }
   }
@@ -452,10 +467,16 @@ export class ComicService {
           console.log('✅ Successfully created series in Supabase:', data);
           return data;
         } else {
-          console.log('⚠️ Supabase error, falling back to local storage:', error);
+          // Don't log error if table doesn't exist
+          if (error?.code !== 'PGRST205' && !error?.message?.includes('relation') && !error?.message?.includes('does not exist')) {
+            console.log('⚠️ Supabase error, falling back to local storage:', error);
+          }
         }
       } catch (supabaseError) {
-        console.log('⚠️ Supabase connection failed, using local storage:', supabaseError);
+        // Don't log error if table doesn't exist
+        if (!supabaseError?.message?.includes('relation') && !supabaseError?.message?.includes('does not exist')) {
+          console.log('⚠️ Supabase connection failed, using local storage:', supabaseError);
+        }
       }
       
       // Fallback to local storage
@@ -537,10 +558,19 @@ export class ComicService {
         .update({ is_active: false })
         .eq('id', id);
 
-      if (error) throw error;
+      if (error) {
+        // Don't throw error if table doesn't exist
+        if (error.code === 'PGRST205' || error.message?.includes('relation') || error.message?.includes('does not exist')) {
+          return;
+        }
+        throw error;
+      }
     } catch (error) {
-      console.error('Error deleting series:', error);
-      throw error;
+      // Don't log error if table doesn't exist
+      if (!error?.message?.includes('relation') && !error?.message?.includes('does not exist')) {
+        console.error('Error deleting series:', error);
+        throw error;
+      }
     }
   }
 

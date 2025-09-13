@@ -24,62 +24,21 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { SettingsService, type SiteSettings, type EmailSettings, type PaymentSettings, type ShippingSettings, type SecuritySettings, type BackupSettings } from '@/services/settingsService';
 
-interface SiteSettings {
-  site_name: string;
-  site_description: string;
-  site_url: string;
-  admin_email: string;
-  support_email: string;
-  currency: string;
-  timezone: string;
-  language: string;
-  maintenance_mode: boolean;
-  registration_enabled: boolean;
-  email_verification_required: boolean;
-}
+// SiteSettings interface imported from settingsService
 
-interface EmailSettings {
-  smtp_host: string;
-  smtp_port: number;
-  smtp_username: string;
-  smtp_password: string;
-  smtp_encryption: 'none' | 'tls' | 'ssl';
-  from_name: string;
-  from_email: string;
-  order_confirmation_template: string;
-  welcome_email_template: string;
-}
+// EmailSettings interface imported from settingsService
 
-interface PaymentSettings {
-  stripe_public_key: string;
-  stripe_secret_key: string;
-  paypal_client_id: string;
-  paypal_client_secret: string;
-  payment_methods: string[];
-  default_currency: string;
-  tax_rate: number;
-  shipping_cost: number;
-  free_shipping_threshold: number;
-}
+// PaymentSettings interface imported from settingsService
 
-interface ShippingSettings {
-  shipping_zones: Array<{
-    name: string;
-    countries: string[];
-    cost: number;
-    free_threshold: number;
-  }>;
-  default_shipping_cost: number;
-  free_shipping_threshold: number;
-  processing_time: number;
-  tracking_enabled: boolean;
-}
+// ShippingSettings interface imported from settingsService
 
 export const SettingsPanel = () => {
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
   
   // Site Settings
   const [siteSettings, setSiteSettings] = useState<SiteSettings>({
@@ -124,32 +83,71 @@ export const SettingsPanel = () => {
 
   // Shipping Settings
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings>({
-    shipping_zones: [
-      {
-        name: 'United States',
-        countries: ['US'],
-        cost: 2.99,
-        free_threshold: 50.00
-      },
-      {
-        name: 'International',
-        countries: ['CA', 'MX', 'GB', 'DE', 'FR', 'JP'],
-        cost: 9.99,
-        free_threshold: 100.00
-      }
-    ],
+    shipping_methods: ['standard', 'express', 'overnight'],
     default_shipping_cost: 2.99,
     free_shipping_threshold: 50.00,
     processing_time: 1,
     tracking_enabled: true
   });
 
+  // Security Settings
+  const [securitySettings, setSecuritySettings] = useState<SecuritySettings>({
+    two_factor_enabled: false,
+    session_timeout: 24,
+    password_min_length: 8,
+    require_strong_passwords: true,
+    login_attempts_limit: 5,
+    lockout_duration: 15
+  });
+
+  // Backup Settings
+  const [backupSettings, setBackupSettings] = useState<BackupSettings>({
+    auto_backup_enabled: false,
+    backup_frequency: 'daily',
+    backup_retention_days: 30,
+    backup_location: 'local'
+  });
+
+  // Load settings on component mount
+  useEffect(() => {
+    const loadSettings = async () => {
+      setIsLoading(true);
+      try {
+        const [site, email, payment, shipping, security, backup] = await Promise.all([
+          SettingsService.getSiteSettings(),
+          SettingsService.getEmailSettings(),
+          SettingsService.getPaymentSettings(),
+          SettingsService.getShippingSettings(),
+          SettingsService.getSecuritySettings(),
+          SettingsService.getBackupSettings()
+        ]);
+        
+        setSiteSettings(site);
+        setEmailSettings(email);
+        setPaymentSettings(payment);
+        setShippingSettings(shipping);
+        setSecuritySettings(security);
+        setBackupSettings(backup);
+      } catch (error) {
+        console.error('Error loading settings:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load settings",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSettings();
+  }, []);
+
   const handleSaveSiteSettings = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await SettingsService.saveSiteSettings(siteSettings);
+      setLastSaved(new Date());
       toast({
         title: "Success",
         description: "Site settings saved successfully",
@@ -168,9 +166,8 @@ export const SettingsPanel = () => {
   const handleSaveEmailSettings = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await SettingsService.saveEmailSettings(emailSettings);
+      setLastSaved(new Date());
       toast({
         title: "Success",
         description: "Email settings saved successfully",
@@ -189,9 +186,8 @@ export const SettingsPanel = () => {
   const handleSavePaymentSettings = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await SettingsService.savePaymentSettings(paymentSettings);
+      setLastSaved(new Date());
       toast({
         title: "Success",
         description: "Payment settings saved successfully",
@@ -210,9 +206,8 @@ export const SettingsPanel = () => {
   const handleSaveShippingSettings = async () => {
     setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
+      await SettingsService.saveShippingSettings(shippingSettings);
+      setLastSaved(new Date());
       toast({
         title: "Success",
         description: "Shipping settings saved successfully",
@@ -228,12 +223,50 @@ export const SettingsPanel = () => {
     }
   };
 
+  const handleSaveSecuritySettings = async () => {
+    setIsSaving(true);
+    try {
+      await SettingsService.saveSecuritySettings(securitySettings);
+      setLastSaved(new Date());
+      toast({
+        title: "Success",
+        description: "Security settings saved successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save security settings",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveBackupSettings = async () => {
+    setIsSaving(true);
+    try {
+      await SettingsService.saveBackupSettings(backupSettings);
+      setLastSaved(new Date());
+      toast({
+        title: "Success",
+        description: "Backup settings saved successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to save backup settings",
+        variant: "destructive"
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleBackupDatabase = async () => {
     setIsLoading(true);
     try {
-      // Simulate backup process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
+      await SettingsService.backupDatabase();
       toast({
         title: "Success",
         description: "Database backup completed successfully",
@@ -255,7 +288,19 @@ export const SettingsPanel = () => {
         <div>
           <h2 className="text-2xl font-bold">Settings</h2>
           <p className="text-muted-foreground">Configure your site settings and preferences</p>
+          {lastSaved && (
+            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+              <RefreshCw className="h-3 w-3" />
+              Last saved: {lastSaved.toLocaleTimeString()}
+            </p>
+          )}
         </div>
+        {isLoading && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <RefreshCw className="h-4 w-4 animate-spin" />
+            Loading settings...
+          </div>
+        )}
       </div>
 
       <Tabs defaultValue="general" className="space-y-4">
@@ -331,7 +376,7 @@ export const SettingsPanel = () => {
                 <div>
                   <Label htmlFor="currency">Currency</Label>
                   <Select value={siteSettings.currency} onValueChange={(value) => setSiteSettings({...siteSettings, currency: value})}>
-                    <SelectTrigger>
+                    <SelectTrigger id="currency">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -345,7 +390,7 @@ export const SettingsPanel = () => {
                 <div>
                   <Label htmlFor="timezone">Timezone</Label>
                   <Select value={siteSettings.timezone} onValueChange={(value) => setSiteSettings({...siteSettings, timezone: value})}>
-                    <SelectTrigger>
+                    <SelectTrigger id="timezone">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -360,7 +405,7 @@ export const SettingsPanel = () => {
                 <div>
                   <Label htmlFor="language">Language</Label>
                   <Select value={siteSettings.language} onValueChange={(value) => setSiteSettings({...siteSettings, language: value})}>
-                    <SelectTrigger>
+                    <SelectTrigger id="language">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -492,7 +537,7 @@ export const SettingsPanel = () => {
               <div>
                 <Label htmlFor="smtp_encryption">SMTP Encryption</Label>
                 <Select value={emailSettings.smtp_encryption} onValueChange={(value: any) => setEmailSettings({...emailSettings, smtp_encryption: value})}>
-                  <SelectTrigger>
+                  <SelectTrigger id="smtp_encryption">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -562,6 +607,48 @@ export const SettingsPanel = () => {
                 </div>
               </div>
 
+              <div>
+                <Label htmlFor="payment_methods">Payment Methods</Label>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-2">
+                  {['credit_card', 'paypal', 'bank_transfer', 'crypto'].map((method) => (
+                    <div key={method} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`payment_${method}`}
+                        checked={paymentSettings.payment_methods.includes(method)}
+                        onChange={(e) => {
+                          const methods = e.target.checked
+                            ? [...paymentSettings.payment_methods, method]
+                            : paymentSettings.payment_methods.filter(m => m !== method);
+                          setPaymentSettings({...paymentSettings, payment_methods: methods});
+                        }}
+                        className="rounded"
+                      />
+                      <Label htmlFor={`payment_${method}`} className="text-sm capitalize">
+                        {method.replace('_', ' ')}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="default_currency">Default Currency</Label>
+                <Select value={paymentSettings.default_currency} onValueChange={(value) => setPaymentSettings({...paymentSettings, default_currency: value})}>
+                  <SelectTrigger id="default_currency">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">USD - US Dollar</SelectItem>
+                    <SelectItem value="EUR">EUR - Euro</SelectItem>
+                    <SelectItem value="GBP">GBP - British Pound</SelectItem>
+                    <SelectItem value="JPY">JPY - Japanese Yen</SelectItem>
+                    <SelectItem value="CAD">CAD - Canadian Dollar</SelectItem>
+                    <SelectItem value="AUD">AUD - Australian Dollar</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="tax_rate">Tax Rate (%)</Label>
@@ -612,6 +699,31 @@ export const SettingsPanel = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="shipping_methods">Shipping Methods</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                  {['standard', 'express', 'overnight'].map((method) => (
+                    <div key={method} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        id={`shipping_${method}`}
+                        checked={shippingSettings.shipping_methods.includes(method)}
+                        onChange={(e) => {
+                          const methods = e.target.checked
+                            ? [...shippingSettings.shipping_methods, method]
+                            : shippingSettings.shipping_methods.filter(m => m !== method);
+                          setShippingSettings({...shippingSettings, shipping_methods: methods});
+                        }}
+                        className="rounded"
+                      />
+                      <Label htmlFor={`shipping_${method}`} className="text-sm capitalize">
+                        {method}
+                      </Label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="default_shipping_cost">Default Shipping Cost</Label>
@@ -624,14 +736,25 @@ export const SettingsPanel = () => {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="processing_time">Processing Time (days)</Label>
+                  <Label htmlFor="free_shipping_threshold">Free Shipping Threshold</Label>
                   <Input
-                    id="processing_time"
+                    id="free_shipping_threshold"
                     type="number"
-                    value={shippingSettings.processing_time}
-                    onChange={(e) => setShippingSettings({...shippingSettings, processing_time: parseInt(e.target.value)})}
+                    step="0.01"
+                    value={shippingSettings.free_shipping_threshold}
+                    onChange={(e) => setShippingSettings({...shippingSettings, free_shipping_threshold: parseFloat(e.target.value)})}
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="processing_time">Processing Time (days)</Label>
+                <Input
+                  id="processing_time"
+                  type="number"
+                  value={shippingSettings.processing_time}
+                  onChange={(e) => setShippingSettings({...shippingSettings, processing_time: parseInt(e.target.value)})}
+                />
               </div>
 
               <div className="flex items-center justify-between">
@@ -664,29 +787,76 @@ export const SettingsPanel = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium mb-2">Password Requirements</h4>
-                  <p className="text-sm text-muted-foreground">Configure password strength requirements for user accounts.</p>
-                  <Button variant="outline" size="sm" className="mt-2">
-                    Configure
-                  </Button>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="two_factor_enabled">Two-Factor Authentication</Label>
+                    <p className="text-sm text-muted-foreground">Enable 2FA for admin accounts</p>
+                  </div>
+                  <Switch
+                    id="two_factor_enabled"
+                    checked={securitySettings.two_factor_enabled}
+                    onCheckedChange={(checked) => setSecuritySettings({...securitySettings, two_factor_enabled: checked})}
+                  />
                 </div>
-                
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium mb-2">Two-Factor Authentication</h4>
-                  <p className="text-sm text-muted-foreground">Enable 2FA for admin accounts.</p>
-                  <Button variant="outline" size="sm" className="mt-2">
-                    Enable 2FA
-                  </Button>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="session_timeout">Session Timeout (hours)</Label>
+                    <Input
+                      id="session_timeout"
+                      type="number"
+                      value={securitySettings.session_timeout}
+                      onChange={(e) => setSecuritySettings({...securitySettings, session_timeout: parseInt(e.target.value)})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="password_min_length">Minimum Password Length</Label>
+                    <Input
+                      id="password_min_length"
+                      type="number"
+                      value={securitySettings.password_min_length}
+                      onChange={(e) => setSecuritySettings({...securitySettings, password_min_length: parseInt(e.target.value)})}
+                    />
+                  </div>
                 </div>
-                
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium mb-2">API Keys</h4>
-                  <p className="text-sm text-muted-foreground">Manage API keys for third-party integrations.</p>
-                  <Button variant="outline" size="sm" className="mt-2">
-                    Manage Keys
-                  </Button>
+
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="require_strong_passwords">Require Strong Passwords</Label>
+                    <p className="text-sm text-muted-foreground">Enforce complex password requirements</p>
+                  </div>
+                  <Switch
+                    id="require_strong_passwords"
+                    checked={securitySettings.require_strong_passwords}
+                    onCheckedChange={(checked) => setSecuritySettings({...securitySettings, require_strong_passwords: checked})}
+                  />
                 </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="login_attempts_limit">Login Attempts Limit</Label>
+                    <Input
+                      id="login_attempts_limit"
+                      type="number"
+                      value={securitySettings.login_attempts_limit}
+                      onChange={(e) => setSecuritySettings({...securitySettings, login_attempts_limit: parseInt(e.target.value)})}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="lockout_duration">Lockout Duration (minutes)</Label>
+                    <Input
+                      id="lockout_duration"
+                      type="number"
+                      value={securitySettings.lockout_duration}
+                      onChange={(e) => setSecuritySettings({...securitySettings, lockout_duration: parseInt(e.target.value)})}
+                    />
+                  </div>
+                </div>
+
+                <Button onClick={handleSaveSecuritySettings} disabled={isSaving} className="flex items-center gap-2">
+                  <Save className="h-4 w-4" />
+                  {isSaving ? 'Saving...' : 'Save Security Settings'}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -702,34 +872,71 @@ export const SettingsPanel = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium mb-2">Database Backup</h4>
-                  <p className="text-sm text-muted-foreground">Create a backup of your database.</p>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label htmlFor="auto_backup_enabled">Auto Backup</Label>
+                    <p className="text-sm text-muted-foreground">Automatically backup database</p>
+                  </div>
+                  <Switch
+                    id="auto_backup_enabled"
+                    checked={backupSettings.auto_backup_enabled}
+                    onCheckedChange={(checked) => setBackupSettings({...backupSettings, auto_backup_enabled: checked})}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="backup_frequency">Backup Frequency</Label>
+                    <Select value={backupSettings.backup_frequency} onValueChange={(value) => setBackupSettings({...backupSettings, backup_frequency: value})}>
+                      <SelectTrigger id="backup_frequency">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="daily">Daily</SelectItem>
+                        <SelectItem value="weekly">Weekly</SelectItem>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="backup_retention_days">Retention Days</Label>
+                    <Input
+                      id="backup_retention_days"
+                      type="number"
+                      value={backupSettings.backup_retention_days}
+                      onChange={(e) => setBackupSettings({...backupSettings, backup_retention_days: parseInt(e.target.value)})}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="backup_location">Backup Location</Label>
+                  <Select value={backupSettings.backup_location} onValueChange={(value) => setBackupSettings({...backupSettings, backup_location: value})}>
+                    <SelectTrigger id="backup_location">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="local">Local Storage</SelectItem>
+                      <SelectItem value="cloud">Cloud Storage</SelectItem>
+                      <SelectItem value="external">External Drive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button onClick={handleSaveBackupSettings} disabled={isSaving} className="flex items-center gap-2">
+                    <Save className="h-4 w-4" />
+                    {isSaving ? 'Saving...' : 'Save Backup Settings'}
+                  </Button>
+                  
                   <Button 
                     onClick={handleBackupDatabase} 
                     disabled={isLoading}
-                    className="mt-2 flex items-center gap-2"
+                    variant="outline"
+                    className="flex items-center gap-2"
                   >
                     <Download className="h-4 w-4" />
-                    {isLoading ? 'Creating Backup...' : 'Create Backup'}
-                  </Button>
-                </div>
-                
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium mb-2">Restore Database</h4>
-                  <p className="text-sm text-muted-foreground">Restore from a previous backup.</p>
-                  <Button variant="outline" size="sm" className="mt-2 flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    Restore
-                  </Button>
-                </div>
-                
-                <div className="p-4 border rounded-lg">
-                  <h4 className="font-medium mb-2">Export Data</h4>
-                  <p className="text-sm text-muted-foreground">Export all data to CSV files.</p>
-                  <Button variant="outline" size="sm" className="mt-2 flex items-center gap-2">
-                    <Download className="h-4 w-4" />
-                    Export All Data
+                    {isLoading ? 'Creating Backup...' : 'Create Backup Now'}
                   </Button>
                 </div>
               </div>

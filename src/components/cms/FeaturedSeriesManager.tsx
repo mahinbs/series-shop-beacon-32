@@ -25,11 +25,17 @@ import {
   Calendar,
   User,
   Palette,
-  RefreshCw
+  RefreshCw,
+  FileText,
+  Download,
+  Upload as UploadIcon,
+  History,
+  RotateCcw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ComicService, type ComicSeries } from '@/services/comicService';
 import { FeaturedSeriesService, type FeaturedSeriesConfig, type FeaturedSeriesBadge } from '@/services/featuredSeriesService';
+import { FeaturedSeriesTemplateService, type FeaturedSeriesTemplate } from '@/services/featuredSeriesTemplateService';
 
 
 const BADGE_COLORS = [
@@ -78,8 +84,17 @@ export const FeaturedSeriesManager = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('config');
 
+  // Template Management State
+  const [templates, setTemplates] = useState<FeaturedSeriesTemplate[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
+  const [templateName, setTemplateName] = useState('');
+  const [templateDescription, setTemplateDescription] = useState('');
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false);
+  const [showApplyTemplateDialog, setShowApplyTemplateDialog] = useState(false);
+
   useEffect(() => {
     loadFeaturedSeriesData();
+    loadTemplates();
   }, []);
 
   const loadFeaturedSeriesData = async () => {
@@ -130,7 +145,8 @@ export const FeaturedSeriesManager = () => {
       if (editingConfigId) {
         // Update existing config
         console.log('🔄 Updating existing configuration...');
-        await FeaturedSeriesService.updateConfig(editingConfigId, configFormData);
+        const updatedConfig = await FeaturedSeriesService.updateConfig(editingConfigId, configFormData);
+        console.log('✅ Config updated successfully:', updatedConfig);
         toast({
           title: "Success",
           description: "Featured Series configuration updated successfully"
@@ -138,7 +154,8 @@ export const FeaturedSeriesManager = () => {
       } else {
         // Create new config
         console.log('➕ Creating new configuration...');
-        await FeaturedSeriesService.createConfig(configFormData);
+        const newConfig = await FeaturedSeriesService.createConfig(configFormData);
+        console.log('✅ Config created successfully:', newConfig);
         toast({
           title: "Success",
           description: "Featured Series configuration created successfully"
@@ -147,9 +164,10 @@ export const FeaturedSeriesManager = () => {
       
       resetConfigForm();
       console.log('🔄 Reloading configurations after save...');
-      setTimeout(async () => {
-        await loadFeaturedSeriesData(); // Reload data to get updated content
-      }, 100);
+      
+      // Force reload data immediately (don't clear cache as it would remove the data we just saved)
+      await loadFeaturedSeriesData();
+      console.log('✅ Configuration saved and data reloaded');
     } catch (error) {
       console.error('❌ Error saving configuration:', error);
       toast({
@@ -283,6 +301,138 @@ export const FeaturedSeriesManager = () => {
     setEditingBadgeId(null);
   };
 
+  // Template Management Functions
+  const loadTemplates = async () => {
+    try {
+      console.log('📋 Loading templates...');
+      const templateData = await FeaturedSeriesTemplateService.getTemplates();
+      setTemplates(templateData);
+      console.log(`✅ Loaded ${templateData.length} templates`);
+    } catch (error) {
+      console.error('❌ Error loading templates:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load templates",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveBeforeTemplate = async () => {
+    try {
+      console.log('💾 Saving current state as "Before Template"...');
+      await FeaturedSeriesTemplateService.saveBeforeTemplate(featuredConfigs, badges);
+      toast({
+        title: "Success",
+        description: "Current state saved as 'Before Template'"
+      });
+      await loadTemplates();
+    } catch (error) {
+      console.error('❌ Error saving before template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save before template",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleSaveTemplate = async () => {
+    try {
+      if (!templateName.trim()) {
+        toast({
+          title: "Error",
+          description: "Please enter a template name",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('💾 Saving template:', templateName);
+      await FeaturedSeriesTemplateService.saveTemplate({
+        name: templateName,
+        description: templateDescription,
+        template_type: 'combined',
+        config_data: { configs: featuredConfigs },
+        badge_data: { badges: badges },
+        is_default: false,
+        is_active: true,
+        created_by: 'admin'
+      });
+
+      toast({
+        title: "Success",
+        description: `Template "${templateName}" saved successfully`
+      });
+
+      setTemplateName('');
+      setTemplateDescription('');
+      setShowTemplateDialog(false);
+      await loadTemplates();
+    } catch (error) {
+      console.error('❌ Error saving template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save template",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleApplyTemplate = async () => {
+    try {
+      if (!selectedTemplate) {
+        toast({
+          title: "Error",
+          description: "Please select a template to apply",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      console.log('🔄 Applying template:', selectedTemplate);
+      const result = await FeaturedSeriesTemplateService.applyTemplate(selectedTemplate);
+      
+      // Update the current state with template data
+      setFeaturedConfigs(result.configs);
+      setBadges(result.badges);
+
+      toast({
+        title: "Success",
+        description: "Template applied successfully"
+      });
+
+      setSelectedTemplate('');
+      setShowApplyTemplateDialog(false);
+    } catch (error) {
+      console.error('❌ Error applying template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to apply template",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleDeleteTemplate = async (templateId: string, templateName: string) => {
+    try {
+      console.log('🗑️ Deleting template:', templateId);
+      await FeaturedSeriesTemplateService.deleteTemplate(templateId);
+      toast({
+        title: "Success",
+        description: `Template "${templateName}" deleted successfully`
+      });
+      await loadTemplates();
+    } catch (error) {
+      console.error('❌ Error deleting template:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete template",
+        variant: "destructive"
+      });
+    }
+  };
+
   // Series Management Handlers
   const toggleFeatured = async (seriesId: string, isFeatured: boolean) => {
     try {
@@ -355,6 +505,41 @@ export const FeaturedSeriesManager = () => {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          <Button 
+            onClick={async () => {
+              console.log('🗑️ Force clearing all caches...');
+              FeaturedSeriesService.clearCache();
+              FeaturedSeriesTemplateService.clearCache();
+              // Also clear any other related caches
+              localStorage.removeItem('comic_series');
+              await loadFeaturedSeriesData();
+              await loadTemplates();
+              toast({
+                title: "Success",
+                description: "All caches cleared and data refreshed"
+              });
+            }}
+            variant="outline" 
+            size="sm"
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Force Refresh
+          </Button>
+          <Button 
+            onClick={() => {
+              const isLocalOnly = FeaturedSeriesService.isLocalStorageOnlyMode();
+              FeaturedSeriesService.setLocalStorageOnlyMode(!isLocalOnly);
+              toast({
+                title: "Success",
+                description: `Local storage only mode: ${!isLocalOnly ? 'ENABLED' : 'DISABLED'}`
+              });
+            }}
+            variant="outline" 
+            size="sm"
+            className={FeaturedSeriesService.isLocalStorageOnlyMode() ? "bg-green-600 text-white" : ""}
+          >
+            {FeaturedSeriesService.isLocalStorageOnlyMode() ? "Local Only" : "Enable Local Only"}
+          </Button>
           <Button onClick={loadFeaturedSeriesData} variant="outline" size="sm">
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
@@ -385,7 +570,7 @@ export const FeaturedSeriesManager = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="config" className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
             Configuration
@@ -393,6 +578,10 @@ export const FeaturedSeriesManager = () => {
           <TabsTrigger value="badges" className="flex items-center gap-2">
             <Tag className="h-4 w-4" />
             Badges
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            Templates
           </TabsTrigger>
           <TabsTrigger value="series" className="flex items-center gap-2">
             <Star className="h-4 w-4" />
@@ -716,6 +905,98 @@ export const FeaturedSeriesManager = () => {
           </Card>
         </TabsContent>
 
+        {/* Templates Tab */}
+        <TabsContent value="templates" className="space-y-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle>Template Management</CardTitle>
+              <div className="flex gap-2">
+                <Button 
+                  onClick={handleSaveBeforeTemplate}
+                  variant="outline"
+                  className="flex items-center gap-2"
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  Save Before Template
+                </Button>
+                <Button 
+                  onClick={() => setShowTemplateDialog(true)}
+                  className="flex items-center gap-2"
+                >
+                  <Save className="h-4 w-4" />
+                  Save Current as Template
+                </Button>
+                <Button 
+                  onClick={() => setShowApplyTemplateDialog(true)}
+                  variant="secondary"
+                  className="flex items-center gap-2"
+                >
+                  <Download className="h-4 w-4" />
+                  Apply Template
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid gap-4">
+                  {templates.map((template) => (
+                    <Card key={template.id} className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h3 className="font-semibold">{template.name}</h3>
+                            {template.is_default && (
+                              <Badge variant="secondary">Default</Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {template.description}
+                          </p>
+                          <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                            <span>Type: {template.template_type}</span>
+                            <span>Configs: {template.config_data?.configs?.length || 0}</span>
+                            <span>Badges: {template.badge_data?.badges?.length || 0}</span>
+                            <span>Created: {new Date(template.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setSelectedTemplate(template.id);
+                              setShowApplyTemplateDialog(true);
+                            }}
+                          >
+                            <Download className="h-4 w-4" />
+                            Apply
+                          </Button>
+                          {!template.is_default && (
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => handleDeleteTemplate(template.id, template.name)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                  {templates.length === 0 && (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No templates found</p>
+                      <p className="text-sm">Create your first template to get started</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Series Management Tab */}
         <TabsContent value="series" className="space-y-6">
           <Card>
@@ -818,6 +1099,111 @@ export const FeaturedSeriesManager = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Save Template Dialog */}
+      {showTemplateDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>Save Template</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="template-name">Template Name</Label>
+                <Input
+                  id="template-name"
+                  value={templateName}
+                  onChange={(e) => setTemplateName(e.target.value)}
+                  placeholder="Enter template name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="template-description">Description (Optional)</Label>
+                <Textarea
+                  id="template-description"
+                  value={templateDescription}
+                  onChange={(e) => setTemplateDescription(e.target.value)}
+                  placeholder="Enter template description"
+                  rows={3}
+                />
+              </div>
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowTemplateDialog(false);
+                    setTemplateName('');
+                    setTemplateDescription('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleSaveTemplate}>
+                  Save Template
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Apply Template Dialog */}
+      {showApplyTemplateDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4">
+            <CardHeader>
+              <CardTitle>Apply Template</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label htmlFor="template-select">Select Template</Label>
+                <Select value={selectedTemplate} onValueChange={setSelectedTemplate}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Choose a template to apply" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {templates.map((template) => (
+                      <SelectItem key={template.id} value={template.id}>
+                        <div className="flex items-center gap-2">
+                          <span>{template.name}</span>
+                          {template.is_default && (
+                            <Badge variant="secondary" className="text-xs">Default</Badge>
+                          )}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {selectedTemplate && (
+                <div className="p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    This will replace your current configurations and badges with the template data.
+                    Make sure to save your current state as a template first if you want to keep it.
+                  </p>
+                </div>
+              )}
+              <div className="flex gap-2 justify-end">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowApplyTemplateDialog(false);
+                    setSelectedTemplate('');
+                  }}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleApplyTemplate}
+                  disabled={!selectedTemplate}
+                >
+                  Apply Template
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 };
