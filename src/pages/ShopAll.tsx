@@ -6,6 +6,7 @@ import ShopGrid from '@/components/ShopGrid';
 import ShopFilters from '@/components/ShopFilters';
 // import FeaturedSeriesSlideshow from '@/components/FeaturedSeriesSlideshow';
 import SeriesGrid from '@/components/SeriesGrid';
+import CharactersSection from '@/components/CharactersSection';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useState, useEffect } from 'react';
 import shopHeroBg from '@/assets/shop-hero-bg.jpg';
@@ -184,6 +185,9 @@ const ShopAll = () => {
           />
         )}
       </div>
+
+      {/* Characters Section */}
+      <CharactersSection />
 
       <Newsletter />
       <Footer />
