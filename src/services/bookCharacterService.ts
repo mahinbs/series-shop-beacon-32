@@ -37,7 +37,7 @@ export class BookCharacterService {
   }
 
   // Create a new character for a book
-  static async createBookCharacter(characterData: Omit<BookCharacter, 'id' | 'created_at' | 'updated_at'>): Promise<BookCharacter | null> {
+  static async createBookCharacter(characterData: Omit<BookCharacter, 'id' | 'created_at' | 'updated_at'>): Promise<BookCharacter> {
     try {
       const { data, error } = await (supabase as any)
         .from('book_characters')
@@ -47,18 +47,21 @@ export class BookCharacterService {
 
       if (error) {
         console.error('Error creating book character:', error);
-        return null;
+        throw new Error(`Failed to create character: ${error.message}`);
       }
 
       return data as BookCharacter;
     } catch (error) {
       console.error('Error in createBookCharacter:', error);
-      return null;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to create character');
     }
   }
 
   // Update a character
-  static async updateBookCharacter(id: string, characterData: Partial<BookCharacter>): Promise<BookCharacter | null> {
+  static async updateBookCharacter(id: string, characterData: Partial<BookCharacter>): Promise<BookCharacter> {
     try {
       const { data, error } = await (supabase as any)
         .from('book_characters')
@@ -69,13 +72,16 @@ export class BookCharacterService {
 
       if (error) {
         console.error('Error updating book character:', error);
-        return null;
+        throw new Error(`Failed to update character: ${error.message}`);
       }
 
       return data as BookCharacter;
     } catch (error) {
       console.error('Error in updateBookCharacter:', error);
-      return null;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to update character');
     }
   }
 
@@ -89,13 +95,16 @@ export class BookCharacterService {
 
       if (error) {
         console.error('Error deleting book character:', error);
-        return false;
+        throw new Error(`Failed to delete character: ${error.message}`);
       }
 
       return true;
     } catch (error) {
       console.error('Error in deleteBookCharacter:', error);
-      return false;
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to delete character');
     }
   }
 

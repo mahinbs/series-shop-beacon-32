@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { useBooks } from '@/hooks/useBooks';
 import { BookCharacterService, BookCharacter } from '@/services/bookCharacterService';
 import { testDatabaseConnection } from '@/services/database';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,6 +50,7 @@ export const BooksManager = () => {
   const [submitting, setSubmitting] = useState(false);
   const [testing, setTesting] = useState(false);
   const [characters, setCharacters] = useState<BookCharacter[]>([]);
+  const [originalCharacters, setOriginalCharacters] = useState<BookCharacter[]>([]);
   const [showCharacterForm, setShowCharacterForm] = useState(false);
   const [characterForm, setCharacterForm] = useState<CharacterForm>({
     name: '',
@@ -96,6 +98,7 @@ export const BooksManager = () => {
     setEditingId(null);
     setShowAddForm(false);
     setCharacters([]);
+    setOriginalCharacters([]);
     setShowCharacterForm(false);
     setCharacterForm({
       name: '',
@@ -133,6 +136,75 @@ export const BooksManager = () => {
     }
   };
 
+  const saveCharactersForBook = async (bookId: string) => {
+    try {
+      // Check authentication
+      const { data: { session } } = await (supabase as any).auth.getSession();
+      if (!session) {
+        toast({
+          title: "Authentication Required",
+          description: "Please sign in to save characters",
+          variant: "destructive",
+        });
+        return false;
+      }
+
+      // Get current characters from database
+      const currentDbCharacters = await BookCharacterService.getBookCharacters(bookId);
+      
+      // Find characters to create (temp IDs)
+      const charactersToCreate = characters.filter(c => c.id.startsWith('temp_'));
+      
+      // Find characters to update (existing IDs that changed)
+      const charactersToUpdate = characters.filter(c => 
+        !c.id.startsWith('temp_') && 
+        originalCharacters.some(orig => orig.id === c.id && JSON.stringify(orig) !== JSON.stringify(c))
+      );
+      
+      // Find characters to delete (in original but not in current)
+      const charactersToDelete = originalCharacters.filter(orig => 
+        !characters.some(c => c.id === orig.id)
+      );
+
+      // Create new characters
+      for (const character of charactersToCreate) {
+        const { id, created_at, updated_at, ...characterData } = character;
+        await BookCharacterService.createBookCharacter({
+          ...characterData,
+          book_id: bookId,
+        });
+      }
+
+      // Update existing characters
+      for (const character of charactersToUpdate) {
+        const { created_at, updated_at, ...characterData } = character;
+        await BookCharacterService.updateBookCharacter(character.id, characterData);
+      }
+
+      // Delete removed characters
+      for (const character of charactersToDelete) {
+        await BookCharacterService.deleteBookCharacter(character.id);
+      }
+
+      if (charactersToCreate.length > 0 || charactersToUpdate.length > 0 || charactersToDelete.length > 0) {
+        toast({
+          title: "Success",
+          description: "Characters saved successfully",
+        });
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error saving characters:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save characters",
+        variant: "destructive",
+      });
+      return false;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
@@ -153,9 +225,18 @@ export const BooksManager = () => {
         throw new Error('Image URL is required');
       }
 
+      let bookId = editingId;
+      
       if (editingId) {
         console.log('Updating book with ID:', editingId);
         await updateBook(editingId, formData);
+        
+        // Save characters for existing book
+        const charactersSaved = await saveCharactersForBook(editingId);
+        if (!charactersSaved) {
+          return; // Don't reset form if characters failed to save
+        }
+        
         toast({
           title: "Success",
           description: "Book updated successfully",
@@ -175,16 +256,21 @@ export const BooksManager = () => {
           weight: null,
           tags: [],
         });
+        
+        bookId = createdBook.id;
+        
+        // Save characters for new book
+        if (characters.length > 0) {
+          const charactersSaved = await saveCharactersForBook(bookId); 
+          if (!charactersSaved) {
+            return; // Don't reset form if characters failed to save
+          }
+        }
+        
         toast({
           title: "Success",
           description: "Book created successfully",
         });
-        
-        // Create characters for the new book if any exist
-        if (characters.length > 0) {
-          // Note: createBook would need to return the created book for character linking
-          console.log('Characters will be created after book creation is complete');
-        }
       }
       resetForm();
       await loadBooks();
@@ -231,6 +317,7 @@ export const BooksManager = () => {
     // Load existing characters for this book
     const bookCharacters = await BookCharacterService.getBookCharacters(book.id);
     setCharacters(bookCharacters);
+    setOriginalCharacters([...bookCharacters]); // Deep copy for comparison
     
     setShowAddForm(true);
   };
@@ -288,7 +375,7 @@ export const BooksManager = () => {
     }
   };
 
-  const handleAddCharacter = () => {
+  const handleAddCharacter = async () => {
     if (!characterForm.name.trim()) {
       toast({
         title: "Error",
@@ -299,7 +386,7 @@ export const BooksManager = () => {
     }
 
     const newCharacter: BookCharacter = {
-      id: Date.now().toString(), // Temporary ID
+      id: `temp_${Date.now()}`, // Temporary ID with temp_ prefix
       book_id: editingId || '',
       name: characterForm.name,
       description: characterForm.description,
@@ -311,7 +398,50 @@ export const BooksManager = () => {
       updated_at: new Date().toISOString(),
     };
 
-    setCharacters([...characters, newCharacter]);
+    // If editing an existing book, save immediately
+    if (editingId) {
+      try {
+        const { data: { session } } = await (supabase as any).auth.getSession();
+        if (!session) {
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to save characters",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const { id, created_at, updated_at, ...characterData } = newCharacter;
+        const savedCharacter = await BookCharacterService.createBookCharacter({
+          ...characterData,
+          book_id: editingId,
+        });
+
+        if (savedCharacter) {
+          setCharacters([...characters, savedCharacter]);
+          toast({
+            title: "Success",
+            description: "Character added and saved",
+          });
+        }
+      } catch (error) {
+        console.error('Error saving character:', error);
+        toast({
+          title: "Error",
+          description: "Failed to save character",
+          variant: "destructive",
+        });
+        return;
+      }
+    } else {
+      // For new books, just add to local state
+      setCharacters([...characters, newCharacter]);
+      toast({
+        title: "Success",
+        description: "Character added to book",
+      });
+    }
+
     setCharacterForm({
       name: '',
       description: '',
@@ -320,17 +450,40 @@ export const BooksManager = () => {
       display_order: characters.length,
     });
     setShowCharacterForm(false);
-
-    toast({
-      title: "Success",
-      description: "Character added to book",
-    });
   };
 
   const handleRemoveCharacter = async (characterId: string) => {
     // If it's an existing character (has a real ID), delete from database
-    if (!characterId.startsWith('temp_')) {
-      await BookCharacterService.deleteBookCharacter(characterId);
+    if (!characterId.startsWith('temp_') && editingId) {
+      try {
+        const { data: { session } } = await (supabase as any).auth.getSession();
+        if (!session) {
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to delete characters",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        const success = await BookCharacterService.deleteBookCharacter(characterId);
+        if (!success) {
+          toast({
+            title: "Error",
+            description: "Failed to delete character",
+            variant: "destructive",
+          });
+          return;
+        }
+      } catch (error) {
+        console.error('Error deleting character:', error);
+        toast({
+          title: "Error",
+          description: "Failed to delete character",
+          variant: "destructive",
+        });
+        return;
+      }
     }
     
     setCharacters(characters.filter(c => c.id !== characterId));
