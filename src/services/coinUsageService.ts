@@ -146,7 +146,7 @@ export class CoinUsageService {
       }
 
       // For Supabase users, check database
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('unlocked_content')
         .select('*')
         .eq('user_id', userId)
@@ -183,7 +183,7 @@ export class CoinUsageService {
       }
 
       // For Supabase users, store in database
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('unlocked_content')
         .insert([{
           user_id: userId,
@@ -214,7 +214,7 @@ export class CoinUsageService {
       }
 
       // For Supabase users
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('unlocked_content')
         .select('*')
         .eq('user_id', userId)

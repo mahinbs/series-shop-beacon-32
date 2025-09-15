@@ -42,13 +42,19 @@ export const OrderManagement = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [stats, setStats] = useState<OrderStats>({
+  const [stats, setStats] = useState({
     total_orders: 0,
     pending_orders: 0,
     completed_orders: 0,
     total_revenue: 0,
     average_order_value: 0,
-    orders_today: 0
+    orders_today: 0,
+    total_users: 0,
+    active_users: 0,
+    admin_users: 0,
+    new_users_today: 0,
+    total_products: 0,
+    active_products: 0
   });
 
   // Load real data from database
@@ -66,7 +72,7 @@ export const OrderManagement = () => {
       ]);
       
       setOrders(ordersData);
-      setStats(statsData);
+      setStats({...statsData, total_products: 0, active_products: 0});
       
       if (isRefresh) {
         toast({
@@ -114,7 +120,7 @@ export const OrderManagement = () => {
       
       // Refresh stats to reflect changes
       const updatedStats = await AdminService.getStats();
-      setStats(updatedStats);
+      setStats({...updatedStats, total_products: 0, active_products: 0});
       
       toast({
         title: "Success",

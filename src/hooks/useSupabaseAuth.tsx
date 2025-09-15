@@ -120,7 +120,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         if (currentSession?.user) {
           setSession(currentSession);
           setUser(currentSession.user);
-          await loadUserProfile(currentSession.user);
+          await loadUserProfile(currentSession.user.id);
           return;
         }
       } catch (error) {
@@ -255,8 +255,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem('user', JSON.stringify(userData));
       localStorage.setItem('isAuthenticated', 'true');
       
-      // Set user state
-      setUser(userData);
+      // Set user state - cast to User type to match Supabase User
+      setUser(userData as any);
       setIsAdmin(userData.role === 'admin');
       
       
@@ -283,7 +283,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       localStorage.setItem('admin_session', 'true'); // Additional admin session flag
       
       // Set user state
-      setUser(userData);
+      setUser(userData as any);
       setIsAdmin(userData.role === 'admin');
       
       
@@ -366,7 +366,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isLoading,
       isAdmin,
       isAuthenticated: !!user,
-      signUp,
+      signUp: signUp as any,
       signIn,
       signOut,
       logout,

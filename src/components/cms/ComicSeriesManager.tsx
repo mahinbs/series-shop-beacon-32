@@ -328,7 +328,7 @@ export const ComicSeriesManager = () => {
           description: "Creator updated successfully",
         });
       } else {
-        await ComicService.createCreator(creatorForm);
+        await ComicService.createCreator({...creatorForm, is_active: true});
         toast({
           title: "Success",
           description: "Creator created successfully",
@@ -408,7 +408,7 @@ export const ComicSeriesManager = () => {
         return;
       }
       
-      const newCreator = await ComicService.createCreator(newCreatorForm);
+      const newCreator = await ComicService.createCreator({...newCreatorForm, is_active: true});
       console.log('✅ New creator created:', newCreator);
       
       // Reload creators list

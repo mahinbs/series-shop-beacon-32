@@ -17,7 +17,7 @@ export class CoinService {
   // Get user's coin balance
   static async getUserCoins(userId: string): Promise<UserCoins | null> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_coins')
         .select('*')
         .eq('user_id', userId)
@@ -32,7 +32,7 @@ export class CoinService {
         return null;
       }
 
-      return data;
+      return data as UserCoins;
     } catch (error) {
       console.error('Error in getUserCoins:', error);
       return null;
@@ -50,7 +50,7 @@ export class CoinService {
         last_updated: new Date().toISOString()
       };
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_coins')
         .insert([initialCoins])
         .select()
@@ -83,7 +83,7 @@ export class CoinService {
       }
 
       // Update balance
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('user_coins')
         .update({
           balance: (currentCoins?.balance || 0) + amount,
@@ -108,7 +108,7 @@ export class CoinService {
         timestamp: new Date().toISOString()
       };
 
-      const { error: transactionError } = await supabase
+      const { error: transactionError } = await (supabase as any)
         .from('coin_transactions')
         .insert([transaction]);
 
@@ -133,7 +133,7 @@ export class CoinService {
       }
 
       // Update balance
-      const { error: updateError } = await supabase
+      const { error: updateError } = await (supabase as any)
         .from('user_coins')
         .update({
           balance: currentCoins.balance - amount,
@@ -158,7 +158,7 @@ export class CoinService {
         timestamp: new Date().toISOString()
       };
 
-      const { error: transactionError } = await supabase
+      const { error: transactionError } = await (supabase as any)
         .from('coin_transactions')
         .insert([transaction]);
 
@@ -177,7 +177,7 @@ export class CoinService {
   // Get user's transaction history
   static async getTransactionHistory(userId: string, limit: number = 20): Promise<CoinTransaction[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('coin_transactions')
         .select('*')
         .eq('user_id', userId)
@@ -194,7 +194,7 @@ export class CoinService {
         return [];
       }
 
-      return data || [];
+      return (data as CoinTransaction[]) || [];
     } catch (error) {
       console.error('Error in getTransactionHistory:', error);
       return [];
@@ -204,7 +204,7 @@ export class CoinService {
   // Get all transactions (for admin view)
   static async getAllTransactions(limit: number = 50): Promise<CoinTransaction[]> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('coin_transactions')
         .select('*')
         .order('timestamp', { ascending: false })
@@ -219,14 +219,14 @@ export class CoinService {
         return [];
       }
 
-      const result = data?.map(transaction => ({
+      const result = (data as any)?.map((transaction: any) => ({
         ...transaction,
         user_name: `User ${transaction.user_id.slice(0, 8)}`, // Use partial UUID as name
         user_email: `${transaction.user_id.slice(0, 8)}@example.com` // Generate email from UUID
       })) || [];
 
       console.log('✅ Successfully loaded transactions from Supabase:', result.length, 'transactions');
-      return result;
+      return result as CoinTransaction[];
     } catch (error) {
       console.error('Error in getAllTransactions:', error);
       return [];
@@ -236,7 +236,7 @@ export class CoinService {
   // Record a coin purchase
   static async recordPurchase(purchase: Partial<CoinPurchase>): Promise<boolean> {
     try {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('coin_purchases')
         .insert([purchase]);
 
@@ -261,7 +261,7 @@ export class CoinService {
         return this.coinPackagesCache;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('coin_packages')
         .select('*')
         .order('price', { ascending: true });
@@ -297,7 +297,7 @@ export class CoinService {
     total_spent: number;
   }>> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_coins')
         .select(`
           user_id,

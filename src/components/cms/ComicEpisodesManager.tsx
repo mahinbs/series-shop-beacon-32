@@ -215,7 +215,7 @@ export const ComicEpisodesManager = () => {
         return;
       }
       
-      const newPage = await ComicService.createPage(pageForm);
+      const newPage = await ComicService.createPage({...pageForm, is_active: true});
       console.log('✅ Page created:', newPage);
       toast({
         title: "Success",

@@ -524,7 +524,7 @@ export const DatabaseSetupHelper = () => {
       
       for (const table of REQUIRED_TABLES) {
         try {
-          const { error } = await supabase
+          const { error } = await (supabase as any)
             .from(table)
             .select('count')
             .limit(1);

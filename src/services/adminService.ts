@@ -163,7 +163,7 @@ export class AdminService {
           
           // Store the mock order
           localStorage.setItem('admin_orders', JSON.stringify([mockOrder]));
-          return [mockOrder];
+          return [mockOrder as any];
         }
       }
 
