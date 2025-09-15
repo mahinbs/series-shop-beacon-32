@@ -127,6 +127,7 @@ export type Database = {
           can_unlock_with_coins: boolean
           category: string
           coins: string | null
+          cover_page_url: string | null
           created_at: string
           description: string | null
           dimensions: string | null
@@ -155,6 +156,7 @@ export type Database = {
           can_unlock_with_coins?: boolean
           category: string
           coins?: string | null
+          cover_page_url?: string | null
           created_at?: string
           description?: string | null
           dimensions?: string | null
@@ -183,6 +185,7 @@ export type Database = {
           can_unlock_with_coins?: boolean
           category?: string
           coins?: string | null
+          cover_page_url?: string | null
           created_at?: string
           description?: string | null
           dimensions?: string | null

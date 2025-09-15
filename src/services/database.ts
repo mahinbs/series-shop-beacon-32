@@ -135,6 +135,7 @@ export const booksService = {
         price: book.price,
         original_price: book.original_price,
         coins: book.coins,
+        cover_page_url: book.cover_page_url,
         image_url: book.image_url,
         hover_image_url: book.hover_image_url,
         description: book.description,

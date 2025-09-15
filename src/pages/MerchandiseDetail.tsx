@@ -244,6 +244,23 @@ const MerchandiseDetail = () => {
           Back to Shop
         </Button>
 
+        {product && product.cover_page_url && (
+          <div className="relative mb-8 h-64 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg overflow-hidden">
+            <img
+              src={product.cover_page_url}
+              alt={`${product.title} cover`}
+              className="w-full h-full object-cover opacity-80"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-transparent to-transparent" />
+            <div className="absolute bottom-6 left-6 text-white">
+              <h1 className="text-2xl font-bold mb-2">{product.title}</h1>
+              {product.author && (
+                <p className="text-lg text-gray-200">by {product.author}</p>
+              )}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Product Images */}
           <div className="space-y-4">

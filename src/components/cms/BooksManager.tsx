@@ -22,6 +22,7 @@ interface BookForm {
   coins?: string;
   image_url: string;
   hover_image_url: string;
+  cover_page_url: string;
   video_url?: string;
   can_unlock_with_coins: boolean;
   section_type: 'new-releases' | 'best-sellers' | 'leaving-soon' | 'featured' | 'trending';
@@ -45,6 +46,7 @@ export const BooksManager = () => {
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hoverFileInputRef = useRef<HTMLInputElement>(null);
+  const coverPageFileInputRef = useRef<HTMLInputElement>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -69,6 +71,7 @@ export const BooksManager = () => {
     coins: '',
     image_url: '',
     hover_image_url: '',
+    cover_page_url: '',
     video_url: '',
     can_unlock_with_coins: false,
     section_type: 'new-releases',
@@ -89,6 +92,7 @@ export const BooksManager = () => {
       coins: '',
       image_url: '',
       hover_image_url: '',
+      cover_page_url: '',
       video_url: '',
       can_unlock_with_coins: false,
       section_type: 'new-releases',
@@ -308,6 +312,7 @@ export const BooksManager = () => {
       coins: book.coins || '',
       image_url: book.image_url || '',
       hover_image_url: book.hover_image_url || '',
+      cover_page_url: book.cover_page_url || '',
       video_url: book.video_url || '',
       can_unlock_with_coins: book.can_unlock_with_coins || false,
       section_type: book.section_type || 'new-releases',
@@ -355,12 +360,14 @@ export const BooksManager = () => {
     }
   };
 
-  const handleImageUpload = async (file: File, isHoverImage = false) => {
+  const handleImageUpload = async (file: File, imageType: 'main' | 'hover' | 'cover' = 'main') => {
     setUploading(true);
     try {
       const tempUrl = URL.createObjectURL(file);
-      if (isHoverImage) {
+      if (imageType === 'hover') {
         setFormData(prev => ({ ...prev, hover_image_url: tempUrl }));
+      } else if (imageType === 'cover') {
+        setFormData(prev => ({ ...prev, cover_page_url: tempUrl }));
       } else {
         setFormData(prev => ({ ...prev, image_url: tempUrl }));
       }
@@ -727,6 +734,20 @@ export const BooksManager = () => {
                     disabled={submitting}
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="cover_page_url">Cover Page URL</Label>
+                <Input
+                  id="cover_page_url"
+                  value={formData.cover_page_url}
+                  onChange={(e) => setFormData({ ...formData, cover_page_url: e.target.value })}
+                  placeholder="LinkedIn-style cover image for book detail page"
+                  disabled={submitting}
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Optional: Add a cover image that will display at the top of the book detail page (LinkedIn-style)
+                </p>
               </div>
 
               <div>
