@@ -2,7 +2,7 @@ import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Sparkles, Star, Heart, Zap, Shield, Sword } from 'lucide-react';
+import { Sparkles, Star, Heart, Shield, Sword } from 'lucide-react';
 
 interface Character {
   id: string;
@@ -174,13 +174,6 @@ const CharactersSection = () => {
                       <h3 className="text-white font-bold text-sm md:text-base mb-2 group-hover:text-red-400 transition-colors duration-500 tracking-wide">
                         {character.name}
                       </h3>
-                      {character.abilities && (
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                          <p className="text-xs text-gray-400 truncate">
-                            {character.abilities[0]}
-                          </p>
-                        </div>
-                      )}
                     </div>
 
                     {/* Enhanced glow effects with multiple layers */}
@@ -278,22 +271,6 @@ const CharactersSection = () => {
                           </div>
                         )}
 
-                        {/* Abilities preview */}
-                        {character.abilities && character.abilities.length > 0 && (
-                          <div className="mb-4">
-                            <h5 className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-2">
-                              <Zap className="h-3 w-3" />
-                              Abilities
-                            </h5>
-                            <div className="flex flex-wrap gap-1">
-                              {character.abilities.slice(0, 4).map((ability, i) => (
-                                <Badge key={i} variant="secondary" className="text-xs bg-red-500/15 text-red-300 border-red-500/30">
-                                  {ability}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                        )}
 
                         {/* Interactive buttons */}
                         <div className="flex gap-2 pt-3 border-t border-red-500/10">

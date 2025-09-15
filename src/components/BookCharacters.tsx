@@ -5,7 +5,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { User, Users, Sparkles, Star, Heart, Sword, Shield, Zap } from 'lucide-react';
+import { User, Users, Sparkles, Star, Heart, Sword, Shield } from 'lucide-react';
 
 interface BookCharactersProps {
   bookId: string;
@@ -231,22 +231,6 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                             </div>
                           )}
 
-                          {/* Abilities */}
-                          {character.abilities && character.abilities.length > 0 && (
-                            <div className="mb-4">
-                              <h5 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
-                                <Zap className="h-3 w-3" />
-                                Abilities
-                              </h5>
-                              <div className="flex flex-wrap gap-2">
-                                {character.abilities.slice(0, 4).map((ability, i) => (
-                                  <Badge key={i} variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
-                                    {ability}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          )}
                           
                           {/* Interactive buttons */}
                           <div className="flex gap-2 pt-3 border-t border-primary/10">
