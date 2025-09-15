@@ -132,14 +132,26 @@ export const CoinsManagement = () => {
       // Set real data if available
       if (realPackages.length > 0) {
         console.log('✅ Setting real packages:', realPackages);
-        setPackages(realPackages);
+        setPackages(realPackages.map(pkg => ({
+          ...pkg,
+          bonus: pkg.bonus || 0,
+          popular: pkg.popular || false,
+          bestValue: pkg.bestValue || false,
+          best_value: pkg.bestValue || false,
+          active: true,
+          created_at: new Date().toISOString()
+        })));
       } else {
         console.log('⚠️ No real packages found, will use mock data');
       }
       
       if (realTransactions.length > 0) {
         console.log('✅ Setting real transactions:', realTransactions);
-        setTransactions(realTransactions);
+        setTransactions(realTransactions.map(tx => ({
+          ...tx,
+          user_email: `user@example.com`,
+          user_name: `User ${tx.user_id.slice(0, 8)}`
+        })));
       } else {
         console.log('⚠️ No real transactions found, will use mock data');
       }

@@ -19,6 +19,7 @@ export const useCoins = () => {
     // For local storage auth users, skip Supabase loading
     if (user.id.startsWith('local-')) {
       setUserCoins({
+        id: 'local-' + user.id,
         user_id: user.id,
         balance: 1000, // Default balance for local users
         total_earned: 1000,

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Diamond, ShoppingCart, Plus, Minus, ArrowLeft, Truck, Shield, RotateCcw } from 'lucide-react';
 import { useCart } from '@/hooks/useCart';
+import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/hooks/use-toast';
 
 const PreOrder = () => {
@@ -15,8 +16,8 @@ const PreOrder = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedVolume, setSelectedVolume] = useState(1);
-  const [wishlist, setWishlist] = useState<string[]>([]);
   const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { toast } = useToast();
   
   // Get volume from URL query parameter
@@ -440,7 +441,7 @@ const PreOrder = () => {
                               onClick={() => handleAddToWishlist(`${product.id}-vol-${volume}`)}
                               className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold transition-colors duration-200"
                             >
-                              {wishlist.includes(`${product.id}-vol-${volume}`) ? '❤️' : '♡'}
+                              ♡
                             </button>
                           </div>
                         </div>

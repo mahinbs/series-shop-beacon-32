@@ -28,7 +28,11 @@ const RecommendedSection = (props: any) => {
 
         if (error) {
           console.error("Error fetching books:", error);
-          toast.error("Failed to load recommended books.");
+          toast({
+            title: "Error",
+            description: "Failed to load recommended books.",
+            variant: "destructive",
+          });
         }
 
         if (data) {
@@ -45,7 +49,11 @@ const RecommendedSection = (props: any) => {
   const handleAddToCart = async (book: BookType) => {
     try {
       if (!book?.id) {
-        toast.error("This book does not have a valid ID.");
+        toast({
+          title: "Error",
+          description: "This book does not have a valid ID.",
+          variant: "destructive",
+        });
         return;
       }
 
@@ -64,10 +72,17 @@ const RecommendedSection = (props: any) => {
         coins: (book as any).coins || undefined,
         canUnlockWithCoins: book.can_unlock_with_coins || undefined,
       });
-      toast.success(`${book.title} added to cart!`);
+      toast({
+        title: "Added to Cart!",
+        description: `${book.title} added to cart!`,
+      });
     } catch (error) {
       console.error("Error adding to cart:", error);
-      toast.error("Failed to add to cart. Please try again.");
+      toast({
+        title: "Error",
+        description: "Failed to add to cart. Please try again.",
+        variant: "destructive",
+      });
     }
   };
 

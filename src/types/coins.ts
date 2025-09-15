@@ -10,16 +10,16 @@ export interface CoinPackage {
 
 export interface UserCoins {
   id: string;
-  userId: string;
+  user_id: string;
   balance: number;
-  totalEarned: number;
-  totalSpent: number;
-  lastUpdated: string;
+  total_earned: number;
+  total_spent: number;
+  last_updated: string;
 }
 
 export interface CoinTransaction {
   id: string;
-  userId: string;
+  user_id: string;
   type: 'purchase' | 'spend' | 'earn' | 'refund';
   amount: number;
   balance: number;
@@ -30,13 +30,13 @@ export interface CoinTransaction {
 
 export interface CoinPurchase {
   id: string;
-  userId: string;
-  packageId: string;
+  user_id: string;
+  package_id: string;
   coins: number;
   price: number;
   status: 'pending' | 'completed' | 'failed';
-  paymentMethod: string;
-  transactionId?: string;
+  payment_method: string;
+  transaction_id?: string;
   timestamp: string;
 }
 

@@ -110,9 +110,16 @@ const AnnouncementsManager = () => {
     if (confirm('Are you sure you want to delete this announcement?')) {
       try {
         await deleteAnnouncement(id);
-        toast.success('Announcement deleted successfully');
+        toast({
+          title: "Success",
+          description: 'Announcement deleted successfully',
+        });
       } catch (error) {
-        toast.error('Failed to delete announcement');
+        toast({
+          title: "Error",
+          description: 'Failed to delete announcement',
+          variant: "destructive",
+        });
       }
     }
   };

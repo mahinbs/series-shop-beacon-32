@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -122,7 +122,7 @@ const Coins = () => {
       case 'spend':
         return <TrendingUp className="w-4 h-4 text-red-500" />;
       default:
-        return <Coins className="w-4 h-4 text-gray-500" />;
+        return <CoinsIcon className="w-4 h-4 text-gray-500" />;
     }
   };
 

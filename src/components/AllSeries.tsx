@@ -9,18 +9,18 @@ const AllSeries = () => {
     navigate(`/digital-reader/${encodeURIComponent(seriesSlug)}`);
   };
   const allSeries = [
-    { title: "Chainsaw Man", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "My Hero Academia", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "Attack on Titan", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "Spy x Family", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "Tokyo Revengers", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "Black Clover", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "Bleach", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "Naruto", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "Dragon Ball Super", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "One Punch Man", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "Haikyuu!", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" },
-    { title: "Demon Slayer", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png" }
+    { title: "Chainsaw Man", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "A dark supernatural thriller about devils and chainsaw powers", genre: "Action", episodes: 24 },
+    { title: "My Hero Academia", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Superheroes in training at an elite academy", genre: "Superhero", episodes: 156 },
+    { title: "Attack on Titan", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Humanity's fight against giant humanoid Titans", genre: "Drama", episodes: 87 },
+    { title: "Spy x Family", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "A spy, assassin, and telepath form a fake family", genre: "Comedy", episodes: 25 },
+    { title: "Tokyo Revengers", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Time travel gang warfare and redemption", genre: "Drama", episodes: 50 },
+    { title: "Black Clover", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Magic knights in a world of spells and adventure", genre: "Fantasy", episodes: 170 },
+    { title: "Bleach", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Soul Reapers and spiritual warfare", genre: "Supernatural", episodes: 366 },
+    { title: "Naruto", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Young ninja's journey to become Hokage", genre: "Action", episodes: 720 },
+    { title: "Dragon Ball Super", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Goku's adventures across multiple universes", genre: "Action", episodes: 131 },
+    { title: "One Punch Man", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Superhero who defeats enemies with one punch", genre: "Comedy", episodes: 24 },
+    { title: "Haikyuu!", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "High school volleyball team's journey to nationals", genre: "Sports", episodes: 85 },
+    { title: "Demon Slayer", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Tanjiro's quest to save his demon sister", genre: "Supernatural", episodes: 44 }
   ];
 
   return (
