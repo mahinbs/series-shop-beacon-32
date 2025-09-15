@@ -195,7 +195,7 @@ const MerchandiseDetail = () => {
     return (
       <div className="min-h-screen bg-gray-900">
         <Header />
-        <div className="container mx-auto px-4 py-8">
+    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <Loader2 className="w-8 h-8 animate-spin text-red-600 mx-auto mb-4" />

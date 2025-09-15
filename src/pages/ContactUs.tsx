@@ -13,7 +13,7 @@ const ContactUs = () => {
   const { elementRef: faqRef, isVisible: faqVisible } = useScrollAnimation(0.2);
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-gray-900 w-full">
       <Header />
       <ContactHero />
       <div 
