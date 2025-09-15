@@ -10,6 +10,7 @@ import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
 import { booksService } from '@/services/database';
 import { ComicService } from '@/services/comicService';
+import { BookCharacters } from '@/components/BookCharacters';
 
 const MerchandiseDetail = () => {
   const { productId } = useParams();
@@ -405,6 +406,13 @@ const MerchandiseDetail = () => {
             </Card>
           </div>
         </div>
+
+        {/* Characters Section */}
+        {product && product.id && (
+          <div className="mt-12">
+            <BookCharacters bookId={product.id} />
+          </div>
+        )}
       </div>
 
       <Footer />

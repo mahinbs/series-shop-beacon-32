@@ -1,10 +1,11 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Heart, ShoppingCart, Download, BookOpen } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { BookCharacters } from '@/components/BookCharacters';
 
 interface Chapter {
   id: number;
@@ -212,6 +213,11 @@ export function ProductDetails({ product }: ProductDetailsProps) {
             </TabsContent>
           </Tabs>
         </div>
+      </div>
+
+      {/* Characters Section */}
+      <div className="mt-12">
+        <BookCharacters bookId={product.id} />
       </div>
     </div>
   );

@@ -213,7 +213,7 @@ export class ComicService {
         .order('name');
 
       if (error) throw error;
-      return data || [];
+      return (data as any[]) || [];
     } catch (error) {
       console.error('Error fetching creators:', error);
       return [];
@@ -246,7 +246,7 @@ export class ComicService {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as any;
     } catch (error) {
       console.error('Error creating creator:', error);
       throw error;
@@ -271,7 +271,7 @@ export class ComicService {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as any;
     } catch (error) {
       console.error('Error updating creator:', error);
       throw error;
@@ -441,7 +441,7 @@ export class ComicService {
         }
         throw error;
       }
-      return data;
+      return data as any;
     } catch (error) {
       // Don't log error if table doesn't exist
       if (!error?.message?.includes('relation') && !error?.message?.includes('does not exist')) {
@@ -614,7 +614,7 @@ export class ComicService {
       const { data, error } = await query.order('episode_number');
 
       if (error) throw error;
-      return data || [];
+      return (data as any) || [];
     } catch (error) {
       console.error('Error fetching episodes:', error);
       return [];
@@ -641,7 +641,7 @@ export class ComicService {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as any;
     } catch (error) {
       console.error('Error fetching episode:', error);
       return null;
@@ -765,7 +765,7 @@ export class ComicService {
         .order('page_number');
 
       if (error) throw error;
-      return data || [];
+      return (data as any) || [];
     } catch (error) {
       console.error('Error fetching pages:', error);
       return [];
@@ -879,7 +879,7 @@ export class ComicService {
         .eq('is_active', true);
 
       if (error) throw error;
-      return data || [];
+      return (data as any) || [];
     } catch (error) {
       console.error('Error fetching files:', error);
       return [];
@@ -905,7 +905,7 @@ export class ComicService {
         .single();
 
       if (error) throw error;
-      return data;
+      return data as any;
     } catch (error) {
       console.error('Error creating file:', error);
       throw error;

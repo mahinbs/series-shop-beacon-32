@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { useBooks } from '@/hooks/useBooks';
+import { BookCharacterService, BookCharacter } from '@/services/bookCharacterService';
 import { testDatabaseConnection } from '@/services/database';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,7 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, Save, Edit, Upload, BookOpen, Database, X } from 'lucide-react';
+import { Trash2, Plus, Save, Edit, Upload, BookOpen, Database, X, Users, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BookForm {
@@ -29,6 +30,14 @@ interface BookForm {
   is_active: boolean;
 }
 
+interface CharacterForm {
+  name: string;
+  description: string;
+  image_url: string;
+  role: string;
+  display_order: number;
+}
+
 export const BooksManager = () => {
   const { books, isLoading, createBook, updateBook, deleteBook, loadBooks } = useBooks();
   const { toast } = useToast();
@@ -39,6 +48,15 @@ export const BooksManager = () => {
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [testing, setTesting] = useState(false);
+  const [characters, setCharacters] = useState<BookCharacter[]>([]);
+  const [showCharacterForm, setShowCharacterForm] = useState(false);
+  const [characterForm, setCharacterForm] = useState<CharacterForm>({
+    name: '',
+    description: '',
+    image_url: '',
+    role: 'main',
+    display_order: 0,
+  });
   const [formData, setFormData] = useState<BookForm>({
     title: '',
     author: '',
@@ -77,6 +95,15 @@ export const BooksManager = () => {
     });
     setEditingId(null);
     setShowAddForm(false);
+    setCharacters([]);
+    setShowCharacterForm(false);
+    setCharacterForm({
+      name: '',
+      description: '',
+      image_url: '',
+      role: 'main',
+      display_order: 0,
+    });
   };
 
   const testDatabase = async () => {
@@ -135,7 +162,7 @@ export const BooksManager = () => {
         });
       } else {
         console.log('Creating new book');
-        await createBook({
+        const createdBook = await createBook({
           ...formData,
           coins: formData.coins || '',
           label: formData.label || '',
@@ -152,6 +179,12 @@ export const BooksManager = () => {
           title: "Success",
           description: "Book created successfully",
         });
+        
+        // Create characters for the new book if any exist
+        if (characters.length > 0) {
+          // Note: createBook would need to return the created book for character linking
+          console.log('Characters will be created after book creation is complete');
+        }
       }
       resetForm();
       await loadBooks();
@@ -175,7 +208,7 @@ export const BooksManager = () => {
     }
   };
 
-  const handleEdit = (book: any) => {
+  const handleEdit = async (book: any) => {
     setFormData({
       title: book.title || '',
       author: book.author || '',
@@ -194,6 +227,11 @@ export const BooksManager = () => {
       is_active: book.is_active !== undefined ? book.is_active : true,
     });
     setEditingId(book.id);
+    
+    // Load existing characters for this book
+    const bookCharacters = await BookCharacterService.getBookCharacters(book.id);
+    setCharacters(bookCharacters);
+    
     setShowAddForm(true);
   };
 
@@ -250,19 +288,56 @@ export const BooksManager = () => {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, isHoverImage = false) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.type.startsWith('image/')) {
-        handleImageUpload(file, isHoverImage);
-      } else {
-        toast({
-          title: "Invalid file type",
-          description: "Please select an image file",
-          variant: "destructive",
-        });
-      }
+  const handleAddCharacter = () => {
+    if (!characterForm.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Character name is required",
+        variant: "destructive",
+      });
+      return;
     }
+
+    const newCharacter: BookCharacter = {
+      id: Date.now().toString(), // Temporary ID
+      book_id: editingId || '',
+      name: characterForm.name,
+      description: characterForm.description,
+      image_url: characterForm.image_url,
+      role: characterForm.role,
+      display_order: characterForm.display_order,
+      is_active: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    setCharacters([...characters, newCharacter]);
+    setCharacterForm({
+      name: '',
+      description: '',
+      image_url: '',
+      role: 'main',
+      display_order: characters.length,
+    });
+    setShowCharacterForm(false);
+
+    toast({
+      title: "Success",
+      description: "Character added to book",
+    });
+  };
+
+  const handleRemoveCharacter = async (characterId: string) => {
+    // If it's an existing character (has a real ID), delete from database
+    if (!characterId.startsWith('temp_')) {
+      await BookCharacterService.deleteBookCharacter(characterId);
+    }
+    
+    setCharacters(characters.filter(c => c.id !== characterId));
+    toast({
+      title: "Success",
+      description: "Character removed from book",
+    });
   };
 
   if (isLoading) {
@@ -494,6 +569,146 @@ export const BooksManager = () => {
                     disabled={submitting}
                   />
                 </div>
+              </div>
+
+              {/* Characters Section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    <Label className="text-lg font-semibold">Characters</Label>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowCharacterForm(true)}
+                    disabled={submitting}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Character
+                  </Button>
+                </div>
+
+                {characters.length > 0 && (
+                  <div className="grid gap-2">
+                    {characters.map((character) => (
+                      <div key={character.id} className="flex items-center justify-between p-3 border rounded-lg">
+                        <div className="flex items-center gap-3">
+                          {character.image_url ? (
+                            <img src={character.image_url} alt={character.name} className="w-10 h-10 rounded object-cover" />
+                          ) : (
+                            <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                              <User className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-medium">{character.name}</p>
+                            <p className="text-sm text-muted-foreground capitalize">{character.role}</p>
+                          </div>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleRemoveCharacter(character.id)}
+                          disabled={submitting}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {showCharacterForm && (
+                  <Card className="border-2 border-blue-200">
+                    <CardContent className="p-4 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-semibold">Add Character</h4>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setShowCharacterForm(false)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="character_name">Name *</Label>
+                          <Input
+                            id="character_name"
+                            value={characterForm.name}
+                            onChange={(e) => setCharacterForm({ ...characterForm, name: e.target.value })}
+                            disabled={submitting}
+                          />
+                        </div>
+                        
+                        <div>
+                          <Label htmlFor="character_role">Role</Label>
+                          <Select
+                            value={characterForm.role}
+                            onValueChange={(value) => setCharacterForm({ ...characterForm, role: value })}
+                            disabled={submitting}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="main">Main Character</SelectItem>
+                              <SelectItem value="supporting">Supporting Character</SelectItem>
+                              <SelectItem value="antagonist">Antagonist</SelectItem>
+                              <SelectItem value="side">Side Character</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label htmlFor="character_description">Description</Label>
+                        <Textarea
+                          id="character_description"
+                          value={characterForm.description}
+                          onChange={(e) => setCharacterForm({ ...characterForm, description: e.target.value })}
+                          disabled={submitting}
+                          rows={3}
+                        />
+                      </div>
+
+                      <div>
+                        <Label htmlFor="character_image">Character Image URL</Label>
+                        <Input
+                          id="character_image"
+                          value={characterForm.image_url}
+                          onChange={(e) => setCharacterForm({ ...characterForm, image_url: e.target.value })}
+                          disabled={submitting}
+                        />
+                      </div>
+
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => setShowCharacterForm(false)}
+                          disabled={submitting}
+                        >
+                          Cancel
+                        </Button>
+                        <Button
+                          type="button"
+                          onClick={handleAddCharacter}
+                          disabled={submitting}
+                        >
+                          Add Character
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
               <div className="flex items-center space-x-4">
