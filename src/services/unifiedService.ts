@@ -7,7 +7,7 @@ export class UnifiedService {
   // Test Supabase connection
   static async testConnection(): Promise<boolean> {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('books')
         .select('count')
         .limit(1);
@@ -34,12 +34,12 @@ export class UnifiedService {
     try {
       // Try Supabase first
       if (this.isSupabaseAvailable) {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from(tableName)
           .select(query || '*');
         
         if (!error && data) {
-          return data;
+          return data as T[];
         }
       }
     } catch (error) {
@@ -63,12 +63,12 @@ export class UnifiedService {
   static async createData<T>(
     tableName: string,
     localStorageKey: string,
-    data: Omit<T, 'id' | 'created_at' | 'updated_at'>
+    data: any
   ): Promise<T> {
     try {
       // Try Supabase first
       if (this.isSupabaseAvailable) {
-        const { data: newData, error } = await supabase
+        const { data: newData, error } = await (supabase as any)
           .from(tableName)
           .insert(data)
           .select()
@@ -76,7 +76,7 @@ export class UnifiedService {
         
         if (!error && newData) {
           // Successfully created in Supabase
-          return newData;
+          return newData as T;
         } else {
           // Supabase error, falling back to local storage
         }
@@ -110,7 +110,7 @@ export class UnifiedService {
     try {
       // Try Supabase first
       if (this.isSupabaseAvailable) {
-        const { data: updatedData, error } = await supabase
+        const { data: updatedData, error } = await (supabase as any)
           .from(tableName)
           .update({ ...updates, updated_at: new Date().toISOString() })
           .eq('id', id)
@@ -119,7 +119,7 @@ export class UnifiedService {
         
         if (!error && updatedData) {
           // Successfully updated in Supabase
-          return updatedData;
+          return updatedData as T;
         } else {
           // Supabase error, falling back to local storage
         }
@@ -157,7 +157,7 @@ export class UnifiedService {
     try {
       // Try Supabase first
       if (this.isSupabaseAvailable) {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from(tableName)
           .delete()
           .eq('id', id);
@@ -178,6 +178,59 @@ export class UnifiedService {
     const filteredData = existingData.filter((item: any) => item.id !== id);
     localStorage.setItem(localStorageKey, JSON.stringify(filteredData));
     console.log(`💾 Deleted ${tableName} from localStorage`);
+  }
+
+  // Legacy support methods (matching the previous interface)
+  static async getItems<T>(tableName: string, fields?: string): Promise<T[]> {
+    return this.getData<T>(tableName, tableName, fields);
+  }
+
+  static async createItem<T>(tableName: string, item: any): Promise<T | null> {
+    try {
+      return await this.createData<T>(tableName, tableName, item);
+    } catch (error) {
+      console.error(`Error creating item in ${tableName}:`, error);
+      return null;
+    }
+  }
+
+  static async updateItem<T>(tableName: string, id: string, updates: Partial<T>): Promise<T | null> {
+    try {
+      return await this.updateData<T>(tableName, tableName, id, updates);
+    } catch (error) {
+      console.error(`Error updating item in ${tableName}:`, error);
+      return null;
+    }
+  }
+
+  static async deleteItem(tableName: string, id: string): Promise<boolean> {
+    try {
+      await this.deleteData(tableName, tableName, id);
+      return true;
+    } catch (error) {
+      console.error(`Error deleting item from ${tableName}:`, error);
+      return false;
+    }
+  }
+
+  static async getItemById<T>(tableName: string, id: string): Promise<T | null> {
+    try {
+      const { data, error } = await (supabase as any)
+        .from(tableName)
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        console.error(`Error fetching item from ${tableName}:`, error);
+        return null;
+      }
+
+      return data as T;
+    } catch (error) {
+      console.error(`Error in getItemById for ${tableName}:`, error);
+      return null;
+    }
   }
 }
 

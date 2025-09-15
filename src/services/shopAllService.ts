@@ -116,7 +116,10 @@ export class ShopAllService {
 
         if (!error && data) {
           console.log('✅ Successfully loaded filters from Supabase:', data);
-          return data;
+          return (data as any).map(filter => ({
+            ...filter,
+            type: filter.type as "publisher" | "author" | "category" | "price" | "status" | "type" | "age_rating" | "genre"
+          })) as ShopAllFilter[];
         } else {
           console.log('⚠️ Supabase error, falling back to local storage:', error);
         }
@@ -584,9 +587,9 @@ export class ShopAllService {
       
       // Try Supabase first
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('shop_all_sorts')
-          .insert([sortData])
+          .insert(sortData)
           .select()
           .single();
 
