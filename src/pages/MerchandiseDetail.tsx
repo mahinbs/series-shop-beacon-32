@@ -8,7 +8,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
-import { useBooks } from '@/hooks/useBooks';
+import { booksService } from '@/services/database';
 import { ComicService } from '@/services/comicService';
 
 const MerchandiseDetail = () => {
@@ -23,19 +23,21 @@ const MerchandiseDetail = () => {
   const [error, setError] = useState<string | null>(null);
   const { addToCart } = useCart();
   const { toast } = useToast();
-  const { books, loadBooks } = useBooks();
 
-  // Debug logging for all navigation attempts
+  // Debug logging
   console.log('🎯 MerchandiseDetail: Component loaded');
   console.log('🆔 MerchandiseDetail: Product ID from URL:', productId);
-  console.log('📍 MerchandiseDetail: Current URL:', window.location.href);
   console.log('📦 MerchandiseDetail: Location state:', location.state);
-  console.log('📚 MerchandiseDetail: Books loaded:', books.length);
-  console.log('📚 MerchandiseDetail: Books data:', books);
 
-  // Load product data
+  // Load product data - simplified approach
   useEffect(() => {
     const loadProduct = async () => {
+      if (!productId) {
+        setError('No product ID provided');
+        setIsLoading(false);
+        return;
+      }
+
       try {
         setIsLoading(true);
         setError(null);
@@ -48,20 +50,23 @@ const MerchandiseDetail = () => {
           return;
         }
 
-        // If no product in state, fetch from database
-        if (productId) {
-          console.log('🔍 Fetching product from database with ID:', productId);
-          await loadBooks();
-          
-          // If books are empty, try comic series directly
-          if (books.length === 0) {
-            console.log('📚 No books loaded, trying comic series directly...');
-            await searchInComicSeries();
+        // Primary method: Try to fetch directly from books service
+        console.log('🔍 Fetching product from books service with ID:', productId);
+        try {
+          const book = await booksService.getById(productId);
+          if (book) {
+            console.log('✅ Found product in books:', book);
+            setProduct(book);
+            setIsLoading(false);
+            return;
           }
-        } else {
-          setError('No product ID provided');
-          setIsLoading(false);
+        } catch (bookError) {
+          console.log('📚 Book not found, trying comic series...');
         }
+
+        // Fallback: Try comic series
+        await searchInComicSeries();
+        
       } catch (err) {
         console.error('❌ Error loading product:', err);
         setError('Failed to load product');
@@ -70,26 +75,7 @@ const MerchandiseDetail = () => {
     };
 
     loadProduct();
-  }, [productId, location.state]); // Only depend on productId and location.state
-
-  // Separate effect to handle books state changes
-  useEffect(() => {
-    if (productId && books.length > 0 && !product && !location.state?.product) {
-      console.log('🔍 Looking for product with ID:', productId);
-      console.log('📚 Available books:', books.map(book => ({ id: book.id, title: book.title })));
-      
-      const foundProduct = books.find(book => book.id === productId);
-      if (foundProduct) {
-        console.log('✅ Found product in books:', foundProduct);
-        setProduct(foundProduct);
-        setIsLoading(false);
-      } else {
-        console.log('❌ Product not found in books, checking comic series...');
-        // Try to find in comic series
-        searchInComicSeries();
-      }
-    }
-  }, [books, productId, product, location.state]);
+  }, [productId, location.state]);
 
   // Function to search in comic series
   const searchInComicSeries = async () => {
@@ -105,17 +91,17 @@ const MerchandiseDetail = () => {
         const transformedProduct = {
           id: foundSeries.id,
           title: foundSeries.title,
-          author: foundSeries.creator || foundSeries.author,
-          category: foundSeries.category || 'Comic',
+          author: 'Comic Series',
+          category: 'Comic',
           product_type: 'book',
-          price: foundSeries.price || 0,
-          original_price: foundSeries.original_price,
-          image_url: foundSeries.cover_image_url || foundSeries.image_url,
-          hover_image_url: foundSeries.hover_image_url,
+          price: 0,
+          original_price: 0,
+          image_url: foundSeries.cover_image_url,
+          hover_image_url: foundSeries.banner_image_url,
           description: foundSeries.description,
-          is_new: foundSeries.is_new || false,
-          is_on_sale: foundSeries.is_on_sale || false,
-          stock_quantity: foundSeries.stock_quantity || 0,
+          is_new: false,
+          is_on_sale: false,
+          stock_quantity: 999,
           display_order: foundSeries.display_order || 0,
           is_active: foundSeries.is_active || true,
           created_at: foundSeries.created_at,
@@ -157,7 +143,7 @@ const MerchandiseDetail = () => {
         price: product.price || parseFloat(product.price?.toString().replace('$', '') || '0'),
         imageUrl: product.image_url || product.imageUrl,
         category: product.category,
-        product_type: (product.product_type || 'merchandise') as const,
+        product_type: (product.product_type || 'merchandise') as 'book' | 'merchandise' | 'digital',
         inStock: product.stock_quantity !== undefined ? product.stock_quantity > 0 : true,
         quantity: quantity
       };
