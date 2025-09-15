@@ -308,9 +308,9 @@ export class ShopAllService {
       
       // Try Supabase first
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('shop_all_heroes')
-          .insert([heroData])
+          .insert(heroData)
           .select()
           .single();
 
@@ -443,15 +443,18 @@ export class ShopAllService {
       
       // Try Supabase first
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('shop_all_filters')
-          .insert([filterData])
+          .insert(filterData)
           .select()
           .single();
 
         if (!error && data) {
           console.log('✅ Successfully created filter in Supabase:', data);
-          return data;
+          return {
+            ...data,
+            type: (data as any).type as "publisher" | "author" | "category" | "price" | "status" | "type" | "age_rating" | "genre"
+          } as ShopAllFilter;
         } else {
           console.log('⚠️ Supabase error, falling back to local storage:', error);
         }
@@ -492,16 +495,23 @@ export class ShopAllService {
       
       // Try Supabase first
       try {
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('shop_all_filters')
-          .update({ ...filterData, updated_at: new Date().toISOString() })
+          .update({ 
+            ...filterData, 
+            updated_at: new Date().toISOString(),
+            options: JSON.stringify(filterData.options)
+          })
           .eq('id', id)
           .select()
           .single();
 
         if (!error && data) {
           console.log('✅ Successfully updated filter in Supabase:', data);
-          return data;
+          return {
+            ...data,
+            type: (data as any).type as "publisher" | "author" | "category" | "price" | "status" | "type" | "age_rating" | "genre"
+          } as ShopAllFilter;
         } else {
           console.log('⚠️ Supabase error, falling back to local storage:', error);
         }

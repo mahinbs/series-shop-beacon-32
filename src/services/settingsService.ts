@@ -103,7 +103,7 @@ export class SettingsService {
         .single();
 
       if (error) throw error;
-      return data || this.getDefaultSiteSettings();
+      return (data as any) || this.getDefaultSiteSettings();
     } catch (error) {
       console.error('Error fetching site settings:', error);
       return this.getDefaultSiteSettings();
@@ -117,7 +117,7 @@ export class SettingsService {
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('site_settings')
         .upsert(settings);
 
@@ -145,7 +145,7 @@ export class SettingsService {
         .single();
 
       if (error) throw error;
-      return data || this.getDefaultEmailSettings();
+      return (data as any) || this.getDefaultEmailSettings();
     } catch (error) {
       console.error('Error fetching email settings:', error);
       return this.getDefaultEmailSettings();
@@ -159,7 +159,7 @@ export class SettingsService {
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('email_settings')
         .upsert(settings);
 
@@ -187,7 +187,7 @@ export class SettingsService {
         .single();
 
       if (error) throw error;
-      return data || this.getDefaultPaymentSettings();
+      return (data as any) || this.getDefaultPaymentSettings();
     } catch (error) {
       console.error('Error fetching payment settings:', error);
       return this.getDefaultPaymentSettings();
@@ -201,7 +201,7 @@ export class SettingsService {
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('payment_settings')
         .upsert(settings);
 
@@ -229,7 +229,7 @@ export class SettingsService {
         .single();
 
       if (error) throw error;
-      return data || this.getDefaultShippingSettings();
+      return (data as any) || this.getDefaultShippingSettings();
     } catch (error) {
       console.error('Error fetching shipping settings:', error);
       return this.getDefaultShippingSettings();
@@ -243,7 +243,7 @@ export class SettingsService {
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('shipping_settings')
         .upsert(settings);
 
@@ -271,7 +271,7 @@ export class SettingsService {
         .single();
 
       if (error) throw error;
-      return data || this.getDefaultSecuritySettings();
+      return (data as any) || this.getDefaultSecuritySettings();
     } catch (error) {
       console.error('Error fetching security settings:', error);
       return this.getDefaultSecuritySettings();
@@ -285,7 +285,7 @@ export class SettingsService {
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('security_settings')
         .upsert(settings);
 
@@ -313,7 +313,7 @@ export class SettingsService {
         .single();
 
       if (error) throw error;
-      return data || this.getDefaultBackupSettings();
+      return (data as any) || this.getDefaultBackupSettings();
     } catch (error) {
       console.error('Error fetching backup settings:', error);
       return this.getDefaultBackupSettings();
@@ -327,7 +327,7 @@ export class SettingsService {
         return;
       }
 
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('backup_settings')
         .upsert(settings);
 

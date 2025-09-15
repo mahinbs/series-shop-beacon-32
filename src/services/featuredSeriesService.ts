@@ -140,7 +140,10 @@ export class FeaturedSeriesService {
 
         if (!error && data) {
           console.log(`✅ Successfully loaded ${data.length} featured badges from Supabase`);
-          return data;
+          return (data as any).map(badge => ({
+            ...badge,
+            text_color: (badge as any).text_color || '#ffffff'
+          })) as FeaturedSeriesBadge[];
         } else {
           // Check if it's a table not found error
           if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
@@ -226,9 +229,23 @@ export class FeaturedSeriesService {
       try {
         // Remove the id from configData if it exists to let Supabase generate it
         const { id: _, ...insertData } = configData;
+        const validInsertData = {
+          title: insertData.title || 'Default Title',
+          description: insertData.description,
+          background_image_url: insertData.background_image_url,
+          primary_button_text: insertData.primary_button_text,
+          primary_button_link: insertData.primary_button_link,
+          secondary_button_text: insertData.secondary_button_text,
+          secondary_button_link: insertData.secondary_button_link,
+          is_active: insertData.is_active,
+          display_order: insertData.display_order,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
         const { data, error } = await supabase
           .from('featured_series_configs')
-          .insert([insertData])
+          .insert(validInsertData)
           .select()
           .single();
 
@@ -424,15 +441,28 @@ export class FeaturedSeriesService {
       
       // Try Supabase first
       try {
+        const validBadgeData = {
+          name: badgeData.name || 'Default Badge',
+          color: badgeData.color || '#EF4444',
+          text_color: badgeData.text_color || '#ffffff',
+          is_active: badgeData.is_active ?? true,
+          display_order: badgeData.display_order || 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        };
+        
         const { data, error } = await supabase
           .from('featured_series_badges')
-          .insert([badgeData])
+          .insert(validBadgeData)
           .select()
           .single();
 
         if (!error && data) {
           console.log('✅ Successfully created badge in Supabase:', data);
-          return data;
+          return {
+            ...data,
+            text_color: (data as any).text_color || '#ffffff'
+          } as FeaturedSeriesBadge;
         } else {
           console.log('⚠️ Supabase error, falling back to local storage:', error);
         }
@@ -482,7 +512,10 @@ export class FeaturedSeriesService {
 
         if (!error && data) {
           console.log('✅ Successfully updated badge in Supabase:', data);
-          return data;
+          return {
+            ...data,
+            text_color: (data as any).text_color || '#ffffff'
+          } as FeaturedSeriesBadge;
         } else {
           console.log('⚠️ Supabase error, falling back to local storage:', error);
         }

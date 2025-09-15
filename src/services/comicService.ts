@@ -316,7 +316,18 @@ export class ComicService {
 
         if (!error && data) {
           console.log('✅ Successfully loaded series from Supabase:', data);
-          return data;
+          return (data as any).map(series => ({
+            ...series,
+            status: series.status as "ongoing" | "completed" | "hiatus" | "cancelled",
+            creators: (series as any).comic_series_creators?.map(creator => ({
+              id: creator.creator_profiles?.id || '',
+              name: creator.creator_profiles?.name || '',
+              role: creator.role,
+              bio: creator.creator_profiles?.bio || null,
+              avatar_url: creator.creator_profiles?.avatar_url || null,
+              social_links: creator.creator_profiles?.social_links || null
+            })) || []
+          })) as ComicSeries[];
         } else {
           // Don't log error if table doesn't exist (PGRST205)
           if (error?.code !== 'PGRST205' && !error?.message?.includes('relation') && !error?.message?.includes('does not exist')) {
@@ -465,7 +476,18 @@ export class ComicService {
 
         if (!error && data) {
           console.log('✅ Successfully created series in Supabase:', data);
-          return data;
+          return {
+            ...data,
+            status: data.status as "ongoing" | "completed" | "hiatus" | "cancelled",
+            creators: (data as any).comic_series_creators?.map(creator => ({
+              id: creator.creator_profiles?.id || '',
+              name: creator.creator_profiles?.name || '',
+              role: creator.role,
+              bio: creator.creator_profiles?.bio || null,
+              avatar_url: creator.creator_profiles?.avatar_url || null,
+              social_links: creator.creator_profiles?.social_links || null
+            })) || []
+          } as ComicSeries;
         } else {
           // Don't log error if table doesn't exist
           if (error?.code !== 'PGRST205' && !error?.message?.includes('relation') && !error?.message?.includes('does not exist')) {

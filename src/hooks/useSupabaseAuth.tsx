@@ -286,10 +286,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(userData as any);
       setIsAdmin(userData.role === 'admin');
       
-      
-      // Return user data for consistency
-      return userData;
-      
     } catch (error: any) {
       console.error('Signin failed:', error);
       throw error;
@@ -366,8 +362,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       isLoading,
       isAdmin,
       isAuthenticated: !!user,
-      signUp: signUp as any,
-      signIn,
+      signUp,
       signIn,
       signOut,
       logout,

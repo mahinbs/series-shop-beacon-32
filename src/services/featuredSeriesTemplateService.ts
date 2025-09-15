@@ -56,7 +56,12 @@ export class FeaturedSeriesTemplateService {
           console.log(`✅ Successfully loaded ${data.length} templates from Supabase`);
           // Update local storage with fresh data from Supabase
           localStorage.setItem('featured_series_templates', JSON.stringify(data));
-          return data;
+          return (data as any).map(template => ({
+            ...template,
+            template_type: template.template_type as "config" | "badge" | "combined",
+            config_data: typeof template.config_data === 'string' ? JSON.parse(template.config_data) : template.config_data,
+            badge_data: typeof template.badge_data === 'string' ? JSON.parse(template.badge_data) : template.badge_data
+          })) as FeaturedSeriesTemplate[];
         } else {
           // Check if it's a table not found error
           if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
@@ -100,7 +105,12 @@ export class FeaturedSeriesTemplateService {
 
         if (!error && data) {
           console.log('✅ Successfully loaded template from Supabase:', data);
-          return data;
+          return {
+            ...data,
+            template_type: data.template_type as "config" | "badge" | "combined",
+            config_data: typeof (data as any).config_data === 'string' ? JSON.parse((data as any).config_data) : (data as any).config_data,
+            badge_data: typeof (data as any).badge_data === 'string' ? JSON.parse((data as any).badge_data) : (data as any).badge_data
+          } as FeaturedSeriesTemplate;
         } else {
           console.log('⚠️ Supabase error, falling back to local storage:', error);
         }
@@ -147,9 +157,15 @@ export class FeaturedSeriesTemplateService {
       
       // Try Supabase first
       try {
-        const { data, error } = await supabase
+        const supabaseTemplate = {
+          ...template,
+          config_data: JSON.stringify(template.config_data),
+          badge_data: JSON.stringify(template.badge_data)
+        };
+        
+        const { data, error } = await (supabase as any)
           .from('featured_series_templates')
-          .upsert(template)
+          .upsert(supabaseTemplate)
           .select()
           .single();
 
