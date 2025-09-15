@@ -50,6 +50,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+  const [adminChecked, setAdminChecked] = useState(false);
+
+  // Helper function to check if all loading operations are complete
+  const checkLoadingComplete = (profileDone: boolean, adminDone: boolean) => {
+    if (profileDone && adminDone) {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -92,6 +101,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       }
       
       // No authentication found
+      setProfileLoaded(false);
+      setAdminChecked(false);
       setIsLoading(false);
     };
 
@@ -114,6 +125,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         } else {
           setProfile(null);
           setIsAdmin(false);
+          setProfileLoaded(false);
+          setAdminChecked(false);
           setIsLoading(false);
         }
       }
@@ -129,6 +142,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           checkAdminRole(session.user.id)
         ]);
       } else {
+        setProfileLoaded(false);
+        setAdminChecked(false);
         setIsLoading(false);
       }
     });
@@ -146,7 +161,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading profile:', error);
-        setIsLoading(false);
+        setProfileLoaded(true);
+        checkLoadingComplete(true, adminChecked);
         return;
       }
 
@@ -175,7 +191,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
     } finally {
-      setIsLoading(false);
+      setProfileLoaded(true);
+      checkLoadingComplete(true, adminChecked);
     }
   };
 
@@ -191,6 +208,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error && error.code !== 'PGRST116') {
         console.error('Error checking admin role:', error);
         setIsAdmin(false);
+        setAdminChecked(true);
+        checkLoadingComplete(profileLoaded, true);
         return;
       }
 
@@ -199,6 +218,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error('Error in checkAdminRole:', error);
       setIsAdmin(false);
+    } finally {
+      setAdminChecked(true);
+      checkLoadingComplete(profileLoaded, true);
     }
   };
 
@@ -303,6 +325,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setIsAdmin(false);
       setProfile(null);
       setSession(null);
+      setProfileLoaded(false);
+      setAdminChecked(false);
       
       console.log('✅ Signout completed');
     } catch (error) {
