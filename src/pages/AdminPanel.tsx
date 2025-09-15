@@ -2,14 +2,26 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminDashboard } from '@/components/cms/AdminDashboard';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
-import { Card, CardContent } from '@/components/ui/card';
-import { Shield, LogOut, Crown } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Shield, LogOut, Crown, User, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useToast } from '@/hooks/use-toast';
 
 const AdminPanel = () => {
-  const { user, profile, signOut, isAdmin, isLoading } = useSupabaseAuth();
+  const { user, profile, signOut, signIn, signUp, isAdmin, isLoading } = useSupabaseAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  // Auth form state
+  const [email, setEmail] = useState('admin@series-shop.com');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('Admin User');
+  const [authLoading, setAuthLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('signin');
 
   useEffect(() => {
     // Wait for auth to finish before deciding
@@ -17,14 +29,8 @@ const AdminPanel = () => {
       return;
     }
 
-    // If not logged in, send to auth and preserve intent
-    if (!user) {
-      navigate('/auth', { state: { from: '/admin' } });
-      return;
-    }
-
     // Logged-in but not an admin: send to home
-    if (!isAdmin) {
+    if (user && !isAdmin) {
       navigate('/');
     }
   }, [user, isAdmin, isLoading, navigate]);
@@ -32,6 +38,48 @@ const AdminPanel = () => {
   const handleSignOut = async () => {
     await signOut();
     navigate('/');
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    
+    try {
+      await signIn(email, password);
+      toast({
+        title: "Welcome Back!",
+        description: "Successfully signed in to admin panel.",
+      });
+    } catch (error) {
+      toast({
+        title: "Sign In Failed",
+        description: "Please check your credentials and try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setAuthLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthLoading(true);
+    
+    try {
+      await signUp(email, password, fullName);
+      toast({
+        title: "Account Created!",
+        description: "Admin account created successfully. You may need to verify your email.",
+      });
+    } catch (error) {
+      toast({
+        title: "Sign Up Failed",
+        description: "Please try again or check your email format.",
+        variant: "destructive",
+      });
+    } finally {
+      setAuthLoading(false);
+    }
   };
 
   // Show loading while resolving auth/admin status
@@ -57,36 +105,117 @@ const AdminPanel = () => {
     );
   }
 
-  // If not authenticated, show login prompt
+  // If not authenticated, show admin auth form
   if (!user) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">
-          <CardContent className="p-8 text-center">
-            <Shield className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
-            <h2 className="text-2xl font-bold mb-2">Admin Access Required</h2>
-            <p className="text-muted-foreground mb-4">Please sign in to access the admin panel.</p>
-            <div className="space-y-2">
-              <Button onClick={() => navigate('/auth', { state: { from: '/admin' } })} className="w-full">
-                Go to Login
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  // Debug auth state (only in development)
-                    if (process.env.NODE_ENV === 'development') {
-                      console.log('Current auth state:', { user, isAdmin, isLoading });
-                      console.log('LocalStorage:', {
-                        isAuthenticated: localStorage.getItem('isAuthenticated'),
-                        user: localStorage.getItem('user'),
-                        adminSession: localStorage.getItem('admin_session')
-                      });
-                    }
-                }}
-                className="w-full text-xs"
-              >
-                Debug Auth State
-              </Button>
+          <CardHeader className="text-center">
+            <div className="flex items-center justify-center mb-4">
+              <Shield className="h-12 w-12 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Admin Panel Access</CardTitle>
+            <p className="text-muted-foreground">
+              Sign in or create an admin account to access the dashboard.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="signin">
+                <form onSubmit={handleSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-email">Email</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signin-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="admin@series-shop.com"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signin-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signin-password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={authLoading}>
+                    {authLoading ? "Signing In..." : "Sign In"}
+                  </Button>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="signup">
+                <form onSubmit={handleSignUp} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-name">Full Name</Label>
+                    <Input
+                      id="signup-name"
+                      type="text"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Admin User"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-email">Email</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="admin@series-shop.com"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="signup-password"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        className="pl-10"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <Button type="submit" className="w-full" disabled={authLoading}>
+                    {authLoading ? "Creating Account..." : "Create Admin Account"}
+                  </Button>
+                </form>
+              </TabsContent>
+            </Tabs>
+            
+            <div className="mt-4 text-center text-xs text-muted-foreground">
+              <p>Use <strong>admin@series-shop.com</strong> to get admin privileges</p>
             </div>
           </CardContent>
         </Card>
