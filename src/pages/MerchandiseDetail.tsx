@@ -49,7 +49,7 @@ const MerchandiseDetail = () => {
           console.log('📦 Using product from location state:', location.state.product);
           setProduct(location.state.product);
           setIsLoading(false);
-          return;
+          // Note: Do not return here; we will fetch fresh data to ensure all fields (e.g., video_url)
         }
 
         // Primary method: Try to fetch directly from books service
