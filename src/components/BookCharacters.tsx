@@ -155,7 +155,7 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                 
                 <HoverCardContent 
                   side="top" 
-                  className="w-[450px] p-0 border-primary/20 bg-gradient-to-br from-background/98 via-background/95 to-primary/10 backdrop-blur-xl shadow-2xl shadow-primary/20 ring-1 ring-primary/20"
+                  className="w-[650px] p-0 border-primary/20 bg-gradient-to-br from-background/98 via-background/95 to-primary/10 backdrop-blur-xl shadow-2xl shadow-primary/20 ring-1 ring-primary/20"
                   sideOffset={18}
                   align="center"
                 >
@@ -165,37 +165,31 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                     <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-primary/25 to-transparent rounded-full blur-2xl" />
                     <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-primary/20 to-transparent rounded-full blur-xl" />
                     
-                    {/* Visual connector arrow */}
-                    <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
-                      <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[12px] border-l-transparent border-r-transparent border-t-background/98"></div>
-                      <div className="absolute -top-1 left-1/2 transform -translate-x-1/2">
-                        <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[10px] border-l-transparent border-r-transparent border-t-primary/20"></div>
-                      </div>
-                    </div>
-                    
-                    <div className="relative p-6">
-                      <div className="flex items-start gap-4 mb-5">
-                        <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-primary/40 flex-shrink-0 shadow-lg shadow-primary/20">
-                          <img
-                            src={character.image || "/placeholder.svg"}
-                            alt={character.name}
-                            className="w-full h-full object-cover"
-                          />
-                          <div className="absolute inset-0 ring-1 ring-primary/30 rounded-full animate-pulse" />
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-bold text-xl text-primary mb-2 flex items-center gap-2">
+                    <div className="relative flex flex-col md:flex-row h-[350px]">
+                      {/* Image Section - 60% */}
+                      <div className="relative w-full md:w-3/5 h-40 md:h-full">
+                        <img
+                          src={character.image || "/placeholder.svg"}
+                          alt={character.name}
+                          className="w-full h-full object-cover"
+                        />
+                        {/* Gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/60 md:bg-gradient-to-r md:from-transparent md:to-background/80" />
+                        
+                        {/* Character name overlay on image */}
+                        <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6">
+                          <h4 className="font-bold text-xl md:text-2xl text-foreground mb-2 flex items-center gap-2">
                             {character.name}
                             <Sparkles className="h-4 w-4 text-primary animate-pulse" />
                           </h4>
                           <div className="flex gap-2">
                             {character.role && (
-                              <Badge variant="outline" className="bg-primary/15 text-primary border-primary/30 text-sm">
+                              <Badge variant="outline" className="bg-primary/15 text-primary border-primary/30 text-sm backdrop-blur-sm">
                                 <Star className="h-3 w-3 mr-1" />
                                 {character.role}
                               </Badge>
                             )}
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-sm">
+                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-sm backdrop-blur-sm">
                               <Heart className="h-3 w-3 mr-1" />
                               Book Character
                             </Badge>
@@ -203,71 +197,69 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                         </div>
                       </div>
                       
-                      <p className="text-muted-foreground text-sm leading-relaxed mb-5 bg-muted/30 p-3 rounded-lg border border-primary/10">
-                        {character.description}
-                      </p>
+                      {/* Details Section - 40% */}
+                      <div className="flex-1 p-4 overflow-y-auto">
+                        <div className="space-y-4">
+                          <p className="text-muted-foreground text-sm leading-relaxed bg-muted/30 p-3 rounded-lg border border-primary/10">
+                            {character.description}
+                          </p>
+                          
+                          {/* Stats display */}
+                          {character.stats && (
+                            <div className="mb-4">
+                              <h5 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
+                                <Shield className="h-3 w-3" />
+                                Stats
+                              </h5>
+                              <div className="grid grid-cols-2 gap-2">
+                                {Object.entries(character.stats)
+                                  .sort(([,a], [,b]) => (Number(b) || 0) - (Number(a) || 0))
+                                  .slice(0, 4)
+                                  .map(([stat, value]) => (
+                                    <div key={stat} className="bg-muted/40 rounded-lg p-2 border border-primary/10">
+                                      <div className="text-xs text-muted-foreground capitalize">{stat}</div>
+                                      <div className="font-bold text-primary text-sm">{Number(value) || 0}</div>
+                                      <div className="w-full bg-muted/60 rounded-full h-1 mt-1">
+                                        <div 
+                                          className="bg-gradient-to-r from-primary to-primary/60 h-1 rounded-full transition-all duration-1000"
+                                          style={{ width: `${Number(value) || 0}%` }}
+                                        />
+                                      </div>
+                                    </div>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
 
-                      {/* Stats display */}
-                      {character.stats && (
-                        <div className="mb-5">
-                          <h5 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
-                            <Shield className="h-4 w-4" />
-                            Character Stats
-                          </h5>
-                          <div className="grid grid-cols-2 gap-2">
-                            {Object.entries(character.stats)
-                              .sort(([,a], [,b]) => (Number(b) || 0) - (Number(a) || 0))
-                              .slice(0, 4)
-                              .map(([stat, value]) => (
-                                <div key={stat} className="bg-muted/40 rounded-lg p-2 border border-primary/10">
-                                  <div className="text-xs text-muted-foreground capitalize mb-1">{stat}</div>
-                                  <div className="font-bold text-primary">{Number(value) || 0}</div>
-                                  <div className="w-full bg-muted/60 rounded-full h-1 mt-1">
-                                    <div 
-                                      className="bg-gradient-to-r from-primary to-primary/60 h-1 rounded-full transition-all duration-1000"
-                                      style={{ width: `${Number(value) || 0}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              ))}
+                          {/* Abilities */}
+                          {character.abilities && character.abilities.length > 0 && (
+                            <div className="mb-4">
+                              <h5 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
+                                <Zap className="h-3 w-3" />
+                                Abilities
+                              </h5>
+                              <div className="flex flex-wrap gap-2">
+                                {character.abilities.slice(0, 4).map((ability, i) => (
+                                  <Badge key={i} variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
+                                    {ability}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Interactive buttons */}
+                          <div className="flex gap-2 pt-3 border-t border-primary/10">
+                            <Button size="sm" variant="outline" className="flex-1 text-xs border-primary/30 text-primary hover:bg-primary/10">
+                              <Heart className="h-3 w-3 mr-1" />
+                              Favorite
+                            </Button>
+                            <Button size="sm" variant="outline" className="flex-1 text-xs border-primary/30 text-primary hover:bg-primary/10">
+                              <Star className="h-3 w-3 mr-1" />
+                              Follow
+                            </Button>
                           </div>
                         </div>
-                      )}
-
-                      {/* Abilities */}
-                      {character.abilities && character.abilities.length > 0 && (
-                        <div className="mb-5">
-                          <h5 className="text-sm font-semibold text-primary mb-3 flex items-center gap-2">
-                            <Zap className="h-4 w-4" />
-                            Abilities
-                          </h5>
-                          <div className="flex flex-wrap gap-2">
-                            {character.abilities.slice(0, 4).map((ability, i) => (
-                              <Badge key={i} variant="secondary" className="text-xs bg-primary/10 text-primary border-primary/20">
-                                {ability}
-                              </Badge>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                      
-                      {/* Interactive buttons */}
-                      <div className="flex gap-2 pt-4 border-t border-primary/10">
-                        <Button size="sm" variant="outline" className="flex-1 border-primary/30 text-primary hover:bg-primary/10">
-                          <Heart className="h-3 w-3 mr-2" />
-                          Favorite
-                        </Button>
-                        <Button size="sm" variant="outline" className="flex-1 border-primary/30 text-primary hover:bg-primary/10">
-                          <Star className="h-3 w-3 mr-2" />
-                          Follow
-                        </Button>
-                      </div>
-                      
-                      <div className="flex items-center justify-center text-xs text-muted-foreground mt-4">
-                        <span className="flex items-center gap-2">
-                          <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                          Detailed Book Character
-                        </span>
                       </div>
                     </div>
                   </div>

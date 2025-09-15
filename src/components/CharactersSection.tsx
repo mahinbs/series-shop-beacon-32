@@ -195,7 +195,7 @@ const CharactersSection = () => {
               </HoverCardTrigger>
               <HoverCardContent 
                 side="top" 
-                className="w-[500px] p-0 border-red-500/20 bg-gradient-to-br from-gray-900/98 via-gray-900/95 to-red-900/30 backdrop-blur-xl shadow-2xl shadow-red-500/30 ring-1 ring-red-500/20"
+                className="w-[700px] p-0 border-red-500/20 bg-gradient-to-br from-gray-900/98 via-gray-900/95 to-red-900/30 backdrop-blur-xl shadow-2xl shadow-red-500/30 ring-1 ring-red-500/20"
                 sideOffset={20}
                 align="center"
               >
@@ -206,36 +206,29 @@ const CharactersSection = () => {
                   <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-purple-500/25 to-transparent rounded-full blur-2xl" />
                   <div className="absolute inset-0 bg-gradient-to-br from-transparent via-red-500/5 to-purple-500/10" />
                   
-                  {/* Visual connector arrow */}
-                  <div className="absolute -bottom-3 left-1/2 transform -translate-x-1/2">
-                    <div className="w-0 h-0 border-l-[12px] border-r-[12px] border-t-[12px] border-l-transparent border-r-transparent border-t-gray-900/95"></div>
-                    <div className="absolute -top-1 left-1/2 transform -translate-x-1/2">
-                      <div className="w-0 h-0 border-l-[10px] border-r-[10px] border-t-[10px] border-l-transparent border-r-transparent border-t-red-500/20"></div>
-                    </div>
-                  </div>
-                  
-                  <div className="relative p-8 text-white">
-                    <div className="flex items-start gap-6 mb-6">
-                      <div className="w-20 h-20 rounded-full overflow-hidden border-3 border-red-400/60 flex-shrink-0 group relative shadow-lg shadow-red-500/30">
-                        <img 
-                          src={character.image} 
-                          alt={character.name}
-                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 ring-2 ring-red-400/50 rounded-full animate-pulse" />
-                        <div className="absolute inset-0 bg-gradient-to-br from-red-500/20 to-transparent rounded-full" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-bold text-2xl text-red-400 mb-3 flex items-center gap-3">
+                  <div className="relative flex flex-col md:flex-row h-[400px] text-white">
+                    {/* Image Section - 60% */}
+                    <div className="relative w-full md:w-3/5 h-48 md:h-full">
+                      <img 
+                        src={character.image} 
+                        alt={character.name}
+                        className="w-full h-full object-cover"
+                      />
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent to-gray-900/60 md:bg-gradient-to-r md:from-transparent md:to-gray-900/80" />
+                      
+                      {/* Character name overlay on image */}
+                      <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6">
+                        <h4 className="font-bold text-2xl md:text-3xl text-white mb-2 flex items-center gap-3">
                           {character.name}
                           <Sparkles className="h-5 w-5 text-yellow-400 animate-pulse" />
                         </h4>
-                        <div className="flex gap-2 mb-3">
-                          <Badge variant="outline" className="border-red-400/60 text-red-300 text-sm bg-red-500/10">
+                        <div className="flex gap-2">
+                          <Badge variant="outline" className="border-red-400/60 text-red-300 text-sm bg-red-500/20 backdrop-blur-sm">
                             <Star className="h-3 w-3 mr-1" />
                             {character.role}
                           </Badge>
-                          <Badge variant="outline" className="border-purple-400/50 text-purple-300 text-sm bg-purple-500/10">
+                          <Badge variant="outline" className="border-purple-400/50 text-purple-300 text-sm bg-purple-500/20 backdrop-blur-sm">
                             <Heart className="h-3 w-3 mr-1" />
                             Featured
                           </Badge>
@@ -243,96 +236,77 @@ const CharactersSection = () => {
                       </div>
                     </div>
                     
-                    <p className="text-sm text-gray-300 leading-relaxed mb-6 bg-gray-800/30 p-4 rounded-lg border border-red-500/20">{character.description}</p>
-                    
-                    {/* Backstory section */}
-                    {character.backstory && (
-                      <div className="mb-6">
-                        <h5 className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
-                          <Sword className="h-4 w-4" />
-                          Backstory
-                        </h5>
-                        <p className="text-xs text-gray-400 leading-relaxed bg-gray-800/20 p-3 rounded border-l-2 border-red-500/40">
-                          {character.backstory}
-                        </p>
-                      </div>
-                    )}
+                    {/* Details Section - 40% */}
+                    <div className="flex-1 p-6 overflow-y-auto">
+                      <div className="space-y-4">
+                        <p className="text-sm text-gray-300 leading-relaxed bg-gray-800/30 p-4 rounded-lg border border-red-500/20">{character.description}</p>
+                        
+                        {/* Backstory section */}
+                        {character.backstory && (
+                          <div className="mb-4">
+                            <h5 className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-2">
+                              <Sword className="h-3 w-3" />
+                              Backstory
+                            </h5>
+                            <p className="text-xs text-gray-400 leading-relaxed bg-gray-800/20 p-2 rounded border-l-2 border-red-500/40">
+                              {character.backstory}
+                            </p>
+                          </div>
+                        )}
 
-                    {/* Enhanced stats preview */}
-                    {character.stats && (
-                      <div className="mb-6">
-                        <h5 className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
-                          <Shield className="h-4 w-4" />
-                          Character Stats
-                        </h5>
-                        <div className="grid grid-cols-4 gap-3">
-                          {Object.entries(character.stats).map(([stat, value]) => (
-                            <div key={stat} className="bg-gray-800/40 rounded-lg p-3 border border-red-500/20 hover:border-red-500/40 transition-colors">
-                              <div className="text-xs text-gray-400 capitalize mb-1">{stat}</div>
-                              <div className="font-bold text-red-400 text-lg">{value}</div>
-                              <div className="w-full bg-gray-700 rounded-full h-1.5 mt-2">
-                                <div 
-                                  className="bg-gradient-to-r from-red-500 to-red-400 h-1.5 rounded-full transition-all duration-1000"
-                                  style={{ width: `${value}%` }}
-                                />
-                              </div>
+                        {/* Enhanced stats preview */}
+                        {character.stats && (
+                          <div className="mb-4">
+                            <h5 className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-2">
+                              <Shield className="h-3 w-3" />
+                              Character Stats
+                            </h5>
+                            <div className="grid grid-cols-2 gap-2">
+                              {Object.entries(character.stats).map(([stat, value]) => (
+                                <div key={stat} className="bg-gray-800/40 rounded-lg p-2 border border-red-500/20">
+                                  <div className="text-xs text-gray-400 capitalize">{stat}</div>
+                                  <div className="font-bold text-red-400 text-sm">{value}</div>
+                                  <div className="w-full bg-gray-700 rounded-full h-1 mt-1">
+                                    <div 
+                                      className="bg-gradient-to-r from-red-500 to-red-400 h-1 rounded-full transition-all duration-1000"
+                                      style={{ width: `${value}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                          </div>
+                        )}
 
-                    {/* Abilities preview */}
-                    {character.abilities && character.abilities.length > 0 && (
-                      <div className="mb-6">
-                        <h5 className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
-                          <Zap className="h-4 w-4" />
-                          Special Abilities
-                        </h5>
-                        <div className="grid grid-cols-2 gap-2">
-                          {character.abilities.map((ability, i) => (
-                            <Badge key={i} variant="secondary" className="text-sm bg-red-500/15 text-red-300 border-red-500/30 p-2 justify-center hover:bg-red-500/25 transition-colors">
-                              {ability}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Relationships */}
-                    {character.relationships && character.relationships.length > 0 && (
-                      <div className="mb-6">
-                        <h5 className="text-sm font-semibold text-red-400 mb-3 flex items-center gap-2">
-                          <Heart className="h-4 w-4" />
-                          Relationships
-                        </h5>
-                        <div className="space-y-2">
-                          {character.relationships.map((relationship, i) => (
-                            <div key={i} className="text-xs text-gray-400 bg-gray-800/30 p-2 rounded border-l-2 border-purple-500/40">
-                              {relationship}
+                        {/* Abilities preview */}
+                        {character.abilities && character.abilities.length > 0 && (
+                          <div className="mb-4">
+                            <h5 className="text-sm font-semibold text-red-400 mb-2 flex items-center gap-2">
+                              <Zap className="h-3 w-3" />
+                              Abilities
+                            </h5>
+                            <div className="flex flex-wrap gap-1">
+                              {character.abilities.slice(0, 4).map((ability, i) => (
+                                <Badge key={i} variant="secondary" className="text-xs bg-red-500/15 text-red-300 border-red-500/30">
+                                  {ability}
+                                </Badge>
+                              ))}
                             </div>
-                          ))}
+                          </div>
+                        )}
+
+                        {/* Interactive buttons */}
+                        <div className="flex gap-2 pt-3 border-t border-red-500/10">
+                          <Button size="sm" variant="outline" className="flex-1 text-xs border-red-500/30 text-red-300 hover:bg-red-500/10">
+                            <Heart className="h-3 w-3 mr-1" />
+                            Favorite
+                          </Button>
+                          <Button size="sm" variant="outline" className="flex-1 text-xs border-red-500/30 text-red-300 hover:bg-red-500/10">
+                            <Star className="h-3 w-3 mr-1" />
+                            Follow
+                          </Button>
                         </div>
                       </div>
-                    )}
-                    
-                    {/* Interactive buttons */}
-                    <div className="flex gap-3 pt-4 border-t border-red-500/20">
-                      <Button size="sm" variant="outline" className="flex-1 border-red-500/30 text-red-400 hover:bg-red-500/10">
-                        <Heart className="h-3 w-3 mr-2" />
-                        Favorite
-                      </Button>
-                      <Button size="sm" variant="outline" className="flex-1 border-purple-500/30 text-purple-400 hover:bg-purple-500/10">
-                        <Star className="h-3 w-3 mr-2" />
-                        Follow
-                      </Button>
-                    </div>
-                    
-                    <div className="flex items-center justify-center text-xs text-gray-500 mt-4">
-                      <span className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-red-400 rounded-full animate-pulse" />
-                        Detailed Character Preview
-                      </span>
                     </div>
                   </div>
                 </div>
@@ -340,7 +314,6 @@ const CharactersSection = () => {
             </HoverCard>
           ))}
         </div>
-
       </div>
     </section>
   );
