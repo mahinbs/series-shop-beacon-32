@@ -53,84 +53,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     const initializeAuth = async () => {
-      // IMMEDIATELY clear any old user data that doesn't have the local- prefix
+      // Clear any old localStorage-only authentication data
       try {
         const oldUserData = localStorage.getItem('user');
         if (oldUserData) {
           const user = JSON.parse(oldUserData);
-          if (user.id && !user.id.startsWith('local-')) {
+          if (user.id && user.id.startsWith('local-')) {
+            console.log('🧹 Clearing old localStorage auth data');
             localStorage.removeItem('user');
             localStorage.removeItem('isAuthenticated');
-            localStorage.removeItem('anonymous_cart'); // Also clear cart data
+            localStorage.removeItem('admin_session');
+            localStorage.removeItem('anonymous_cart');
           }
         }
       } catch (error) {
         console.error('Error checking old user data:', error);
-        // Clear corrupted data
         localStorage.removeItem('user');
         localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('admin_session');
         localStorage.removeItem('anonymous_cart');
       }
 
-      // Check local storage first for bypass authentication
-      const checkLocalAuth = () => {
-        try {
-          const isAuthenticated = localStorage.getItem('isAuthenticated');
-          const userData = localStorage.getItem('user');
-          const adminSession = localStorage.getItem('admin_session');
-          
-          
-          if (isAuthenticated === 'true' && userData) {
-            const user = JSON.parse(userData);
-            
-            // Validate user data structure
-            if (user.id && user.email && user.role) {
-              setUser(user);
-              setProfile({
-                id: user.id,
-                user_id: user.id,
-                email: user.email,
-                full_name: user.full_name,
-                avatar_url: user.avatar_url
-              });
-              setIsAdmin(user.role === 'admin');
-              setIsLoading(false);
-              return true;
-            } else {
-              localStorage.removeItem('isAuthenticated');
-              localStorage.removeItem('user');
-              localStorage.removeItem('admin_session');
-            }
-          } else {
-          }
-        } catch (error) {
-          console.error('❌ Error restoring auth from local storage:', error);
-          localStorage.removeItem('isAuthenticated');
-          localStorage.removeItem('user');
-          localStorage.removeItem('admin_session');
-        }
-        return false;
-      };
-
-      // Try Supabase first (prioritize real authentication)
-      
-      // Only use local storage as fallback if Supabase fails
+      // Check for existing Supabase session
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (currentSession?.user) {
+          console.log('🔐 Found existing Supabase session:', currentSession.user.id);
           setSession(currentSession);
           setUser(currentSession.user);
-          await loadUserProfile(currentSession.user.id);
+          await Promise.all([
+            loadUserProfile(currentSession.user.id),
+            checkAdminRole(currentSession.user.id)
+          ]);
           return;
         }
       } catch (error) {
+        console.error('Error checking Supabase session:', error);
       }
       
-      // Fallback to local storage only if no Supabase session
-      if (checkLocalAuth()) {
-        return;
-      }
-      
+      // No authentication found
+      setIsLoading(false);
     };
 
     initializeAuth();
@@ -242,58 +204,94 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, fullName?: string) => {
     try {
-      // BYPASS SUPABASE AUTH - Use local storage instead
-      const userData = {
-        id: `local-${crypto.randomUUID()}`,
+      console.log('🔐 Starting Supabase signup for:', email);
+      
+      const { data, error } = await supabase.auth.signUp({
         email: email.trim().toLowerCase(),
-        full_name: fullName || 'User',
-        role: email.toLowerCase() === 'admin@series-shop.com' ? 'admin' : 'user',
-        created_at: new Date().toISOString()
-      };
+        password,
+        options: {
+          data: {
+            full_name: fullName || 'User',
+          },
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
 
-      // Store in localStorage
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('isAuthenticated', 'true');
-      
-      // Set user state - cast to User type to match Supabase User
-      setUser(userData as any);
-      setIsAdmin(userData.role === 'admin');
-      
+      if (error) throw error;
+
+      if (data.user) {
+        console.log('✅ Supabase signup successful:', data.user.id);
+        
+        // Create profile
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([{
+            user_id: data.user.id,
+            email: email.trim().toLowerCase(),
+            full_name: fullName || 'User',
+          }]);
+
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+        }
+
+        // Set admin role if admin email
+        if (email.toLowerCase() === 'admin@series-shop.com') {
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert([{
+              user_id: data.user.id,
+              role: 'admin'
+            }]);
+
+          if (roleError) {
+            console.error('Admin role assignment error:', roleError);
+          }
+        }
+      }
       
     } catch (error: any) {
-      console.error('Signup failed:', error);
+      console.error('❌ Supabase signup failed:', error);
       throw error;
     }
   };
 
   const signIn = async (email: string, password: string) => {
     try {
-      // BYPASS SUPABASE AUTH - Use local storage instead
-      const userData = {
-        id: `local-${crypto.randomUUID()}`,
-        email: email.trim().toLowerCase(),
-        full_name: 'Admin User',
-        role: email.toLowerCase() === 'admin@series-shop.com' ? 'admin' : 'user',
-        created_at: new Date().toISOString()
-      };
-
-      // Store in localStorage with enhanced data
-      localStorage.setItem('user', JSON.stringify(userData));
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('admin_session', 'true'); // Additional admin session flag
+      console.log('🔐 Starting Supabase signin for:', email);
       
-      // Set user state
-      setUser(userData as any);
-      setIsAdmin(userData.role === 'admin');
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password,
+      });
+
+      if (error) throw error;
+
+      if (data.user) {
+        console.log('✅ Supabase signin successful:', data.user.id);
+        
+        // Clear any old localStorage data
+        localStorage.removeItem('user');
+        localStorage.removeItem('isAuthenticated');
+        localStorage.removeItem('admin_session');
+      }
       
     } catch (error: any) {
-      console.error('Signin failed:', error);
+      console.error('❌ Supabase signin failed:', error);
       throw error;
     }
   };
 
   const signOut = async () => {
     try {
+      console.log('🔐 Starting signout...');
+      
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Supabase signout error:', error);
+      }
+      
       // Clear localStorage completely
       localStorage.removeItem('user');
       localStorage.removeItem('isAuthenticated');
@@ -304,9 +302,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setUser(null);
       setIsAdmin(false);
       setProfile(null);
+      setSession(null);
       
+      console.log('✅ Signout completed');
     } catch (error) {
-      console.error('Signout failed:', error);
+      console.error('❌ Signout failed:', error);
     }
   };
 
