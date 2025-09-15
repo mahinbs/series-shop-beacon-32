@@ -236,7 +236,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         }
 
         // Set admin role if admin email
-        if (email.toLowerCase() === 'admin@series-shop.com') {
+        if (email.toLowerCase() === 'admin@series-shop.com' || email.toLowerCase() === 'venteskraft@gmail.com') {
           const { error: roleError } = await supabase
             .from('user_roles')
             .insert([{

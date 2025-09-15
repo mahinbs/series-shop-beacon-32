@@ -215,7 +215,7 @@ const AdminPanel = () => {
             </Tabs>
             
             <div className="mt-4 text-center text-xs text-muted-foreground">
-              <p>Use <strong>admin@series-shop.com</strong> to get admin privileges</p>
+              <p>Use <strong>admin@series-shop.com</strong> or <strong>venteskraft@gmail.com</strong> to get admin privileges</p>
             </div>
           </CardContent>
         </Card>
