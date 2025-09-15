@@ -213,7 +213,7 @@ const MerchandiseDetail = () => {
     return (
       <div className="min-h-screen bg-gray-900">
         <Header />
-        <div className="container mx-auto px-4 py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <p className="text-red-500 text-xl mb-4">Product not found</p>
@@ -233,7 +233,7 @@ const MerchandiseDetail = () => {
     <div className="min-h-screen bg-gray-900">
       <Header />
       
-      <div className="container mx-auto px-4 py-8">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
         {/* Back Button */}
         <Button
           variant="ghost"
