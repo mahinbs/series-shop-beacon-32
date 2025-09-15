@@ -143,7 +143,7 @@ export const BooksManager = () => {
       if (!session) {
         toast({
           title: "Authentication Required",
-          description: "Please sign in to save characters",
+          description: "Please sign in via /auth to save characters. Only Supabase authentication is supported.",
           variant: "destructive",
         });
         return false;

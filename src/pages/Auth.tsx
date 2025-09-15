@@ -13,9 +13,9 @@ const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
+    email: 'admin@series-shop.com',
     password: '',
-    fullName: '',
+    fullName: 'Admin User',
   });
   
   const { signUp, signIn, user, isAdmin, isLoading: authLoading } = useSupabaseAuth();
@@ -101,15 +101,18 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="text-center mb-8">
-          <img 
-            src="/lovable-uploads/d2efe27c-7713-4015-9de8-ea1ddfbe2830.png" 
-            alt="Crossed Hearts"
-            className="h-16 w-auto mx-auto mb-4"
-          />
-          <h1 className="text-2xl font-bold text-foreground">Welcome</h1>
-          <p className="text-muted-foreground">Sign in to your account or create a new one</p>
-        </div>
+          <div className="text-center mb-8">
+            <img 
+              src="/lovable-uploads/d2efe27c-7713-4015-9de8-ea1ddfbe2830.png" 
+              alt="Crossed Hearts"
+              className="h-16 w-auto mx-auto mb-4"
+            />
+            <h1 className="text-2xl font-bold text-foreground">Welcome</h1>
+            <p className="text-muted-foreground">Sign in to your account or create a new one</p>
+            <div className="mt-2 text-xs text-muted-foreground bg-muted/50 p-2 rounded border">
+              💡 For admin access, use: admin@series-shop.com / Admin@2024!
+            </div>
+          </div>
 
         <Card>
           <CardHeader>
@@ -119,7 +122,7 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs defaultValue="signup" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>

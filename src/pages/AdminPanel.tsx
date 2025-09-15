@@ -87,33 +87,6 @@ const AdminPanel = () => {
               >
                 Debug Auth State
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  // Force restore admin session
-                  const adminUser = {
-                    id: 'local-admin-' + Date.now(),
-                    email: 'admin@series-shop.com',
-                    full_name: 'Admin User',
-                    role: 'admin',
-                    created_at: new Date().toISOString(),
-                    last_login: new Date().toISOString(),
-                    is_active: true
-                  };
-                  
-                  localStorage.setItem('user', JSON.stringify(adminUser));
-                  localStorage.setItem('isAuthenticated', 'true');
-                  localStorage.setItem('admin_session', 'true');
-                  
-                  if (process.env.NODE_ENV === 'development') {
-                    console.log('✅ Admin session restored manually');
-                  }
-                  window.location.reload();
-                }}
-                className="w-full text-xs bg-green-600 hover:bg-green-700"
-              >
-                Restore Admin Session
-              </Button>
             </div>
           </CardContent>
         </Card>

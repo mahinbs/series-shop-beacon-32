@@ -13,7 +13,7 @@ import CoinDisplay from './CoinDisplay';
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
-  const { user, isAuthenticated, logout, isLoading, profile } = useSupabaseAuth();
+  const { user, isAuthenticated, signOut, isLoading, profile } = useSupabaseAuth();
   const { getCartItemCount } = useCart();
 
   const scrollToFeaturedSeries = () => {
@@ -201,7 +201,7 @@ const Header = () => {
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem 
-                    onClick={logout} 
+                    onClick={signOut} 
                     className="flex items-center gap-2 text-destructive focus:text-destructive"
                   >
                     <LogOut className="h-4 w-4" />
@@ -286,7 +286,7 @@ const Header = () => {
                   </Link>
                   <Button
                     variant="ghost"
-                    onClick={logout}
+                    onClick={signOut}
                     className="text-gray-300 hover:text-white hover:bg-gray-800 text-sm font-medium px-3 py-2 rounded-md w-full justify-start flex items-center gap-2 text-destructive"
                   >
                     <LogOut className="h-4 w-4" />
