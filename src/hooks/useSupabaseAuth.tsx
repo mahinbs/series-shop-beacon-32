@@ -53,12 +53,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [adminChecked, setAdminChecked] = useState(false);
 
-  // Helper function to check if all loading operations are complete
-  const checkLoadingComplete = (profileDone: boolean, adminDone: boolean) => {
-    if (profileDone && adminDone) {
-      setIsLoading(false);
-    }
-  };
+// Derive loading state: wait for both profile and admin checks when session exists
+useEffect(() => {
+  if (session?.user) {
+    setIsLoading(!(profileLoaded && adminChecked));
+  } else {
+    setIsLoading(false);
+  }
+}, [session, profileLoaded, adminChecked]);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -88,12 +90,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (currentSession?.user) {
           console.log('🔐 Found existing Supabase session:', currentSession.user.id);
-          setSession(currentSession);
-          setUser(currentSession.user);
-          await Promise.all([
-            loadUserProfile(currentSession.user.id),
-            checkAdminRole(currentSession.user.id)
-          ]);
+setSession(currentSession);
+setUser(currentSession.user);
+// Reset loading flags and start both checks
+setProfileLoaded(false);
+setAdminChecked(false);
+setIsLoading(true);
+await Promise.all([
+  loadUserProfile(currentSession.user.id),
+  checkAdminRole(currentSession.user.id)
+]);
           return;
         }
       } catch (error) {
@@ -115,14 +121,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Use setTimeout to prevent deadlock
+          // Reset flags and defer queries to prevent deadlock
+          setProfileLoaded(false);
+          setAdminChecked(false);
+          setIsLoading(true);
           setTimeout(async () => {
             await Promise.all([
               loadUserProfile(session.user.id),
               checkAdminRole(session.user.id)
             ]);
           }, 0);
-        } else {
+        }
+        else {
           setProfile(null);
           setIsAdmin(false);
           setProfileLoaded(false);
@@ -137,6 +147,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        setProfileLoaded(false);
+        setAdminChecked(false);
+        setIsLoading(true);
         await Promise.all([
           loadUserProfile(session.user.id),
           checkAdminRole(session.user.id)
@@ -161,9 +174,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading profile:', error);
-        setProfileLoaded(true);
-        checkLoadingComplete(true, adminChecked);
-        return;
+setProfileLoaded(true);
+return;
       }
 
       if (data) {
@@ -191,8 +203,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
     } finally {
-      setProfileLoaded(true);
-      checkLoadingComplete(true, adminChecked);
+setProfileLoaded(true);
     }
   };
 
@@ -208,8 +219,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error && error.code !== 'PGRST116') {
         console.error('Error checking admin role:', error);
         setIsAdmin(false);
-        setAdminChecked(true);
-        checkLoadingComplete(profileLoaded, true);
+setAdminChecked(true);
         return;
       }
 
@@ -219,8 +229,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error('Error in checkAdminRole:', error);
       setIsAdmin(false);
     } finally {
-      setAdminChecked(true);
-      checkLoadingComplete(profileLoaded, true);
+setAdminChecked(true);
     }
   };
 
