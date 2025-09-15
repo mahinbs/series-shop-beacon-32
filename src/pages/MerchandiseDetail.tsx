@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { booksService } from '@/services/database';
 import { ComicService } from '@/services/comicService';
 import { BookCharacters } from '@/components/BookCharacters';
+import { YouTubeVideo } from '@/components/YouTubeVideo';
 
 const MerchandiseDetail = () => {
   const { productId } = useParams();
@@ -406,6 +407,17 @@ const MerchandiseDetail = () => {
             </Card>
           </div>
         </div>
+
+        {/* YouTube Video Section */}
+        {product && product.video_url && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold text-white mb-6">Featured Video</h2>
+            <YouTubeVideo 
+              url={product.video_url} 
+              className="max-w-4xl mx-auto"
+            />
+          </div>
+        )}
 
         {/* Characters Section */}
         {product && product.id && (

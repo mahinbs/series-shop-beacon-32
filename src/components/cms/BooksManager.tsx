@@ -22,6 +22,7 @@ interface BookForm {
   coins?: string;
   image_url: string;
   hover_image_url: string;
+  video_url?: string;
   can_unlock_with_coins: boolean;
   section_type: 'new-releases' | 'best-sellers' | 'leaving-soon' | 'featured' | 'trending';
   label?: string;
@@ -68,6 +69,7 @@ export const BooksManager = () => {
     coins: '',
     image_url: '',
     hover_image_url: '',
+    video_url: '',
     can_unlock_with_coins: false,
     section_type: 'new-releases',
     label: '',
@@ -87,6 +89,7 @@ export const BooksManager = () => {
       coins: '',
       image_url: '',
       hover_image_url: '',
+      video_url: '',
       can_unlock_with_coins: false,
       section_type: 'new-releases',
       label: '',
@@ -247,6 +250,7 @@ export const BooksManager = () => {
           ...formData,
           coins: formData.coins || '',
           label: formData.label || '',
+          video_url: formData.video_url || null,
           original_price: formData.original_price || null,
           description: '',
           dimensions: '',
@@ -304,6 +308,7 @@ export const BooksManager = () => {
       coins: book.coins || '',
       image_url: book.image_url || '',
       hover_image_url: book.hover_image_url || '',
+      video_url: book.video_url || '',
       can_unlock_with_coins: book.can_unlock_with_coins || false,
       section_type: book.section_type || 'new-releases',
       label: book.label || '',
@@ -722,6 +727,20 @@ export const BooksManager = () => {
                     disabled={submitting}
                   />
                 </div>
+              </div>
+
+              <div>
+                <Label htmlFor="video_url">YouTube Video URL</Label>
+                <Input
+                  id="video_url"
+                  value={formData.video_url}
+                  onChange={(e) => setFormData({ ...formData, video_url: e.target.value })}
+                  placeholder="https://www.youtube.com/watch?v=... or https://youtu.be/..."
+                  disabled={submitting}
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  Optional: Add a YouTube video that will be displayed above the characters section
+                </p>
               </div>
 
               {/* Characters Section */}
