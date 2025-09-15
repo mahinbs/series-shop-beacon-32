@@ -414,7 +414,7 @@ const MerchandiseDetail = () => {
             <h2 className="text-2xl font-bold text-white mb-6">Featured Video</h2>
             <YouTubeVideo 
               url={product.video_url} 
-              className="max-w-4xl mx-auto"
+              className="w-full max-w-lg mx-auto"
             />
           </div>
         )}
