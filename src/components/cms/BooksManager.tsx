@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { useBooks } from '@/hooks/useBooks';
 import { BookCharacterService, BookCharacter } from '@/services/bookCharacterService';
+import { CharacterImageManager } from '@/components/CharacterImageManager';
 import { testDatabaseConnection, booksService } from '@/services/database';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,9 +37,17 @@ interface BookForm {
 interface CharacterForm {
   name: string;
   description: string;
-  image_url: string;
   role: string;
   display_order: number;
+  images: CharacterImageForm[];
+}
+
+interface CharacterImageForm {
+  id?: string;
+  image_url: string;
+  is_main: boolean;
+  display_order: number;
+  alt_text: string;
 }
 
 interface VolumeForm {
@@ -69,9 +78,9 @@ export const BooksManager = () => {
   const [characterForm, setCharacterForm] = useState<CharacterForm>({
     name: '',
     description: '',
-    image_url: '',
     role: 'main',
     display_order: 0,
+    images: []
   });
   
   // Volume management state
@@ -135,9 +144,9 @@ export const BooksManager = () => {
     setCharacterForm({
       name: '',
       description: '',
-      image_url: '',
       role: 'main',
       display_order: 0,
+      images: []
     });
   };
 
@@ -427,17 +436,26 @@ export const BooksManager = () => {
       return;
     }
 
+    const mainImage = characterForm.images.find(img => img.is_main) || characterForm.images[0];
+    
     const newCharacter: BookCharacter = {
       id: `temp_${Date.now()}`, // Temporary ID with temp_ prefix
       book_id: editingId || '',
       name: characterForm.name,
       description: characterForm.description,
-      image_url: characterForm.image_url,
+      image_url: mainImage?.image_url || null, // Use main image for backward compatibility
       role: characterForm.role,
       display_order: characterForm.display_order,
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
+      images: characterForm.images.map(img => ({
+        ...img,
+        id: img.id || `temp_img_${Date.now()}_${Math.random()}`,
+        character_id: `temp_${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }))
     };
 
     // If editing an existing book, save immediately
@@ -487,9 +505,9 @@ export const BooksManager = () => {
     setCharacterForm({
       name: '',
       description: '',
-      image_url: '',
       role: 'main',
       display_order: characters.length,
+      images: []
     });
     setShowCharacterForm(false);
   };
@@ -892,32 +910,55 @@ export const BooksManager = () => {
 
                 {characters.length > 0 && (
                   <div className="grid gap-2">
-                    {characters.map((character) => (
-                      <div key={character.id} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex items-center gap-3">
-                          {character.image_url ? (
-                            <img src={character.image_url} alt={character.name} className="w-10 h-10 rounded object-cover" />
-                          ) : (
-                            <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
-                              <User className="h-5 w-5 text-muted-foreground" />
+                    {characters.map((character) => {
+                      const mainImage = character.images?.find(img => img.is_main) || character.images?.[0];
+                      const imageCount = character.images?.length || 0;
+                      
+                      return (
+                        <div key={character.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            {mainImage?.image_url || character.image_url ? (
+                              <div className="relative">
+                                <img 
+                                  src={mainImage?.image_url || character.image_url} 
+                                  alt={character.name} 
+                                  className="w-10 h-10 rounded object-cover" 
+                                />
+                                {imageCount > 1 && (
+                                  <div className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-4 h-4 flex items-center justify-center">
+                                    {imageCount}
+                                  </div>
+                                )}
+                              </div>
+                            ) : (
+                              <div className="w-10 h-10 rounded bg-muted flex items-center justify-center">
+                                <User className="h-5 w-5 text-muted-foreground" />
+                              </div>
+                            )}
+                            <div>
+                              <p className="font-medium">{character.name}</p>
+                              <p className="text-sm text-muted-foreground capitalize">
+                                {character.role}
+                                {imageCount > 0 && (
+                                  <span className="ml-2 text-xs bg-primary/10 text-primary px-1 rounded">
+                                    {imageCount} image{imageCount !== 1 ? 's' : ''}
+                                  </span>
+                                )}
+                              </p>
                             </div>
-                          )}
-                          <div>
-                            <p className="font-medium">{character.name}</p>
-                            <p className="text-sm text-muted-foreground capitalize">{character.role}</p>
                           </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveCharacter(character.id)}
+                            disabled={submitting}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleRemoveCharacter(character.id)}
-                          disabled={submitting}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
 
@@ -979,11 +1020,9 @@ export const BooksManager = () => {
                       </div>
 
                       <div>
-                        <Label htmlFor="character_image">Character Image URL</Label>
-                        <Input
-                          id="character_image"
-                          value={characterForm.image_url}
-                          onChange={(e) => setCharacterForm({ ...characterForm, image_url: e.target.value })}
+                        <CharacterImageManager
+                          images={characterForm.images}
+                          onImagesChange={(images) => setCharacterForm({ ...characterForm, images })}
                           disabled={submitting}
                         />
                       </div>

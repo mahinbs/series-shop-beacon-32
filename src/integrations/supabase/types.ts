@@ -74,6 +74,47 @@ export type Database = {
         }
         Relationships: []
       }
+      book_character_images: {
+        Row: {
+          alt_text: string | null
+          character_id: string
+          created_at: string
+          display_order: number
+          id: string
+          image_url: string
+          is_main: boolean
+          updated_at: string
+        }
+        Insert: {
+          alt_text?: string | null
+          character_id: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url: string
+          is_main?: boolean
+          updated_at?: string
+        }
+        Update: {
+          alt_text?: string | null
+          character_id?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          image_url?: string
+          is_main?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "book_character_images_character_id_fkey"
+            columns: ["character_id"]
+            isOneToOne: false
+            referencedRelation: "book_characters"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       book_characters: {
         Row: {
           book_id: string

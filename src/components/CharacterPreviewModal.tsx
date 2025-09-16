@@ -3,6 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, Share2, Star, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { CharacterImageGallery } from '@/components/CharacterImageGallery';
+import { BookCharacterImage } from '@/services/bookCharacterService';
 
 interface Character {
   id: string;
@@ -10,6 +12,7 @@ interface Character {
   description: string;
   role: string;
   image: string;
+  images?: BookCharacterImage[];
   stats?: {
     strength?: number;
     intelligence?: number;
@@ -78,22 +81,29 @@ export const CharacterPreviewModal = ({ character, isOpen, onClose }: CharacterP
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 overflow-y-auto max-h-[70vh]">
-          {/* Character Image */}
+          {/* Character Images */}
           <div className="relative">
-            <div className="aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 relative group">
-              <img
-                src={character.image}
-                alt={character.name}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                onError={(e) => {
-                  e.currentTarget.src = "/placeholder.svg";
-                }}
+            {character.images && character.images.length > 0 ? (
+              <CharacterImageGallery 
+                images={character.images} 
+                characterName={character.name} 
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                <p className="text-white text-sm font-medium">{character.name}</p>
+            ) : (
+              <div className="aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 relative group">
+                <img
+                  src={character.image}
+                  alt={character.name}
+                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                  onError={(e) => {
+                    e.currentTarget.src = "/placeholder.svg";
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                  <p className="text-white text-sm font-medium">{character.name}</p>
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Character Stats */}
             {character.stats && (

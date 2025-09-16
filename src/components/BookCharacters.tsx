@@ -22,19 +22,22 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
       try {
         const data = await BookCharacterService.getBookCharacters(bookId);
         // Transform data to include additional properties for enhanced preview
-        const enhancedCharacters = data.map(char => ({
-          ...char,
-          image: char.image_url || "/placeholder.svg",
-          stats: {
-            strength: Math.floor(Math.random() * 100) + 1,
-            intelligence: Math.floor(Math.random() * 100) + 1,
-            charisma: Math.floor(Math.random() * 100) + 1,
-            magic: Math.floor(Math.random() * 100) + 1,
-          },
-          backstory: char.description + " Their journey has been filled with challenges that have shaped them into who they are today.",
-          abilities: ['Unique Skill', 'Special Power', 'Ancient Knowledge', 'Hidden Talent'],
-          relationships: ['Connected to the main story', 'Influences key events', 'Beloved by readers']
-        }));
+        const enhancedCharacters = data.map(char => {
+          const mainImage = char.images?.find(img => img.is_main) || char.images?.[0];
+          return {
+            ...char,
+            image: mainImage?.image_url || char.image_url || "/placeholder.svg",
+            stats: {
+              strength: Math.floor(Math.random() * 100) + 1,
+              intelligence: Math.floor(Math.random() * 100) + 1,
+              charisma: Math.floor(Math.random() * 100) + 1,
+              magic: Math.floor(Math.random() * 100) + 1,
+            },
+            backstory: char.description + " Their journey has been filled with challenges that have shaped them into who they are today.",
+            abilities: ['Unique Skill', 'Special Power', 'Ancient Knowledge', 'Hidden Talent'],
+            relationships: ['Connected to the main story', 'Influences key events', 'Beloved by readers']
+          };
+        });
         setCharacters(enhancedCharacters);
       } catch (error) {
         console.error('Failed to load characters:', error);

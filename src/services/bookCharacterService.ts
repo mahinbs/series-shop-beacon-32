@@ -11,15 +11,38 @@ export interface BookCharacter {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  images?: BookCharacterImage[];
+}
+
+export interface BookCharacterImage {
+  id: string;
+  character_id: string;
+  image_url: string;
+  is_main: boolean;
+  display_order: number;
+  alt_text: string | null;
+  created_at: string;
+  updated_at: string;
 }
 
 export class BookCharacterService {
-  // Get characters for a specific book
+  // Get characters for a specific book with their images
   static async getBookCharacters(bookId: string): Promise<BookCharacter[]> {
     try {
       const { data, error } = await (supabase as any)
         .from('book_characters')
-        .select('*')
+        .select(`
+          *,
+          book_character_images (
+            id,
+            image_url,
+            is_main,
+            display_order,
+            alt_text,
+            created_at,
+            updated_at
+          )
+        `)
         .eq('book_id', bookId)
         .eq('is_active', true)
         .order('display_order', { ascending: true });
@@ -29,7 +52,14 @@ export class BookCharacterService {
         return [];
       }
 
-      return (data as BookCharacter[]) || [];
+      return (data as any[])?.map(character => ({
+        ...character,
+        images: character.book_character_images?.sort((a: BookCharacterImage, b: BookCharacterImage) => {
+          if (a.is_main && !b.is_main) return -1;
+          if (!a.is_main && b.is_main) return 1;
+          return a.display_order - b.display_order;
+        }) || []
+      })) || [];
     } catch (error) {
       console.error('Error in getBookCharacters:', error);
       return [];
@@ -117,6 +147,15 @@ export class BookCharacterService {
           *,
           books (
             title
+          ),
+          book_character_images (
+            id,
+            image_url,
+            is_main,
+            display_order,
+            alt_text,
+            created_at,
+            updated_at
           )
         `)
         .order('created_at', { ascending: false });
@@ -126,10 +165,138 @@ export class BookCharacterService {
         return [];
       }
 
-      return (data as any[]) || [];
+      return (data as any[])?.map(character => ({
+        ...character,
+        images: character.book_character_images?.sort((a: BookCharacterImage, b: BookCharacterImage) => {
+          if (a.is_main && !b.is_main) return -1;
+          if (!a.is_main && b.is_main) return 1;
+          return a.display_order - b.display_order;
+        }) || []
+      })) || [];
     } catch (error) {
       console.error('Error in getAllCharacters:', error);
       return [];
+    }
+  }
+
+  // Get character images
+  static async getCharacterImages(characterId: string): Promise<BookCharacterImage[]> {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('book_character_images')
+        .select('*')
+        .eq('character_id', characterId)
+        .order([
+          { column: 'is_main', ascending: false },
+          { column: 'display_order', ascending: true }
+        ]);
+
+      if (error) {
+        console.error('Error fetching character images:', error);
+        return [];
+      }
+
+      return (data as BookCharacterImage[]) || [];
+    } catch (error) {
+      console.error('Error in getCharacterImages:', error);
+      return [];
+    }
+  }
+
+  // Add character image
+  static async addCharacterImage(imageData: Omit<BookCharacterImage, 'id' | 'created_at' | 'updated_at'>): Promise<BookCharacterImage> {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('book_character_images')
+        .insert([imageData])
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding character image:', error);
+        throw new Error(`Failed to add character image: ${error.message}`);
+      }
+
+      return data as BookCharacterImage;
+    } catch (error) {
+      console.error('Error in addCharacterImage:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to add character image');
+    }
+  }
+
+  // Update character image
+  static async updateCharacterImage(imageId: string, imageData: Partial<BookCharacterImage>): Promise<BookCharacterImage> {
+    try {
+      const { data, error } = await (supabase as any)
+        .from('book_character_images')
+        .update(imageData)
+        .eq('id', imageId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating character image:', error);
+        throw new Error(`Failed to update character image: ${error.message}`);
+      }
+
+      return data as BookCharacterImage;
+    } catch (error) {
+      console.error('Error in updateCharacterImage:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to update character image');
+    }
+  }
+
+  // Delete character image
+  static async deleteCharacterImage(imageId: string): Promise<boolean> {
+    try {
+      const { error } = await (supabase as any)
+        .from('book_character_images')
+        .delete()
+        .eq('id', imageId);
+
+      if (error) {
+        console.error('Error deleting character image:', error);
+        throw new Error(`Failed to delete character image: ${error.message}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in deleteCharacterImage:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to delete character image');
+    }
+  }
+
+  // Set main image for character
+  static async setMainImage(characterId: string, imageId: string): Promise<boolean> {
+    try {
+      // The database trigger will handle unsetting other main images
+      const { error } = await (supabase as any)
+        .from('book_character_images')
+        .update({ is_main: true })
+        .eq('id', imageId)
+        .eq('character_id', characterId);
+
+      if (error) {
+        console.error('Error setting main character image:', error);
+        throw new Error(`Failed to set main character image: ${error.message}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error in setMainImage:', error);
+      if (error instanceof Error) {
+        throw error;
+      }
+      throw new Error('Failed to set main character image');
     }
   }
 }
