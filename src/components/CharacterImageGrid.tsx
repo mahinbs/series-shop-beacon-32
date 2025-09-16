@@ -15,6 +15,7 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [hasMultipleImages, setHasMultipleImages] = useState(false);
   
   if (!images || images.length === 0) {
     return null;
@@ -32,9 +33,11 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
     const container = scrollContainerRef.current;
     const scrollLeft = container.scrollLeft;
     const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    const isScrollable = container.scrollWidth > container.clientWidth;
     
+    setHasMultipleImages(images.length > 1);
     setCanScrollLeft(scrollLeft > 0);
-    setCanScrollRight(scrollLeft < maxScrollLeft - 1); // -1 for rounding issues
+    setCanScrollRight(scrollLeft < maxScrollLeft - 1 && isScrollable);
   };
 
   // Scroll functions
@@ -56,7 +59,12 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
 
   // Set up scroll listeners for horizontal variant
   useEffect(() => {
-    if (!isHorizontal || !scrollContainerRef.current) return;
+    if (!isHorizontal) return;
+    
+    // Set initial state
+    setHasMultipleImages(images.length > 1);
+    
+    if (!scrollContainerRef.current) return;
     
     const container = scrollContainerRef.current;
     
@@ -79,13 +87,19 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
   if (isHorizontal) {
     return (
       <div className="relative">
+        {/* Left fade gradient */}
+        {hasMultipleImages && (
+          <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-[5] pointer-events-none" />
+        )}
+        
         {/* Left Arrow */}
-        {canScrollLeft && (
+        {hasMultipleImages && (
           <Button
             variant="ghost"
             size="sm"
             onClick={scrollLeft}
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-background/80 hover:bg-background/90 border shadow-sm"
+            disabled={!canScrollLeft}
+            className="absolute left-1 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-background/90 hover:bg-background border shadow-lg disabled:opacity-50"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -94,7 +108,7 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
         {/* Scrollable Container */}
         <div 
           ref={scrollContainerRef}
-          className="flex gap-3 overflow-x-auto pb-2 scrollbar-none px-6"
+          className="flex gap-3 overflow-x-auto pb-2 scrollbar-none px-10"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {images.map((image, index) => (
@@ -131,13 +145,19 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
           ))}
         </div>
 
+        {/* Right fade gradient */}
+        {hasMultipleImages && (
+          <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-background to-transparent z-[5] pointer-events-none" />
+        )}
+
         {/* Right Arrow */}
-        {canScrollRight && (
+        {hasMultipleImages && (
           <Button
             variant="ghost"
             size="sm"
             onClick={scrollRight}
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-background/80 hover:bg-background/90 border shadow-sm"
+            disabled={!canScrollRight}
+            className="absolute right-1 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-background/90 hover:bg-background border shadow-lg disabled:opacity-50"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
