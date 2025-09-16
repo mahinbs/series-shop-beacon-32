@@ -9,22 +9,36 @@ import { Shield } from 'lucide-react';
 
 export const AdminDashboard = () => {
   const { isLoading } = useCMS();
-  const { user, isAdmin } = useSupabaseAuth();
+  const { user, isAdmin, isLoading: authLoading } = useSupabaseAuth();
   const [selectedPage, setSelectedPage] = useState('home-page');
   const [loadingTimeout, setLoadingTimeout] = useState(false);
+  const [stableSession, setStableSession] = useState(false);
 
-  // Add a timeout fallback for loading
+  // Track stable session to prevent unnecessary loading screens
   useEffect(() => {
-    if (isLoading) {
+    if (user && isAdmin && !authLoading) {
+      const timer = setTimeout(() => {
+        setStableSession(true);
+      }, 500); // Small delay to ensure auth is stable
+      
+      return () => clearTimeout(timer);
+    } else {
+      setStableSession(false);
+    }
+  }, [user, isAdmin, authLoading]);
+
+  // Add a timeout fallback for loading - but only if session isn't stable
+  useEffect(() => {
+    if (isLoading && !stableSession) {
       const timeoutId = setTimeout(() => {
         setLoadingTimeout(true);
-      }, 3000); // Reduced to 3 second timeout for better UX
+      }, 2000); // Reduced timeout for better UX
 
       return () => clearTimeout(timeoutId);
     } else {
       setLoadingTimeout(false);
     }
-  }, [isLoading]);
+  }, [isLoading, stableSession]);
 
   // console.log('AdminDashboard render:', { user, isLoading, loadingTimeout, selectedPage });
 
@@ -44,15 +58,16 @@ export const AdminDashboard = () => {
     );
   }
 
-  // Show loading for a maximum of 3 seconds, then proceed anyway
-  if (isLoading && !loadingTimeout) {
-    // console.log('AdminDashboard: Loading CMS...');
+  // Show loading only if auth is loading or CMS is loading for new sessions
+  if ((authLoading || (isLoading && !stableSession)) && !loadingTimeout) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center justify-center h-64 gap-4">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           <p className="text-lg text-muted-foreground">Loading Admin Panel...</p>
-          <p className="text-sm text-muted-foreground">Initializing dashboard components</p>
+          <p className="text-sm text-muted-foreground">
+            {authLoading ? 'Authenticating...' : 'Initializing dashboard components'}
+          </p>
         </div>
       </div>
     );

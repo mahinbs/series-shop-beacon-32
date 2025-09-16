@@ -52,6 +52,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
   const [adminChecked, setAdminChecked] = useState(false);
+  
+  // Session stability tracking
+  const [lastSessionId, setLastSessionId] = useState<string | null>(null);
+  const [lastProfileCheck, setLastProfileCheck] = useState<number>(0);
+  const [lastAdminCheck, setLastAdminCheck] = useState<number>(0);
+  const [isTabVisible, setIsTabVisible] = useState(true);
+  
+  // Session cache duration (5 minutes)
+  const CACHE_DURATION = 5 * 60 * 1000;
 
 // Derive loading state: wait for both profile and admin checks when session exists
 useEffect(() => {
@@ -62,8 +71,38 @@ useEffect(() => {
   }
 }, [session, profileLoaded, adminChecked]);
 
+  // Add tab visibility handling
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      const visible = !document.hidden;
+      setIsTabVisible(visible);
+      console.log(`📱 Tab visibility changed: ${visible ? 'visible' : 'hidden'}`);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, []);
+
+  // Helper function to check if session is stable
+  const isSessionStable = (newSession: Session | null): boolean => {
+    const newSessionId = newSession?.access_token?.substring(0, 20) || null;
+    const isStable = newSessionId === lastSessionId;
+    if (!isStable) {
+      console.log(`🔄 Session changed: ${lastSessionId?.substring(0, 8)}... → ${newSessionId?.substring(0, 8)}...`);
+      setLastSessionId(newSessionId);
+    }
+    return isStable;
+  };
+
+  // Helper function to check if cache is valid
+  const isCacheValid = (lastCheck: number): boolean => {
+    return Date.now() - lastCheck < CACHE_DURATION;
+  };
+
   useEffect(() => {
     const initializeAuth = async () => {
+      console.log('🚀 Initializing auth...');
+      
       // Clear any old localStorage-only authentication data
       try {
         const oldUserData = localStorage.getItem('user');
@@ -90,16 +129,40 @@ useEffect(() => {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         if (currentSession?.user) {
           console.log('🔐 Found existing Supabase session:', currentSession.user.id);
-setSession(currentSession);
-setUser(currentSession.user);
-// Reset loading flags and start both checks
-setProfileLoaded(false);
-setAdminChecked(false);
-setIsLoading(true);
-await Promise.all([
-  loadUserProfile(currentSession.user.id),
-  checkAdminRole(currentSession.user.id)
-]);
+          setSession(currentSession);
+          setUser(currentSession.user);
+          setLastSessionId(currentSession.access_token?.substring(0, 20) || null);
+          
+          // Check if we need to refresh profile/admin data
+          const now = Date.now();
+          const needsProfileCheck = !isCacheValid(lastProfileCheck);
+          const needsAdminCheck = !isCacheValid(lastAdminCheck);
+          
+          if (needsProfileCheck || needsAdminCheck) {
+            console.log('🔄 Refreshing cached data...', { needsProfileCheck, needsAdminCheck });
+            setIsLoading(true);
+            const promises = [];
+            
+            if (needsProfileCheck) {
+              promises.push(loadUserProfile(currentSession.user.id));
+            } else {
+              setProfileLoaded(true);
+            }
+            
+            if (needsAdminCheck) {
+              promises.push(checkAdminRole(currentSession.user.id));
+            } else {
+              setAdminChecked(true);
+            }
+            
+            if (promises.length > 0) {
+              await Promise.all(promises);
+            }
+          } else {
+            console.log('✅ Using cached auth data');
+            setProfileLoaded(true);
+            setAdminChecked(true);
+          }
           return;
         }
       } catch (error) {
@@ -107,6 +170,7 @@ await Promise.all([
       }
       
       // No authentication found
+      console.log('❌ No authentication found');
       setProfileLoaded(false);
       setAdminChecked(false);
       setIsLoading(false);
@@ -114,58 +178,56 @@ await Promise.all([
 
     initializeAuth();
 
-    // Fallback to Supabase auth if local storage fails
+    // Set up auth state listener with session stability checks
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      async (event, newSession) => {
+        console.log(`🔐 Auth state change: ${event}`, newSession?.user?.id);
         
-        if (session?.user) {
-          // Reset flags and defer queries to prevent deadlock
-          setProfileLoaded(false);
-          setAdminChecked(false);
-          setIsLoading(true);
-          setTimeout(async () => {
-            await Promise.all([
-              loadUserProfile(session.user.id),
-              checkAdminRole(session.user.id)
-            ]);
-          }, 0);
+        // Check if session is actually stable
+        if (isSessionStable(newSession) && isTabVisible) {
+          console.log('✅ Session stable, skipping reload');
+          return;
         }
-        else {
+        
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        
+        if (newSession?.user) {
+          // Only reload if tab is visible or session actually changed
+          if (isTabVisible || event === 'SIGNED_IN') {
+            console.log('🔄 Reloading auth data due to session change');
+            setProfileLoaded(false);
+            setAdminChecked(false);
+            setIsLoading(true);
+            
+            // Use setTimeout to prevent auth deadlock
+            setTimeout(async () => {
+              await Promise.all([
+                loadUserProfile(newSession.user.id),
+                checkAdminRole(newSession.user.id)
+              ]);
+            }, 0);
+          }
+        } else {
+          console.log('🚪 User signed out');
           setProfile(null);
           setIsAdmin(false);
           setProfileLoaded(false);
           setAdminChecked(false);
           setIsLoading(false);
+          setLastSessionId(null);
+          setLastProfileCheck(0);
+          setLastAdminCheck(0);
         }
       }
     );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      if (session?.user) {
-        setProfileLoaded(false);
-        setAdminChecked(false);
-        setIsLoading(true);
-        await Promise.all([
-          loadUserProfile(session.user.id),
-          checkAdminRole(session.user.id)
-        ]);
-      } else {
-        setProfileLoaded(false);
-        setAdminChecked(false);
-        setIsLoading(false);
-      }
-    });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const loadUserProfile = async (userId: string) => {
     try {
+      console.log('👤 Loading user profile for:', userId);
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
@@ -174,14 +236,17 @@ await Promise.all([
 
       if (error && error.code !== 'PGRST116') {
         console.error('Error loading profile:', error);
-setProfileLoaded(true);
-return;
+        setProfileLoaded(true);
+        setLastProfileCheck(Date.now());
+        return;
       }
 
       if (data) {
         setProfile(data);
+        console.log('✅ Profile loaded successfully');
       } else {
         // Create profile if it doesn't exist
+        console.log('🆕 Creating new profile...');
         const newProfile = {
           user_id: userId,
           email: user?.email || null,
@@ -198,17 +263,20 @@ return;
           console.error('Error creating profile:', createError);
         } else {
           setProfile(createdProfile);
+          console.log('✅ Profile created successfully');
         }
       }
     } catch (error) {
       console.error('Error in loadUserProfile:', error);
     } finally {
-setProfileLoaded(true);
+      setProfileLoaded(true);
+      setLastProfileCheck(Date.now());
     }
   };
 
   const checkAdminRole = async (userId: string) => {
     try {
+      console.log('👑 Checking admin role for:', userId);
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
@@ -219,17 +287,20 @@ setProfileLoaded(true);
       if (error && error.code !== 'PGRST116') {
         console.error('Error checking admin role:', error);
         setIsAdmin(false);
-setAdminChecked(true);
+        setAdminChecked(true);
+        setLastAdminCheck(Date.now());
         return;
       }
 
       const adminStatus = !!data;
       setIsAdmin(adminStatus);
+      console.log(`✅ Admin status: ${adminStatus}`);
     } catch (error) {
       console.error('Error in checkAdminRole:', error);
       setIsAdmin(false);
     } finally {
-setAdminChecked(true);
+      setAdminChecked(true);
+      setLastAdminCheck(Date.now());
     }
   };
 
