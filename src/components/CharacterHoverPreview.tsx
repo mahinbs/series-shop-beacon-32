@@ -62,21 +62,10 @@ export const CharacterHoverPreview = ({ character }: CharacterHoverPreviewProps)
               characterName={character.name}
               onImageSelect={handleImageSelect}
               selectedImageUrl={character.image || ""}
-              variant="compact"
+              variant="horizontal"
             />
           )}
           
-          {/* Interactive buttons */}
-          <div className="flex gap-2 pt-2 border-t border-primary/10">
-            <Button size="sm" variant="outline" className="flex-1 text-xs border-primary/30 text-primary hover:bg-primary/10">
-              <Heart className="h-3 w-3 mr-1" />
-              Favorite
-            </Button>
-            <Button size="sm" variant="outline" className="flex-1 text-xs border-primary/30 text-primary hover:bg-primary/10">
-              <Star className="h-3 w-3 mr-1" />
-              Follow
-            </Button>
-          </div>
         </div>
       </div>
     </div>

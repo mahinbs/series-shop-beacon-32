@@ -6,7 +6,7 @@ interface CharacterImageGridProps {
   characterName: string;
   onImageSelect: (imageUrl: string) => void;
   selectedImageUrl: string;
-  variant?: 'default' | 'compact';
+  variant?: 'default' | 'compact' | 'horizontal';
 }
 
 export const CharacterImageGrid = ({ images, characterName, onImageSelect, selectedImageUrl, variant = 'default' }: CharacterImageGridProps) => {
@@ -17,13 +17,20 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
   console.log('🖼️ CharacterImageGrid rendering:', images.length, 'images for', characterName);
 
   const isCompact = variant === 'compact';
+  const isHorizontal = variant === 'horizontal';
   
   return (
     <div className="space-y-3">
-      <h4 className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold text-muted-foreground`}>
-        All Images ({images.length})
-      </h4>
-      <div className={`grid ${isCompact ? 'grid-cols-3 gap-2 max-h-48' : 'grid-cols-2 gap-3 max-h-96'} overflow-y-auto`}>
+      {!isHorizontal && (
+        <h4 className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold text-muted-foreground`}>
+          All Images ({images.length})
+        </h4>
+      )}
+      <div className={
+        isHorizontal 
+          ? 'flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent' 
+          : `grid ${isCompact ? 'grid-cols-3 gap-2 max-h-48' : 'grid-cols-2 gap-3 max-h-96'} overflow-y-auto`
+      }>
         {images.map((image, index) => (
           <button
             key={`${image.id}-${index}`} // Use both id and index to ensure uniqueness
@@ -32,6 +39,8 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
               onImageSelect(image.image_url);
             }}
             className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+              isHorizontal ? 'min-w-20 w-20 h-20' : ''
+            } ${
               selectedImageUrl === image.image_url 
                 ? 'border-primary ring-2 ring-primary/20' 
                 : 'border-muted hover:border-primary/50'
