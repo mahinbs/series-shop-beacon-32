@@ -179,6 +179,8 @@ export const BooksManager = () => {
 
   const saveCharactersForBook = async (bookId: string) => {
     try {
+      console.log('🎭 Starting character save process for book:', bookId);
+      
       // Check authentication
       const { data: { session } } = await (supabase as any).auth.getSession();
       if (!session) {
@@ -207,39 +209,111 @@ export const BooksManager = () => {
         !characters.some(c => c.id === orig.id)
       );
 
-      // Create new characters
+      console.log('🎭 Characters to create:', charactersToCreate.length);
+      console.log('🎭 Characters to update:', charactersToUpdate.length);
+      console.log('🎭 Characters to delete:', charactersToDelete.length);
+
+      // Create new characters with their images
       for (const character of charactersToCreate) {
-        const { id, created_at, updated_at, ...characterData } = character;
-        await BookCharacterService.createBookCharacter({
+        console.log('🎭 Creating character:', character.name);
+        
+        const { id, created_at, updated_at, images, ...characterData } = character;
+        
+        // Create the character first
+        const savedCharacter = await BookCharacterService.createBookCharacter({
           ...characterData,
           book_id: bookId,
         });
+        
+        console.log('✅ Character created with ID:', savedCharacter.id);
+        
+        // Now save the character images
+        if (images && images.length > 0) {
+          console.log('🖼️ Saving', images.length, 'images for character:', savedCharacter.id);
+          
+          for (const image of images) {
+            try {
+              const { id: imageId, character_id, created_at: imgCreated, updated_at: imgUpdated, ...imageData } = image;
+              
+              await BookCharacterService.addCharacterImage({
+                ...imageData,
+                character_id: savedCharacter.id,
+              });
+              
+              console.log('✅ Image saved for character:', savedCharacter.id);
+            } catch (imageError) {
+              console.error('❌ Error saving image for character:', savedCharacter.id, imageError);
+              
+              // Rollback: delete the character we just created
+              await BookCharacterService.deleteBookCharacter(savedCharacter.id);
+              
+              throw new Error(`Failed to save images for character "${character.name}". Character creation rolled back.`);
+            }
+          }
+        }
       }
 
-      // Update existing characters
+      // Update existing characters and their images
       for (const character of charactersToUpdate) {
-        const { created_at, updated_at, ...characterData } = character;
+        console.log('🎭 Updating character:', character.name);
+        
+        const { created_at, updated_at, images, ...characterData } = character;
         await BookCharacterService.updateBookCharacter(character.id, characterData);
+        
+        // Handle image updates for existing characters
+        if (images && images.length > 0) {
+          console.log('🖼️ Updating images for character:', character.id);
+          
+          // Get current images for this character
+          const currentImages = await BookCharacterService.getCharacterImages(character.id);
+          
+          // Delete images that are no longer present
+          const imagesToDelete = currentImages.filter(currentImg => 
+            !images.some(newImg => newImg.id === currentImg.id)
+          );
+          
+          for (const imageToDelete of imagesToDelete) {
+            await BookCharacterService.deleteCharacterImage(imageToDelete.id);
+          }
+          
+          // Update or create images
+          for (const image of images) {
+            const { character_id, created_at: imgCreated, updated_at: imgUpdated, ...imageData } = image;
+            
+            if (image.id && !image.id.startsWith('temp_')) {
+              // Update existing image
+              await BookCharacterService.updateCharacterImage(image.id, imageData);
+            } else {
+              // Create new image
+              await BookCharacterService.addCharacterImage({
+                ...imageData,
+                character_id: character.id,
+              });
+            }
+          }
+        }
       }
 
-      // Delete removed characters
+      // Delete removed characters (this will cascade delete their images)
       for (const character of charactersToDelete) {
+        console.log('🗑️ Deleting character:', character.name);
         await BookCharacterService.deleteBookCharacter(character.id);
       }
 
       if (charactersToCreate.length > 0 || charactersToUpdate.length > 0 || charactersToDelete.length > 0) {
         toast({
           title: "Success",
-          description: "Characters saved successfully",
+          description: "Characters and images saved successfully",
         });
       }
 
+      console.log('✅ Character save process completed successfully');
       return true;
     } catch (error) {
-      console.error('Error saving characters:', error);
+      console.error('❌ Error saving characters:', error);
       toast({
         title: "Error",
-        description: "Failed to save characters",
+        description: error instanceof Error ? error.message : "Failed to save characters",
         variant: "destructive",
       });
       return false;
@@ -461,6 +535,8 @@ export const BooksManager = () => {
     // If editing an existing book, save immediately
     if (editingId) {
       try {
+        console.log('🎭 Adding character to existing book:', editingId);
+        
         const { data: { session } } = await (supabase as any).auth.getSession();
         if (!session) {
           toast({
@@ -471,21 +547,57 @@ export const BooksManager = () => {
           return;
         }
 
-        const { id, created_at, updated_at, ...characterData } = newCharacter;
+        const { id, created_at, updated_at, images, ...characterData } = newCharacter;
+        
+        // Create the character first
         const savedCharacter = await BookCharacterService.createBookCharacter({
           ...characterData,
           book_id: editingId,
         });
 
-        if (savedCharacter) {
-          setCharacters([...characters, savedCharacter]);
-          toast({
-            title: "Success",
-            description: "Character added and saved",
-          });
+        console.log('✅ Character created:', savedCharacter.id);
+
+        // Now save the character images
+        if (images && images.length > 0) {
+          console.log('🖼️ Saving', images.length, 'images for character:', savedCharacter.id);
+          
+          try {
+            for (const image of images) {
+              const { id: imageId, character_id, created_at: imgCreated, updated_at: imgUpdated, ...imageData } = image;
+              
+              await BookCharacterService.addCharacterImage({
+                ...imageData,
+                character_id: savedCharacter.id,
+              });
+              
+              console.log('✅ Image saved for character:', savedCharacter.id);
+            }
+          } catch (imageError) {
+            console.error('❌ Error saving images:', imageError);
+            
+            // Rollback: delete the character we just created
+            await BookCharacterService.deleteBookCharacter(savedCharacter.id);
+            
+            toast({
+              title: "Error",
+              description: "Failed to save character images. Character creation rolled back.",
+              variant: "destructive",
+            });
+            return;
+          }
         }
+
+        // Reload characters to get the saved character with images
+        const updatedCharacters = await BookCharacterService.getBookCharacters(editingId);
+        setCharacters(updatedCharacters);
+        setOriginalCharacters([...updatedCharacters]);
+
+        toast({
+          title: "Success",
+          description: "Character and images added successfully",
+        });
       } catch (error) {
-        console.error('Error saving character:', error);
+        console.error('❌ Error saving character:', error);
         toast({
           title: "Error",
           description: "Failed to save character",
