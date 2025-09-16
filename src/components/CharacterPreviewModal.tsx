@@ -2,7 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Heart, Share2, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { CharacterImageGrid } from '@/components/CharacterImageGrid';
 import { BookCharacterImage } from '@/services/bookCharacterService';
 
@@ -32,13 +32,23 @@ interface CharacterPreviewModalProps {
 
 export const CharacterPreviewModal = ({ character, isOpen, onClose }: CharacterPreviewModalProps) => {
   const [isFavorited, setIsFavorited] = useState(false);
-  const [selectedImage, setSelectedImage] = useState(() => {
+  const [selectedImage, setSelectedImage] = useState('/placeholder.svg');
+
+  // Update selected image when character changes
+  useEffect(() => {
     if (character?.images?.length > 0) {
       const mainImage = character.images.find(img => img.is_main);
-      return mainImage?.image_url || character.images[0].image_url;
+      const newSelectedImage = mainImage?.image_url || character.images[0].image_url;
+      setSelectedImage(newSelectedImage);
+      console.log('🖼️ Character images loaded:', character.images.length, 'images for', character.name);
+      console.log('🖼️ Selected image:', newSelectedImage);
+    } else if (character?.image) {
+      setSelectedImage(character.image);
+      console.log('🖼️ Using fallback image for', character.name);
+    } else {
+      setSelectedImage('/placeholder.svg');
     }
-    return character?.image || '/placeholder.svg';
-  });
+  }, [character]);
 
   if (!character) return null;
 
