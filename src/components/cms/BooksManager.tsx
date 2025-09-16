@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { useBooks } from '@/hooks/useBooks';
 import { BookCharacterService, BookCharacter } from '@/services/bookCharacterService';
-import { testDatabaseConnection } from '@/services/database';
+import { testDatabaseConnection, booksService } from '@/services/database';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, Save, Edit, Upload, BookOpen, Database, X, Users, User } from 'lucide-react';
+import { Trash2, Plus, Save, Edit, Upload, BookOpen, Database, X, Users, User, BookCopy } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface BookForm {
@@ -41,6 +41,17 @@ interface CharacterForm {
   display_order: number;
 }
 
+interface VolumeForm {
+  volume_number: number;
+  price: number;
+  original_price?: number;
+  label?: string;
+  is_new: boolean;
+  is_on_sale: boolean;
+  stock_quantity: number;
+  description?: string;
+}
+
 export const BooksManager = () => {
   const { books, isLoading, createBook, updateBook, deleteBook, loadBooks } = useBooks();
   const { toast } = useToast();
@@ -61,6 +72,20 @@ export const BooksManager = () => {
     image_url: '',
     role: 'main',
     display_order: 0,
+  });
+  
+  // Volume management state
+  const [volumes, setVolumes] = useState<any[]>([]);
+  const [showVolumeForm, setShowVolumeForm] = useState(false);
+  const [volumeForm, setVolumeForm] = useState<VolumeForm>({
+    volume_number: 1,
+    price: 0,
+    original_price: undefined,
+    label: '',
+    is_new: false,
+    is_on_sale: false,
+    stock_quantity: 0,
+    description: '',
   });
   const [formData, setFormData] = useState<BookForm>({
     title: '',
@@ -263,6 +288,11 @@ export const BooksManager = () => {
           stock_quantity: 0,
           weight: null,
           tags: [],
+          // Volume-specific fields (optional for regular books)
+          parent_book_id: null,
+          volume_number: null,
+          is_volume: false,
+          series_title: null,
         });
         
         bookId = createdBook.id;
@@ -505,6 +535,72 @@ export const BooksManager = () => {
     });
   };
 
+  const handleAddVolume = async () => {
+    if (!editingId || !volumeForm.volume_number) {
+      toast({
+        title: "Error",
+        description: "Please fill in the volume number",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+      const newVolume = await booksService.createVolume(editingId, volumeForm);
+      setVolumes(prev => [...prev, newVolume].sort((a, b) => a.volume_number - b.volume_number));
+      
+      // Reset form
+      setVolumeForm({
+        volume_number: Math.max(...volumes.map(v => v.volume_number), 0) + 1,
+        price: 0,
+        original_price: undefined,
+        label: '',
+        is_new: false,
+        is_on_sale: false,
+        stock_quantity: 0,
+        description: '',
+      });
+      setShowVolumeForm(false);
+      
+      toast({
+        title: "Success",
+        description: "Volume added successfully",
+      });
+    } catch (error) {
+      console.error('Error adding volume:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to add volume",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRemoveVolume = async (volumeId: string) => {
+    try {
+      setSubmitting(true);
+      await booksService.deleteVolume(volumeId);
+      setVolumes(prev => prev.filter(v => v.id !== volumeId));
+      
+      toast({
+        title: "Success",
+        description: "Volume removed successfully",
+      });
+    } catch (error) {
+      console.error('Error removing volume:', error);
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to remove volume",
+        variant: "destructive",
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="p-4">
@@ -576,15 +672,25 @@ export const BooksManager = () => {
                           className="w-16 h-20 object-cover rounded"
                         />
                       )}
-                      <div>
-                        <h3 className="font-semibold">{book.title}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          {book.author} • {book.category} • ${book.price}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          Section: {book.section_type} • Order: {book.display_order}
-                        </p>
-                      </div>
+                        <div>
+                          <h3 className="font-semibold flex items-center gap-2">
+                            {book.title}
+                            {book.is_volume && (
+                              <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                Vol.{book.volume_number}
+                              </span>
+                            )}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {book.author} • {book.category} • ${book.price}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Section: {book.section_type} • Order: {book.display_order}
+                            {book.is_volume && book.parent_book_id && (
+                              <span className="ml-2 text-blue-600">• Volume of series</span>
+                            )}
+                          </p>
+                        </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -903,6 +1009,180 @@ export const BooksManager = () => {
                   </Card>
                 )}
               </div>
+
+              {/* Volume Management Section */}
+              {editingId && !books.find(b => b.id === editingId)?.is_volume && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <BookCopy className="h-5 w-5 text-primary" />
+                      <Label className="text-lg font-semibold">Volume Management</Label>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowVolumeForm(true)}
+                      disabled={submitting}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Volume
+                    </Button>
+                  </div>
+
+                  {volumes.length > 0 && (
+                    <div className="grid gap-2">
+                      {volumes.map((volume) => (
+                        <div key={volume.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <img src={volume.image_url} alt={volume.title} className="w-10 h-10 rounded object-cover" />
+                            <div>
+                              <p className="font-medium">{volume.title}</p>
+                              <p className="text-sm text-muted-foreground">
+                                ${volume.price} • Stock: {volume.stock_quantity}
+                                {volume.is_new && <span className="ml-2 text-green-600">NEW</span>}
+                                {volume.is_on_sale && <span className="ml-2 text-red-600">ON SALE</span>}
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRemoveVolume(volume.id)}
+                            disabled={submitting}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {showVolumeForm && (
+                    <Card className="border-2 border-green-200">
+                      <CardContent className="p-4 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-semibold">Add Volume</h4>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setShowVolumeForm(false)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="volume_number">Volume Number *</Label>
+                            <Input
+                              id="volume_number"
+                              type="number"
+                              min="1"
+                              value={volumeForm.volume_number}
+                              onChange={(e) => setVolumeForm({ ...volumeForm, volume_number: parseInt(e.target.value) || 1 })}
+                              disabled={submitting}
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="volume_price">Price *</Label>
+                            <Input
+                              id="volume_price"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={volumeForm.price}
+                              onChange={(e) => setVolumeForm({ ...volumeForm, price: parseFloat(e.target.value) || 0 })}
+                              disabled={submitting}
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label htmlFor="volume_original_price">Original Price</Label>
+                            <Input
+                              id="volume_original_price"
+                              type="number"
+                              step="0.01"
+                              min="0"
+                              value={volumeForm.original_price || ''}
+                              onChange={(e) => setVolumeForm({ ...volumeForm, original_price: e.target.value ? parseFloat(e.target.value) : undefined })}
+                              disabled={submitting}
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label htmlFor="volume_stock">Stock Quantity</Label>
+                            <Input
+                              id="volume_stock"
+                              type="number"
+                              min="0"
+                              value={volumeForm.stock_quantity}
+                              onChange={(e) => setVolumeForm({ ...volumeForm, stock_quantity: parseInt(e.target.value) || 0 })}
+                              disabled={submitting}
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label htmlFor="volume_label">Label (e.g., "Pre-Order")</Label>
+                          <Input
+                            id="volume_label"
+                            value={volumeForm.label || ''}
+                            onChange={(e) => setVolumeForm({ ...volumeForm, label: e.target.value })}
+                            disabled={submitting}
+                          />
+                        </div>
+
+                        <div className="flex items-center space-x-4">
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="volume_is_new"
+                              checked={volumeForm.is_new}
+                              onCheckedChange={(checked) => setVolumeForm({ ...volumeForm, is_new: checked })}
+                              disabled={submitting}
+                            />
+                            <Label htmlFor="volume_is_new">New</Label>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <Switch
+                              id="volume_is_on_sale"
+                              checked={volumeForm.is_on_sale}
+                              onCheckedChange={(checked) => setVolumeForm({ ...volumeForm, is_on_sale: checked })}
+                              disabled={submitting}
+                            />
+                            <Label htmlFor="volume_is_on_sale">On Sale</Label>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => setShowVolumeForm(false)}
+                            disabled={submitting}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            type="button"
+                            onClick={handleAddVolume}
+                            disabled={submitting}
+                          >
+                            Add Volume
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+                </div>
+              )}
 
               <div className="flex items-center space-x-4">
                 <div className="flex items-center space-x-2">

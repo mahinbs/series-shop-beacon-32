@@ -268,6 +268,122 @@ export const booksService = {
       console.error('Books service getByProductType error:', error);
       throw error;
     }
+  },
+
+  // Volume management functions
+  async getVolumes(parentBookId: string) {
+    try {
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('parent_book_id', parentBookId)
+        .eq('is_volume', true)
+        .eq('is_active', true)
+        .order('volume_number', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching book volumes:', error);
+        throw new Error(`Failed to fetch book volumes: ${error.message}`);
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Books service getVolumes error:', error);
+      throw error;
+    }
+  },
+
+  async createVolume(parentBookId: string, volumeData: Partial<BookInsert> & { volume_number: number }) {
+    try {
+      // Get parent book data to inherit image and other properties
+      const parentBook = await this.getById(parentBookId);
+      
+      const volumeBookData = {
+        title: `${parentBook.title}, Vol.${volumeData.volume_number}`,
+        author: parentBook.author,
+        category: parentBook.category,
+        product_type: parentBook.product_type || 'book',
+        price: volumeData.price || parentBook.price,
+        original_price: volumeData.original_price || parentBook.original_price,
+        coins: volumeData.coins || parentBook.coins,
+        image_url: parentBook.image_url, // Inherit parent's image
+        hover_image_url: parentBook.hover_image_url,
+        cover_page_url: parentBook.cover_page_url,
+        description: volumeData.description || parentBook.description,
+        can_unlock_with_coins: volumeData.can_unlock_with_coins || parentBook.can_unlock_with_coins,
+        section_type: parentBook.section_type,
+        label: volumeData.label,
+        is_new: volumeData.is_new || false,
+        is_on_sale: volumeData.is_on_sale || false,
+        display_order: volumeData.display_order || 0,
+        is_active: volumeData.is_active !== undefined ? volumeData.is_active : true,
+        stock_quantity: volumeData.stock_quantity || 0,
+        sku: volumeData.sku,
+        weight: volumeData.weight || parentBook.weight,
+        dimensions: volumeData.dimensions || parentBook.dimensions,
+        tags: volumeData.tags || parentBook.tags || [],
+        // Volume-specific fields
+        parent_book_id: parentBookId,
+        volume_number: volumeData.volume_number,
+        is_volume: true,
+        series_title: volumeData.series_title || parentBook.title
+      };
+
+      const { data, error } = await supabase
+        .from('books')
+        .insert([volumeBookData])
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error creating book volume:', error);
+        throw new Error(`Failed to create book volume: ${error.message}`);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Books service createVolume error:', error);
+      throw error;
+    }
+  },
+
+  async updateVolume(volumeId: string, updates: Partial<BookUpdate>) {
+    try {
+      const { data, error } = await supabase
+        .from('books')
+        .update(updates)
+        .eq('id', volumeId)
+        .eq('is_volume', true)
+        .select()
+        .single();
+      
+      if (error) {
+        console.error('Error updating book volume:', error);
+        throw new Error(`Failed to update book volume: ${error.message}`);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Books service updateVolume error:', error);
+      throw error;
+    }
+  },
+
+  async deleteVolume(volumeId: string) {
+    try {
+      const { error } = await supabase
+        .from('books')
+        .delete()
+        .eq('id', volumeId)
+        .eq('is_volume', true);
+      
+      if (error) {
+        console.error('Error deleting book volume:', error);
+        throw new Error(`Failed to delete book volume: ${error.message}`);
+      }
+    } catch (error) {
+      console.error('Books service deleteVolume error:', error);
+      throw error;
+    }
   }
 };
 

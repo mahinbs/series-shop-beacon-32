@@ -23,6 +23,7 @@ const MerchandiseDetail = () => {
   const [product, setProduct] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [volumes, setVolumes] = useState<any[]>([]);
   const { addToCart } = useCart();
   const { toast } = useToast();
 
@@ -53,18 +54,31 @@ const MerchandiseDetail = () => {
         }
 
         // Primary method: Try to fetch directly from books service
-        console.log('🔍 Fetching product from books service with ID:', productId);
-        try {
-          const book = await booksService.getById(productId);
-          if (book) {
-            console.log('✅ Found product in books:', book);
-            setProduct(book);
-            setIsLoading(false);
-            return;
-          }
-        } catch (bookError) {
-          console.log('📚 Book not found, trying comic series...');
-        }
+         console.log('🔍 Fetching product from books service with ID:', productId);
+         try {
+           const book = await booksService.getById(productId);
+           if (book) {
+             console.log('✅ Found product in books:', book);
+             setProduct(book);
+             
+             // Load volumes for this book if it's not a volume itself
+             if (!book.is_volume) {
+               try {
+                 const bookVolumes = await booksService.getVolumes(book.id);
+                 console.log('📚 Loaded volumes:', bookVolumes);
+                 setVolumes(bookVolumes);
+               } catch (volumeError) {
+                 console.error('Error loading volumes:', volumeError);
+                 setVolumes([]);
+               }
+             }
+             
+             setIsLoading(false);
+             return;
+           }
+         } catch (bookError) {
+           console.log('📚 Book not found, trying comic series...');
+         }
 
         // Fallback: Try comic series
         await searchInComicSeries();
@@ -463,56 +477,84 @@ const MerchandiseDetail = () => {
           </div>
 
           {/* All The Volume Section */}
-          <div className="mt-8 mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-white text-xl font-bold uppercase">All The Volume</h2>
-              <button className="text-red-400 hover:text-red-300 font-bold text-sm uppercase">
-                See All
-              </button>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {[1, 2, 3, 4, 5, 6, 7, 8].map((volume) => (
-                <div key={volume} className="bg-gray-900 rounded-lg overflow-hidden">
-                  {/* Pre-order Banner */}
-                  {volume > 4 && (
-                    <div className="bg-orange-600 text-white text-center py-1 text-xs font-bold uppercase">
-                      Pre-orders now open
-                    </div>
-                  )}
-                  
-                  <div className="p-4">
-                    <img
-                      src={product?.image_url || product?.imageUrl || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png'}
-                      alt={`${product?.title || 'Product'} Vol.${volume}`}
-                      className="w-full h-40 object-cover rounded mb-3"
-                    />
+          {volumes.length > 0 && (
+            <div className="mt-8 mb-8">
+              <div className="flex justify-between items-center mb-6">
+                <h2 className="text-white text-xl font-bold uppercase">All The Volume</h2>
+                <button className="text-red-400 hover:text-red-300 font-bold text-sm uppercase">
+                  See All
+                </button>
+              </div>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {volumes.map((volume) => (
+                  <div key={volume.id} className="bg-gray-900 rounded-lg overflow-hidden">
+                    {/* Labels */}
+                    {volume.label && (
+                      <div className="bg-orange-600 text-white text-center py-1 text-xs font-bold uppercase">
+                        {volume.label}
+                      </div>
+                    )}
+                    {volume.is_new && (
+                      <div className="bg-green-600 text-white text-center py-1 text-xs font-bold uppercase">
+                        New
+                      </div>
+                    )}
+                    {volume.is_on_sale && (
+                      <div className="bg-red-600 text-white text-center py-1 text-xs font-bold uppercase">
+                        On Sale
+                      </div>
+                    )}
                     
-                    <div className="text-center">
-                      <h3 className="text-red-400 text-xs font-bold mb-1 uppercase">
-                        {product?.title || 'Product'}, Vol.{volume}
-                      </h3>
-                      <p className="text-white text-xs font-bold mb-3">₹{volume}99</p>
+                    <div className="p-4">
+                      <img
+                        src={volume.image_url}
+                        alt={volume.title}
+                        className="w-full h-40 object-cover rounded mb-3"
+                      />
                       
-                      <div className="space-y-2">
-                        <button className="w-full bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-xs font-bold uppercase">
-                          {volume > 4 ? 'Pre-Order Now' : 'Order Now'}
-                        </button>
-                        <div className="flex space-x-1">
-                          <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold">
-                            Cart
+                      <div className="text-center">
+                        <h3 className="text-red-400 text-xs font-bold mb-1 uppercase">
+                          {volume.title}
+                        </h3>
+                        <div className="flex items-center justify-center gap-2 mb-3">
+                          <p className="text-white text-xs font-bold">${volume.price}</p>
+                          {volume.original_price && volume.original_price > volume.price && (
+                            <p className="text-gray-400 text-xs line-through">${volume.original_price}</p>
+                          )}
+                        </div>
+                        
+                        <div className="space-y-2">
+                          <button 
+                            className={`w-full py-1 px-2 rounded text-xs font-bold uppercase transition-all duration-200 ${
+                              volume.stock_quantity > 0
+                                ? 'bg-red-600 hover:bg-red-700 text-white'
+                                : 'bg-gray-500 text-gray-300 cursor-not-allowed'
+                            }`}
+                            disabled={volume.stock_quantity <= 0}
+                            onClick={() => navigate(`/merchandise/${volume.id}`)}
+                          >
+                            {volume.stock_quantity > 0 ? (volume.label === 'Pre-Order' ? 'Pre-Order Now' : 'Order Now') : 'Out of Stock'}
                           </button>
-                          <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold">
-                            ♡
-                          </button>
+                          <div className="flex space-x-1">
+                            <button 
+                              className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold"
+                              disabled={volume.stock_quantity <= 0}
+                            >
+                              Cart
+                            </button>
+                            <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold">
+                              ♡
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
         </div>
       </div>

@@ -138,17 +138,21 @@ export type Database = {
           is_active: boolean
           is_new: boolean | null
           is_on_sale: boolean | null
+          is_volume: boolean | null
           label: string | null
           original_price: number | null
+          parent_book_id: string | null
           price: number
           product_type: string | null
           section_type: string
+          series_title: string | null
           sku: string | null
           stock_quantity: number | null
           tags: string[] | null
           title: string
           updated_at: string
           video_url: string | null
+          volume_number: number | null
           weight: number | null
         }
         Insert: {
@@ -167,17 +171,21 @@ export type Database = {
           is_active?: boolean
           is_new?: boolean | null
           is_on_sale?: boolean | null
+          is_volume?: boolean | null
           label?: string | null
           original_price?: number | null
+          parent_book_id?: string | null
           price: number
           product_type?: string | null
           section_type: string
+          series_title?: string | null
           sku?: string | null
           stock_quantity?: number | null
           tags?: string[] | null
           title: string
           updated_at?: string
           video_url?: string | null
+          volume_number?: number | null
           weight?: number | null
         }
         Update: {
@@ -196,20 +204,32 @@ export type Database = {
           is_active?: boolean
           is_new?: boolean | null
           is_on_sale?: boolean | null
+          is_volume?: boolean | null
           label?: string | null
           original_price?: number | null
+          parent_book_id?: string | null
           price?: number
           product_type?: string | null
           section_type?: string
+          series_title?: string | null
           sku?: string | null
           stock_quantity?: number | null
           tags?: string[] | null
           title?: string
           updated_at?: string
           video_url?: string | null
+          volume_number?: number | null
           weight?: number | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "books_parent_book_id_fkey"
+            columns: ["parent_book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cart_items: {
         Row: {
