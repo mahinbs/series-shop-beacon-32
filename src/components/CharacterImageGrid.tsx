@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { BookCharacterImage } from '@/services/bookCharacterService';
 
 interface CharacterImageGridProps {
@@ -10,6 +12,10 @@ interface CharacterImageGridProps {
 }
 
 export const CharacterImageGrid = ({ images, characterName, onImageSelect, selectedImageUrl, variant = 'default' }: CharacterImageGridProps) => {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  
   if (!images || images.length === 0) {
     return null;
   }
@@ -18,29 +24,142 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
 
   const isCompact = variant === 'compact';
   const isHorizontal = variant === 'horizontal';
+
+  // Check scroll position and update arrow visibility
+  const checkScrollPosition = () => {
+    if (!scrollContainerRef.current || !isHorizontal) return;
+    
+    const container = scrollContainerRef.current;
+    const scrollLeft = container.scrollLeft;
+    const maxScrollLeft = container.scrollWidth - container.clientWidth;
+    
+    setCanScrollLeft(scrollLeft > 0);
+    setCanScrollRight(scrollLeft < maxScrollLeft - 1); // -1 for rounding issues
+  };
+
+  // Scroll functions
+  const scrollLeft = () => {
+    if (!scrollContainerRef.current) return;
+    scrollContainerRef.current.scrollBy({
+      left: -200, // Scroll by ~1.5 image widths (160px + gap)
+      behavior: 'smooth'
+    });
+  };
+
+  const scrollRight = () => {
+    if (!scrollContainerRef.current) return;
+    scrollContainerRef.current.scrollBy({
+      left: 200, // Scroll by ~1.5 image widths
+      behavior: 'smooth'
+    });
+  };
+
+  // Set up scroll listeners for horizontal variant
+  useEffect(() => {
+    if (!isHorizontal || !scrollContainerRef.current) return;
+    
+    const container = scrollContainerRef.current;
+    
+    // Initial check
+    checkScrollPosition();
+    
+    // Add scroll listener
+    container.addEventListener('scroll', checkScrollPosition);
+    
+    // Add resize observer to handle container size changes
+    const resizeObserver = new ResizeObserver(checkScrollPosition);
+    resizeObserver.observe(container);
+    
+    return () => {
+      container.removeEventListener('scroll', checkScrollPosition);
+      resizeObserver.disconnect();
+    };
+  }, [isHorizontal, images.length]);
+  
+  if (isHorizontal) {
+    return (
+      <div className="relative">
+        {/* Left Arrow */}
+        {canScrollLeft && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={scrollLeft}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-background/80 hover:bg-background/90 border shadow-sm"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        )}
+        
+        {/* Scrollable Container */}
+        <div 
+          ref={scrollContainerRef}
+          className="flex gap-3 overflow-x-auto pb-2 scrollbar-none px-6"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
+          {images.map((image, index) => (
+            <button
+              key={`${image.id}-${index}`}
+              onClick={() => {
+                console.log('🖼️ Image selected:', image.image_url, 'for', characterName);
+                onImageSelect(image.image_url);
+              }}
+              className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200 min-w-40 w-40 h-40 flex-shrink-0 ${
+                selectedImageUrl === image.image_url 
+                  ? 'border-primary ring-2 ring-primary/20' 
+                  : 'border-muted hover:border-primary/50'
+              }`}
+            >
+              <img
+                src={image.image_url}
+                alt={image.alt_text || `${characterName} image ${index + 1}`}
+                className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholder.svg";
+                }}
+              />
+              {image.is_main && (
+                <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border border-background" />
+              )}
+              <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <p className="text-white text-xs truncate">
+                  {image.alt_text || `Image ${index + 1}`}
+                </p>
+              </div>
+              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-200" />
+            </button>
+          ))}
+        </div>
+
+        {/* Right Arrow */}
+        {canScrollRight && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={scrollRight}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 h-8 w-8 p-0 bg-background/80 hover:bg-background/90 border shadow-sm"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-3">
-      {!isHorizontal && (
-        <h4 className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold text-muted-foreground`}>
-          All Images ({images.length})
-        </h4>
-      )}
-      <div className={
-        isHorizontal 
-          ? 'flex gap-3 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent' 
-          : `grid ${isCompact ? 'grid-cols-3 gap-2 max-h-48' : 'grid-cols-2 gap-3 max-h-96'} overflow-y-auto`
-      }>
+      <h4 className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold text-muted-foreground`}>
+        All Images ({images.length})
+      </h4>
+      <div className={`grid ${isCompact ? 'grid-cols-3 gap-2 max-h-48' : 'grid-cols-2 gap-3 max-h-96'} overflow-y-auto`}>
         {images.map((image, index) => (
           <button
-            key={`${image.id}-${index}`} // Use both id and index to ensure uniqueness
+            key={`${image.id}-${index}`}
             onClick={() => {
               console.log('🖼️ Image selected:', image.image_url, 'for', characterName);
               onImageSelect(image.image_url);
             }}
             className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-              isHorizontal ? 'min-w-40 w-40 h-40' : ''
-            } ${
               selectedImageUrl === image.image_url 
                 ? 'border-primary ring-2 ring-primary/20' 
                 : 'border-muted hover:border-primary/50'
@@ -57,7 +176,6 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
             {image.is_main && (
               <div className="absolute top-1 right-1 w-2 h-2 bg-primary rounded-full border border-background" />
             )}
-            {/* Show image metadata */}
             <div className="absolute bottom-0 left-0 right-0 bg-black/60 p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
               <p className="text-white text-xs truncate">
                 {image.alt_text || `Image ${index + 1}`}
