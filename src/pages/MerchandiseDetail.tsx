@@ -3,7 +3,7 @@ import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Heart, ShoppingCart, Package, Truck, Shield, RotateCcw, Loader2 } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, Package, Truck, Shield, RotateCcw, Loader2, Star } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCart } from '@/hooks/useCart';
@@ -188,14 +188,28 @@ const MerchandiseDetail = () => {
     });
   };
 
+  const handleSeriesClick = () => {
+    console.log('🔗 Series title clicked - navigating to series page');
+    navigate(`/series/${productId}`);
+  };
+
+  // Mock data for new sections
+  const mockGenres = ["HIGH SCHOOL", "ROMANCE", "DRAMA", "FANTASY"];
+  const mockCharacters = [
+    { id: 1, name: "MITSUMI IWAKURA", image: product?.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png' },
+    { id: 2, name: "SOUSUKE SHIMA", image: product?.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png' },
+    { id: 3, name: "MIKA EGASHIRA", image: product?.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png' },
+    { id: 4, name: "MAKOTO KURUME", image: product?.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png' }
+  ];
+
   const totalPrice = product ? (product.price || parseFloat(product.price?.toString().replace('$', '') || '0')) * quantity : 0;
 
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen bg-black">
         <Header />
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="text-center">
               <Loader2 className="w-8 h-8 animate-spin text-red-600 mx-auto mb-4" />
@@ -211,7 +225,7 @@ const MerchandiseDetail = () => {
   // Error state
   if (error || !product) {
     return (
-      <div className="min-h-screen bg-gray-900">
+      <div className="min-h-screen bg-black">
         <Header />
         <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
@@ -230,218 +244,299 @@ const MerchandiseDetail = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-900">
+    <div className="min-h-screen bg-black">
       <Header />
       
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-8">
-        {/* Back Button */}
+      {/* Back Button */}
+      <div className="container mx-auto px-4 py-4">
         <Button
           variant="ghost"
           onClick={() => navigate('/shop-all')}
-          className="text-gray-400 hover:text-white mb-6"
+          className="text-gray-300 hover:text-white p-0"
         >
           <ArrowLeft className="w-4 h-4 mr-2" />
-          Back to Shop
+          Back
         </Button>
+      </div>
+      
+      {/* Large Hero Background Image */}
+      <div 
+        className="relative h-96 bg-cover bg-center"
+        style={{ backgroundImage: `url(${product?.cover_page_url || '/lovable-uploads/abed4463-239d-408d-ad63-f574b272f199.png'})` }}
+      >
+        <div className="absolute inset-0 bg-black bg-opacity-30"></div>
+      </div>
 
-        {product && product.cover_page_url && (
-          <div className="relative mb-8 h-64 bg-gradient-to-r from-gray-900 to-gray-800 rounded-lg overflow-hidden">
-            <img
-              src={product.cover_page_url}
-              alt={`${product.title} cover`}
-              className="w-full h-full object-cover opacity-80"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-transparent to-transparent" />
-            <div className="absolute bottom-6 left-6 text-white">
-              <h1 className="text-2xl font-bold mb-2">{product.title}</h1>
-              {product.author && (
-                <p className="text-lg text-gray-200">by {product.author}</p>
-              )}
+      {/* Main Content Container */}
+      <div className="bg-black relative">
+        <div className="container mx-auto px-4">
+          {/* Product Section */}
+          <div className="flex flex-col lg:flex-row gap-0 mb-8">
+            {/* Left Side - Book Cover (Overlapping Hero) */}
+            <div className="flex justify-start lg:justify-start relative -mt-24 z-10 w-80">
+              <div className="w-80">
+                <img
+                  src={product?.image_url || product?.imageUrl || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png'}
+                  alt={product?.title || 'Product'}
+                  className="w-full rounded-lg shadow-2xl animate-fade-in"
+                />
+              </div>
+            </div>
+
+            {/* Right Side - Product Details */}
+            <div className="space-y-4 min-h-96 py-8 w-full flex-1 pl-8 pr-24">
+              {/* Genre Tags */}
+              <div className="flex flex-wrap gap-2">
+                {mockGenres.slice(0, 4).map((genre, index) => (
+                  <span
+                    key={index}
+                    className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded uppercase tracking-wide"
+                  >
+                    {genre}
+                  </span>
+                ))}
+              </div>
+
+              {/* Series Title (Clickable) */}
+              <div>
+                <button
+                  onClick={handleSeriesClick}
+                  className="text-2xl lg:text-3xl font-bold text-white hover:text-red-400 transition-colors duration-200 text-left block"
+                >
+                  {product?.title || 'Product Title'}
+                </button>
+                <p className="text-gray-400 text-sm mt-1">by {product?.author || 'Author'}</p>
+              </div>
+
+              {/* Rating */}
+              <div className="flex items-center space-x-2">
+                <span className="text-white font-semibold">Rating</span>
+                <div className="flex items-center">
+                  {[...Array(5)].map((_, i) => (
+                    <Star 
+                      key={i} 
+                      className="w-4 h-4 text-red-500 fill-current"
+                    />
+                  ))}
+                  <span className="text-white ml-2 font-bold">★★★★★</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex space-x-4 pt-4">
+                <Button
+                  onClick={handleAddToCart}
+                  disabled={product?.stock_quantity !== undefined ? product.stock_quantity <= 0 : false}
+                  className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold uppercase"
+                >
+                  ADD TO CART
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsWishlisted(!isWishlisted)}
+                  className="border-gray-500 text-gray-300 hover:bg-gray-700 px-8 py-3 font-bold uppercase"
+                >
+                  WISH TO BUY
+                </Button>
+              </div>
             </div>
           </div>
-        )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-          {/* Product Images */}
-          <div className="space-y-4">
-            <div className="aspect-square bg-gray-800 rounded-lg overflow-hidden">
-              <img
-                src={product.image_url || product.imageUrl || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png'}
-                alt={product.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-            <div className="grid grid-cols-4 gap-2">
-              {images.map((image, index) => (
-                <div key={index} className="aspect-square bg-gray-800 rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-opacity">
-                  <img
-                    src={image}
-                    alt={`${product.title} ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
+          {/* Characters Section */}
+          <div className="mb-12">
+            <h2 className="text-white text-xl font-bold mb-6 uppercase tracking-wide bg-gray-900 p-3 rounded">Characters</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {mockCharacters.map((character) => (
+                <div key={character.id} className="text-center bg-gray-900 p-4 rounded-lg">
+                  <div className="w-full h-32 mb-3 overflow-hidden bg-gray-800 rounded">
+                    <img
+                      src={character.image}
+                      alt={character.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <p className="text-white font-semibold text-xs uppercase tracking-wide">
+                    {character.name}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Product Details */}
-          <div className="space-y-6">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <Badge variant="secondary" className="bg-red-600 text-white">
-                  {product.category}
-                </Badge>
-                <Badge variant="outline" className="border-gray-600 text-gray-300">
-                  {product.product_type || product.type || 'Product'}
-                </Badge>
-                {product.is_new && <Badge variant="secondary" className="bg-green-600 text-white">🆕 New</Badge>}
-                {product.is_on_sale && <Badge variant="destructive" className="text-white">🏷️ Sale</Badge>}
-              </div>
-              <h1 className="text-3xl font-bold text-white mb-2">{product.title}</h1>
-              {product.author && (
-                <p className="text-lg text-gray-400 mb-2">by {product.author}</p>
-              )}
-              <div className="flex items-center gap-4 mb-4">
-                <div className="flex items-center">
-                  <span className="text-gray-400">({product.reviews || '0'} reviews)</span>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 mb-4">
-                <p className="text-xl font-bold text-white">${product.price}</p>
-                {product.original_price && product.original_price > product.price && (
-                  <p className="text-lg text-gray-400 line-through">${product.original_price}</p>
-                )}
-              </div>
-              <p className="text-gray-300 leading-relaxed">{product.description}</p>
+          {/* Bottom Details Grid */}
+          <div className="flex flex-col md:flex-row gap-6 bg-gray-900 p-6 rounded-lg mb-8">
+            {/* Left Container - Book Description (60% width) */}
+            <div className="md:w-[60%] border border-gray-700 p-4 rounded-lg">
+              <h3 className="text-red-400 font-bold text-lg mb-4 uppercase">About the Series</h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                {product?.description || 'Product description will be displayed here. This is a placeholder text for the product description section.'}
+              </p>
             </div>
-
-            {/* Size Selection (if applicable) */}
-            {product.category === 'Apparel' && (
-              <div>
-                <h3 className="text-white font-semibold mb-3">Size</h3>
-                <div className="flex gap-2">
-                  {sizes.map((size) => (
-                    <button
-                      key={size}
-                      onClick={() => setSelectedSize(size)}
-                      className={`px-4 py-2 border rounded-md transition-colors ${
-                        selectedSize === size
-                          ? 'border-red-500 bg-red-500/10 text-red-400'
-                          : 'border-gray-600 text-gray-400 hover:border-gray-500'
-                      }`}
-                    >
-                      {size}
-                    </button>
-                  ))}
-                </div>
+            
+            {/* Right Container - Details (40% width) */}
+            <div className="md:w-[40%] space-y-3 border border-gray-700 p-4 rounded-lg">
+              <div className="text-sm">
+                <span className="text-red-400 font-bold uppercase">Creator: </span>
+                <span className="text-white font-bold">{product?.author || 'Creator Name'}</span>
               </div>
-            )}
-
-            {/* Quantity */}
-            <div>
-              <h3 className="text-white font-semibold mb-3">Quantity</h3>
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                  className="w-10 h-10 border border-gray-600 rounded-md text-gray-400 hover:border-gray-500 hover:text-white transition-colors"
-                >
-                  -
-                </button>
-                <span className="text-white font-semibold w-8 text-center">{quantity}</span>
-                <button
-                  onClick={() => setQuantity(quantity + 1)}
-                  className="w-10 h-10 border border-gray-600 rounded-md text-gray-400 hover:border-gray-500 hover:text-white transition-colors"
-                >
-                  +
-                </button>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="space-y-3">
-              <Button
-                onClick={handleAddToCart}
-                disabled={product.stock_quantity !== undefined ? product.stock_quantity <= 0 : false}
-                className="w-full bg-red-600 hover:bg-red-700 text-white py-6 text-lg font-semibold"
-              >
-                <ShoppingCart className="w-5 h-5 mr-2" />
-                {(product.stock_quantity !== undefined ? product.stock_quantity > 0 : true) ? 'Add to Cart' : 'Out of Stock'}
-              </Button>
               
-              <Button
-                onClick={handleCheckout}
-                disabled={product.stock_quantity !== undefined ? product.stock_quantity <= 0 : false}
-                variant="outline"
-                className="w-full border-red-600 text-red-400 hover:bg-red-600 hover:text-white py-6 text-lg font-semibold"
-              >
-                Checkout Now - ${totalPrice.toFixed(2)}
-              </Button>
+              <div className="text-sm">
+                <span className="text-red-400 font-bold uppercase">Category: </span>
+                <span className="text-white font-bold">{product?.category || 'Category'}</span>
+              </div>
               
-              <Button
-                variant="outline"
-                onClick={() => setIsWishlisted(!isWishlisted)}
-                className="w-full border-gray-600 text-gray-300 hover:border-red-500 hover:text-red-400"
-              >
-                <Heart className={`w-5 h-5 mr-2 ${isWishlisted ? 'fill-current text-red-500' : ''}`} />
-                {isWishlisted ? 'Remove from Wishlist' : 'Add to Wishlist'}
-              </Button>
+              <div className="text-sm">
+                <span className="text-red-400 font-bold uppercase">Type: </span>
+                <span className="text-white font-bold">{product?.product_type || 'Product Type'}</span>
+              </div>
+              
+              <div className="text-sm">
+                <span className="text-red-400 font-bold uppercase">Price: </span>
+                <span className="text-white font-bold">${product?.price || '0.00'}</span>
+              </div>
             </div>
-
-            {/* Product Features */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center text-gray-300">
-                    <Truck className="w-5 h-5 mr-3 text-red-400" />
-                    <div>
-                      <div className="font-semibold">Free Shipping</div>
-                      <div className="text-sm text-gray-400">On orders over $50</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center text-gray-300">
-                    <Shield className="w-5 h-5 mr-3 text-red-400" />
-                    <div>
-                      <div className="font-semibold">Authentic</div>
-                      <div className="text-sm text-gray-400">100% Official</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center text-gray-300">
-                    <RotateCcw className="w-5 h-5 mr-3 text-red-400" />
-                    <div>
-                      <div className="font-semibold">Easy Returns</div>
-                      <div className="text-sm text-gray-400">30-day policy</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center text-gray-300">
-                    <Package className="w-5 h-5 mr-3 text-red-400" />
-                    <div>
-                      <div className="font-semibold">Gift Wrapping</div>
-                      <div className="text-sm text-gray-400">Available</div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
           </div>
+
+          {/* Trailer and Preview Section */}
+          {product?.video_url && (
+            <div className="mt-8 bg-gray-900 p-6 rounded-lg mb-8">
+              <div className="flex flex-col lg:flex-row gap-6">
+                {/* Left Side - Trailer Video */}
+                <div className="lg:w-[60%]">
+                  <YouTubeVideo 
+                    url={product.video_url} 
+                    className="w-full h-[400px] lg:h-[500px]"
+                  />
+                </div>
+
+                {/* Right Side - Chapter Preview List */}
+                <div className="lg:w-[40%]">
+                  <div className="bg-white rounded-lg p-4">
+                    <h3 className="text-black font-bold text-lg mb-4 uppercase">Preview</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between py-2 border-b border-gray-200">
+                        <span className="text-black font-bold">CH. 1</span>
+                        <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded text-sm font-bold">
+                          📖 READ NOW
+                        </button>
+                      </div>
+                      {[2, 3, 4, 5, 6].map((ch) => (
+                        <div key={ch} className="flex items-center justify-between py-2 border-b border-gray-200">
+                          <span className="text-black font-bold">CH. {ch}</span>
+                          <button className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1 rounded text-sm font-bold">
+                            🔒 JOIN TO CONTINUE
+                          </button>
+                        </div>
+                      ))}
+                      <div className="text-center pt-2">
+                        <button className="text-gray-600 hover:text-gray-800">
+                          ▼
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Checkout Button */}
+          <div className="mt-8 text-center mb-8">
+            <Button
+              onClick={handleCheckout}
+              disabled={product?.stock_quantity !== undefined ? product.stock_quantity <= 0 : false}
+              className="bg-red-600 hover:bg-red-700 text-white px-12 py-4 text-lg font-bold uppercase"
+            >
+              CHECKOUT - ${totalPrice.toFixed(2)}
+            </Button>
+          </div>
+
+          {/* Where to Buy Section */}
+          <div className="mt-8 bg-gray-900 p-6 rounded-lg mb-8">
+            <h2 className="text-white text-xl font-bold mb-6 uppercase">Where to Buy</h2>
+            
+            {/* Format Tabs */}
+            <div className="flex space-x-1 mb-6">
+              <button className="bg-white text-black px-6 py-2 font-bold text-sm uppercase">
+                Digital
+              </button>
+              <button className="bg-transparent text-red-400 px-6 py-2 font-bold text-sm uppercase border-b-2 border-red-400">
+                Paperback
+              </button>
+              <button className="bg-transparent text-red-400 px-6 py-2 font-bold text-sm uppercase border-b-2 border-red-400">
+                Hardcover
+              </button>
+            </div>
+
+            {/* Retailer Buttons */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
+              {['Flipkart', 'Amazon', 'Amazon', 'Flipkart', 'Amazon', 'Flipkart', 'Flipkart', 'Amazon', 'Amazon'].map((retailer, index) => (
+                <button key={index} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase">
+                  {retailer}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* All The Volume Section */}
+          <div className="mt-8 mb-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-white text-xl font-bold uppercase">All The Volume</h2>
+              <button className="text-red-400 hover:text-red-300 font-bold text-sm uppercase">
+                See All
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((volume) => (
+                <div key={volume} className="bg-gray-900 rounded-lg overflow-hidden">
+                  {/* Pre-order Banner */}
+                  {volume > 4 && (
+                    <div className="bg-orange-600 text-white text-center py-1 text-xs font-bold uppercase">
+                      Pre-orders now open
+                    </div>
+                  )}
+                  
+                  <div className="p-4">
+                    <img
+                      src={product?.image_url || product?.imageUrl || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png'}
+                      alt={`${product?.title || 'Product'} Vol.${volume}`}
+                      className="w-full h-40 object-cover rounded mb-3"
+                    />
+                    
+                    <div className="text-center">
+                      <h3 className="text-red-400 text-xs font-bold mb-1 uppercase">
+                        {product?.title || 'Product'}, Vol.{volume}
+                      </h3>
+                      <p className="text-white text-xs font-bold mb-3">₹{volume}99</p>
+                      
+                      <div className="space-y-2">
+                        <button className="w-full bg-red-600 hover:bg-red-700 text-white py-1 px-2 rounded text-xs font-bold uppercase">
+                          {volume > 4 ? 'Pre-Order Now' : 'Order Now'}
+                        </button>
+                        <div className="flex space-x-1">
+                          <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold">
+                            Cart
+                          </button>
+                          <button className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold">
+                            ♡
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Existing Characters Section (if BookCharacters component needed) */}
+          {product && product.id && (
+            <div className="mt-12 mb-8" style={{ display: 'none' }}>
+              <BookCharacters bookId={product.id} />
+            </div>
+          )}
         </div>
-
-        {/* YouTube Video Section */}
-        {product && product.video_url && (
-          <div className="mt-12">
-            <h2 className="text-2xl font-bold text-white mb-6">Featured Video</h2>
-            <YouTubeVideo 
-              url={product.video_url} 
-              className="w-full max-w-lg mx-auto"
-            />
-          </div>
-        )}
-
-        {/* Characters Section */}
-        {product && product.id && (
-          <div className="mt-12">
-            <BookCharacters bookId={product.id} />
-          </div>
-        )}
       </div>
 
       <Footer />
