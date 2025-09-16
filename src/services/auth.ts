@@ -195,6 +195,17 @@ export class AuthService {
   }
 
   static async addToCart(userId: string, productId: string, quantity: number = 1): Promise<void> {
+    // First, validate that the product exists
+    const { data: product, error: productError } = await (supabase as any)
+      .from('books')
+      .select('id')
+      .eq('id', productId)
+      .single();
+
+    if (productError || !product) {
+      throw new Error('Product not found or no longer available');
+    }
+
     // Check if item already exists in cart
     const { data: existingItem } = await (supabase as any)
       .from('cart_items')

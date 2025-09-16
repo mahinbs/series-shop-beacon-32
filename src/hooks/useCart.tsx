@@ -65,18 +65,39 @@ export const CartProvider = ({ children }: CartProviderProps) => {
             setCartItems([]);
           } else {
             // Load from backend for authenticated users
-            const backendCartItems = await AuthService.getCartItems(user.id);
-            const transformedItems: CartItem[] = backendCartItems.map(item => ({
-              id: item.product.id,
-              title: item.product.title,
-              author: item.product.author || undefined,
-              price: item.product.price,
-              imageUrl: item.product.image_url,
-              product_type: item.product.product_type,
-              quantity: item.quantity,
-              inStock: true,
-            }));
-            setCartItems(transformedItems);
+            try {
+              const backendCartItems = await AuthService.getCartItems(user.id);
+              
+              // Filter out any items without valid product data and transform
+              const transformedItems: CartItem[] = backendCartItems
+                .filter(item => {
+                  if (!item.product || !item.product.id || !item.product.title) {
+                    console.warn('Filtering out invalid cart item:', item);
+                    return false;
+                  }
+                  return true;
+                })
+                .map(item => ({
+                  id: item.product.id,
+                  title: item.product.title,
+                  author: item.product.author || undefined,
+                  price: Number(item.product.price) || 0,
+                  imageUrl: item.product.image_url || '',
+                  product_type: item.product.product_type || 'book',
+                  quantity: item.quantity || 1,
+                  inStock: true,
+                }));
+              
+              setCartItems(transformedItems);
+            } catch (backendError) {
+              console.error('Error loading cart from backend:', backendError);
+              // Fall back to empty cart instead of showing error
+              setCartItems([]);
+              // Only show error if it's not a network/auth issue
+              if (backendError && !backendError.message?.includes('network')) {
+                console.warn('Cart loading failed, starting with empty cart');
+              }
+            }
           }
         } else {
           // Load from localStorage for anonymous users
@@ -84,9 +105,22 @@ export const CartProvider = ({ children }: CartProviderProps) => {
           if (savedCart) {
             try {
               const parsedCart = JSON.parse(savedCart);
-              // Validate cart data structure
+              // Validate cart data structure and required fields
               if (Array.isArray(parsedCart) && parsedCart.length > 0) {
-                setCartItems(parsedCart);
+                const validCartItems = parsedCart.filter(item => 
+                  item && 
+                  typeof item === 'object' && 
+                  item.id && 
+                  item.title && 
+                  typeof item.price === 'number' &&
+                  typeof item.quantity === 'number'
+                );
+                setCartItems(validCartItems);
+                
+                // Update localStorage if we filtered out invalid items
+                if (validCartItems.length !== parsedCart.length) {
+                  localStorage.setItem('anonymous_cart', JSON.stringify(validCartItems));
+                }
               } else {
                 // Clear invalid cart data
                 localStorage.removeItem('anonymous_cart');
@@ -103,11 +137,12 @@ export const CartProvider = ({ children }: CartProviderProps) => {
           }
         }
       } catch (error) {
-        console.error('Error loading cart:', error);
+        console.error('Critical error loading cart:', error);
+        setCartItems([]);
+        // Only show user-facing error for critical issues
         toast({
-          title: "Error",
-          description: "Failed to load cart items",
-          variant: "destructive",
+          title: "Notice",
+          description: "Started with empty cart",
         });
       } finally {
         setIsLoading(false);
@@ -188,6 +223,17 @@ export const CartProvider = ({ children }: CartProviderProps) => {
 
   const addToCart = async (item: Omit<CartItem, 'quantity'>) => {
     try {
+      // Validate item data before adding
+      if (!item.id || !item.title || typeof item.price !== 'number') {
+        console.error('Invalid item data:', item);
+        toast({
+          title: "Error",
+          description: "Invalid product data",
+          variant: "destructive",
+        });
+        return;
+      }
+
       if (isAuthenticated && user) {
         // For local storage auth, skip backend operations
         if (user.id && user.id.startsWith('local-')) {
@@ -206,23 +252,47 @@ export const CartProvider = ({ children }: CartProviderProps) => {
             }
           });
         } else {
-          // Add to backend for authenticated users
-          await AuthService.addToCart(user.id, item.id, 1);
-          
-          // Update local state
-          setCartItems(prevItems => {
-            const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
+          try {
+            // Add to backend for authenticated users
+            await AuthService.addToCart(user.id, item.id, 1);
             
-            if (existingItem) {
-              return prevItems.map(cartItem =>
-                cartItem.id === item.id
-                  ? { ...cartItem, quantity: cartItem.quantity + 1 }
-                  : cartItem
-              );
-            } else {
-              return [...prevItems, { ...item, quantity: 1 }];
-            }
-          });
+            // Update local state
+            setCartItems(prevItems => {
+              const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
+              
+              if (existingItem) {
+                return prevItems.map(cartItem =>
+                  cartItem.id === item.id
+                    ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                    : cartItem
+                );
+              } else {
+                return [...prevItems, { ...item, quantity: 1 }];
+              }
+            });
+          } catch (backendError) {
+            console.error('Backend cart operation failed:', backendError);
+            // Fall back to local storage for this operation
+            setCartItems(prevItems => {
+              const existingItem = prevItems.find(cartItem => cartItem.id === item.id);
+              
+              if (existingItem) {
+                return prevItems.map(cartItem =>
+                  cartItem.id === item.id
+                    ? { ...cartItem, quantity: cartItem.quantity + 1 }
+                    : cartItem
+                );
+              } else {
+                return [...prevItems, { ...item, quantity: 1 }];
+              }
+            });
+            
+            toast({
+              title: "Added to cart",
+              description: `${item.title} added (offline mode)`,
+            });
+            return;
+          }
         }
 
         toast({
@@ -394,24 +464,32 @@ export const CartProvider = ({ children }: CartProviderProps) => {
     try {
       setIsLoading(true);
       const backendCartItems = await AuthService.getCartItems(user.id);
-      const transformedItems: CartItem[] = backendCartItems.map(item => ({
-        id: item.product.id,
-        title: item.product.title,
-        author: item.product.author || undefined,
-        price: item.product.price,
-        imageUrl: item.product.image_url,
-        product_type: item.product.product_type,
-        quantity: item.quantity,
-        inStock: true,
-      }));
+      
+      // Filter out any items without valid product data and transform
+      const transformedItems: CartItem[] = backendCartItems
+        .filter(item => {
+          if (!item.product || !item.product.id || !item.product.title) {
+            console.warn('Filtering out invalid cart item during sync:', item);
+            return false;
+          }
+          return true;
+        })
+        .map(item => ({
+          id: item.product.id,
+          title: item.product.title,
+          author: item.product.author || undefined,
+          price: Number(item.product.price) || 0,
+          imageUrl: item.product.image_url || '',
+          product_type: item.product.product_type || 'book',
+          quantity: item.quantity || 1,
+          inStock: true,
+        }));
+      
       setCartItems(transformedItems);
     } catch (error) {
       console.error('Error syncing cart:', error);
-      toast({
-        title: "Error",
-        description: "Failed to sync cart with backend",
-        variant: "destructive",
-      });
+      // Don't show error to user for sync failures, just log it
+      console.warn('Cart sync failed, keeping current cart state');
     } finally {
       setIsLoading(false);
     }
