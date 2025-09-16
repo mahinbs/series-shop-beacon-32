@@ -10,9 +10,17 @@ import { Shield } from 'lucide-react';
 export const AdminDashboard = () => {
   const { isLoading } = useCMS();
   const { user, isAdmin, isLoading: authLoading } = useSupabaseAuth();
-  const [selectedPage, setSelectedPage] = useState('home-page');
+  const [selectedPage, setSelectedPage] = useState(() => {
+    // Restore selected page from localStorage
+    return localStorage.getItem('admin:selectedPage') || 'home-page';
+  });
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [stableSession, setStableSession] = useState(false);
+
+  // Persist selected page to localStorage
+  useEffect(() => {
+    localStorage.setItem('admin:selectedPage', selectedPage);
+  }, [selectedPage]);
 
   // Track stable session to prevent unnecessary loading screens
   useEffect(() => {

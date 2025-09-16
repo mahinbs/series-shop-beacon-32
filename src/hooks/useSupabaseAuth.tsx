@@ -178,47 +178,71 @@ useEffect(() => {
 
     initializeAuth();
 
+    // Add debouncing to prevent rapid auth events
+    let authDebounceTimer: NodeJS.Timeout | null = null;
+
     // Set up auth state listener with session stability checks
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log(`🔐 Auth state change: ${event}`, newSession?.user?.id);
         
-        // Check if session is actually stable
-        if (isSessionStable(newSession) && isTabVisible) {
-          console.log('✅ Session stable, skipping reload');
+        // Ignore token refresh events - just update session silently
+        if (event === 'TOKEN_REFRESHED') {
+          setSession(newSession);
           return;
         }
         
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
+        // Ignore duplicate INITIAL_SESSION events if session is stable
+        if (event === 'INITIAL_SESSION' && isSessionStable(newSession)) {
+          console.log('✅ Ignoring duplicate INITIAL_SESSION');
+          return;
+        }
         
-        if (newSession?.user) {
-          // Only reload if tab is visible or session actually changed
-          if (isTabVisible || event === 'SIGNED_IN') {
-            console.log('🔄 Reloading auth data due to session change');
+        // Clear any pending debounce timer
+        if (authDebounceTimer) {
+          clearTimeout(authDebounceTimer);
+        }
+        
+        // Debounce rapid auth changes
+        authDebounceTimer = setTimeout(async () => {
+          // Check if session is actually stable for non-critical events
+          if (isSessionStable(newSession) && !['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED'].includes(event)) {
+            console.log('✅ Session stable, skipping heavy reload');
+            setSession(newSession);
+            return;
+          }
+          
+          setSession(newSession);
+          setUser(newSession?.user ?? null);
+          
+          if (newSession?.user) {
+            // Only trigger heavy reload for actual user changes
+            if (['SIGNED_IN', 'SIGNED_OUT', 'USER_UPDATED'].includes(event) || !isSessionStable(newSession)) {
+              console.log('🔄 Reloading auth data due to user change');
+              setProfileLoaded(false);
+              setAdminChecked(false);
+              setIsLoading(true);
+              
+              // Use setTimeout to prevent auth deadlock
+              setTimeout(async () => {
+                await Promise.all([
+                  loadUserProfile(newSession.user.id),
+                  checkAdminRole(newSession.user.id)
+                ]);
+              }, 0);
+            }
+          } else {
+            console.log('🚪 User signed out');
+            setProfile(null);
+            setIsAdmin(false);
             setProfileLoaded(false);
             setAdminChecked(false);
-            setIsLoading(true);
-            
-            // Use setTimeout to prevent auth deadlock
-            setTimeout(async () => {
-              await Promise.all([
-                loadUserProfile(newSession.user.id),
-                checkAdminRole(newSession.user.id)
-              ]);
-            }, 0);
+            setIsLoading(false);
+            setLastSessionId(null);
+            setLastProfileCheck(0);
+            setLastAdminCheck(0);
           }
-        } else {
-          console.log('🚪 User signed out');
-          setProfile(null);
-          setIsAdmin(false);
-          setProfileLoaded(false);
-          setAdminChecked(false);
-          setIsLoading(false);
-          setLastSessionId(null);
-          setLastProfileCheck(0);
-          setLastAdminCheck(0);
-        }
+        }, 1000); // 1 second debounce
       }
     );
 

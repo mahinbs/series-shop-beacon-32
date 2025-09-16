@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -46,7 +47,7 @@ const Coins = () => {
           <h2 className="text-2xl font-bold text-white mb-4">Please Sign In</h2>
           <p className="text-gray-400 mb-6">You need to be signed in to access your coins.</p>
           <Button asChild>
-            <a href="/auth">Sign In</a>
+            <Link to="/auth">Sign In</Link>
           </Button>
         </div>
       </div>
