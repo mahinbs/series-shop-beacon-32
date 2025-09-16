@@ -321,9 +321,13 @@ const MerchandiseDetail = () => {
                 <Button
                   onClick={handleAddToCart}
                   disabled={product?.stock_quantity !== undefined ? product.stock_quantity <= 0 : false}
-                  className="bg-red-600 hover:bg-red-700 text-white px-8 py-3 font-bold uppercase"
+                  className={`px-8 py-3 font-bold uppercase transition-all duration-200 ${
+                    product?.stock_quantity !== undefined && product.stock_quantity <= 0
+                      ? 'bg-gray-500 text-gray-300 cursor-not-allowed hover:bg-gray-500'
+                      : 'bg-red-600 hover:bg-red-700 text-white'
+                  }`}
                 >
-                  ADD TO CART
+                  {product?.stock_quantity !== undefined && product.stock_quantity <= 0 ? 'OUT OF STOCK' : 'ADD TO CART'}
                 </Button>
                 <Button
                   variant="outline"

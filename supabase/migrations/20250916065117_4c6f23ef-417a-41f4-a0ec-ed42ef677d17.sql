@@ -1,0 +1,1 @@
+UPDATE books SET stock_quantity = 999 WHERE id = 'e6e7ab95-4cd2-42f3-8346-8d9cbedb98e7';
