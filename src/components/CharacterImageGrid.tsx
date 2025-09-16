@@ -6,19 +6,24 @@ interface CharacterImageGridProps {
   characterName: string;
   onImageSelect: (imageUrl: string) => void;
   selectedImageUrl: string;
+  variant?: 'default' | 'compact';
 }
 
-export const CharacterImageGrid = ({ images, characterName, onImageSelect, selectedImageUrl }: CharacterImageGridProps) => {
+export const CharacterImageGrid = ({ images, characterName, onImageSelect, selectedImageUrl, variant = 'default' }: CharacterImageGridProps) => {
   if (!images || images.length === 0) {
     return null;
   }
 
   console.log('🖼️ CharacterImageGrid rendering:', images.length, 'images for', characterName);
 
+  const isCompact = variant === 'compact';
+  
   return (
-    <div className="space-y-4">
-      <h4 className="text-sm font-semibold text-muted-foreground">All Images ({images.length})</h4>
-      <div className="grid grid-cols-2 gap-3 max-h-96 overflow-y-auto">
+    <div className="space-y-3">
+      <h4 className={`${isCompact ? 'text-xs' : 'text-sm'} font-semibold text-muted-foreground`}>
+        All Images ({images.length})
+      </h4>
+      <div className={`grid ${isCompact ? 'grid-cols-3 gap-2 max-h-48' : 'grid-cols-2 gap-3 max-h-96'} overflow-y-auto`}>
         {images.map((image, index) => (
           <button
             key={`${image.id}-${index}`} // Use both id and index to ensure uniqueness

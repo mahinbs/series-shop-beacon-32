@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { User, Users, Sparkles, Star, Heart } from 'lucide-react';
 import { CharacterPreviewModal } from '@/components/CharacterPreviewModal';
+import { CharacterHoverPreview } from '@/components/CharacterHoverPreview';
 
 interface BookCharactersProps {
   bookId: string;
@@ -165,67 +166,7 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                   sideOffset={18}
                   align="center"
                 >
-                  <div className="relative overflow-hidden rounded-lg">
-                    {/* Enhanced background effects */}
-                    <div className="absolute inset-0 bg-gradient-radial from-primary/15 via-transparent to-transparent opacity-60" />
-                    <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-primary/25 to-transparent rounded-full blur-2xl" />
-                    <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-primary/20 to-transparent rounded-full blur-xl" />
-                    
-                    <div className="relative flex flex-col md:flex-row h-[350px]">
-                      {/* Image Section - 60% */}
-                      <div className="relative w-full md:w-3/5 h-40 md:h-full">
-                        <img
-                          src={character.image || "/placeholder.svg"}
-                          alt={character.name}
-                          className="w-full h-full object-cover"
-                        />
-                        {/* Gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/60 md:bg-gradient-to-r md:from-transparent md:to-background/80" />
-                        
-                        {/* Character name overlay on image */}
-                        <div className="absolute bottom-4 left-4 md:bottom-6 md:left-6">
-                          <h4 className="font-bold text-xl md:text-2xl text-foreground mb-2 flex items-center gap-2">
-                            {character.name}
-                            <Sparkles className="h-4 w-4 text-primary animate-pulse" />
-                          </h4>
-                          <div className="flex gap-2">
-                            {character.role && (
-                              <Badge variant="outline" className="bg-primary/15 text-primary border-primary/30 text-sm backdrop-blur-sm">
-                                <Star className="h-3 w-3 mr-1" />
-                                {character.role}
-                              </Badge>
-                            )}
-                            <Badge variant="outline" className="bg-primary/10 text-primary border-primary/20 text-sm backdrop-blur-sm">
-                              <Heart className="h-3 w-3 mr-1" />
-                              Book Character
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      {/* Details Section - 40% */}
-                      <div className="flex-1 p-4 overflow-y-auto">
-                        <div className="space-y-4">
-                          <p className="text-muted-foreground text-sm leading-relaxed bg-muted/30 p-3 rounded-lg border border-primary/10">
-                            {character.description}
-                          </p>
-
-                          
-                          {/* Interactive buttons */}
-                          <div className="flex gap-2 pt-3 border-t border-primary/10">
-                            <Button size="sm" variant="outline" className="flex-1 text-xs border-primary/30 text-primary hover:bg-primary/10">
-                              <Heart className="h-3 w-3 mr-1" />
-                              Favorite
-                            </Button>
-                            <Button size="sm" variant="outline" className="flex-1 text-xs border-primary/30 text-primary hover:bg-primary/10">
-                              <Star className="h-3 w-3 mr-1" />
-                              Follow
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  <CharacterHoverPreview character={character} />
                 </HoverCardContent>
               </HoverCard>
             </CarouselItem>
