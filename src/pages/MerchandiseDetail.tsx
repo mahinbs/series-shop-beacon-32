@@ -336,47 +336,6 @@ const MerchandiseDetail = () => {
             </div>
           </div>
 
-          {/* Characters Section */}
-          {product?.id && (
-            <div className="mb-12">
-              <BookCharacters bookId={String(product.id)} />
-            </div>
-          )}
-
-          {/* Bottom Details Grid */}
-          <div className="flex flex-col md:flex-row gap-6 bg-gray-900 p-6 rounded-lg mb-8">
-            {/* Left Container - Book Description (60% width) */}
-            <div className="md:w-[60%] border border-gray-700 p-4 rounded-lg">
-              <h3 className="text-red-400 font-bold text-lg mb-4 uppercase">About the Series</h3>
-              <p className="text-gray-300 text-sm leading-relaxed">
-                {product?.description || 'Product description will be displayed here. This is a placeholder text for the product description section.'}
-              </p>
-            </div>
-            
-            {/* Right Container - Details (40% width) */}
-            <div className="md:w-[40%] space-y-3 border border-gray-700 p-4 rounded-lg">
-              <div className="text-sm">
-                <span className="text-red-400 font-bold uppercase">Creator: </span>
-                <span className="text-white font-bold">{product?.author || 'Creator Name'}</span>
-              </div>
-              
-              <div className="text-sm">
-                <span className="text-red-400 font-bold uppercase">Category: </span>
-                <span className="text-white font-bold">{product?.category || 'Category'}</span>
-              </div>
-              
-              <div className="text-sm">
-                <span className="text-red-400 font-bold uppercase">Type: </span>
-                <span className="text-white font-bold">{product?.product_type || 'Product Type'}</span>
-              </div>
-              
-              <div className="text-sm">
-                <span className="text-red-400 font-bold uppercase">Price: </span>
-                <span className="text-white font-bold">${product?.price || '0.00'}</span>
-              </div>
-            </div>
-          </div>
-
           {/* Trailer and Preview Section */}
           {product?.video_url && (
             <div className="mt-8 bg-gray-900 p-6 rounded-lg mb-8">
@@ -419,6 +378,47 @@ const MerchandiseDetail = () => {
               </div>
             </div>
           )}
+
+          {/* Characters Section */}
+          {product?.id && (
+            <div className="mb-12">
+              <BookCharacters bookId={String(product.id)} />
+            </div>
+          )}
+
+          {/* Bottom Details Grid */}
+          <div className="flex flex-col md:flex-row gap-6 bg-gray-900 p-6 rounded-lg mb-8">
+            {/* Left Container - Book Description (60% width) */}
+            <div className="md:w-[60%] border border-gray-700 p-4 rounded-lg">
+              <h3 className="text-red-400 font-bold text-lg mb-4 uppercase">About the Series</h3>
+              <p className="text-gray-300 text-sm leading-relaxed">
+                {product?.description || 'Product description will be displayed here. This is a placeholder text for the product description section.'}
+              </p>
+            </div>
+            
+            {/* Right Container - Details (40% width) */}
+            <div className="md:w-[40%] space-y-3 border border-gray-700 p-4 rounded-lg">
+              <div className="text-sm">
+                <span className="text-red-400 font-bold uppercase">Creator: </span>
+                <span className="text-white font-bold">{product?.author || 'Creator Name'}</span>
+              </div>
+              
+              <div className="text-sm">
+                <span className="text-red-400 font-bold uppercase">Category: </span>
+                <span className="text-white font-bold">{product?.category || 'Category'}</span>
+              </div>
+              
+              <div className="text-sm">
+                <span className="text-red-400 font-bold uppercase">Type: </span>
+                <span className="text-white font-bold">{product?.product_type || 'Product Type'}</span>
+              </div>
+              
+              <div className="text-sm">
+                <span className="text-red-400 font-bold uppercase">Price: </span>
+                <span className="text-white font-bold">${product?.price || '0.00'}</span>
+              </div>
+            </div>
+          </div>
 
           {/* Checkout Button */}
           <div className="mt-8 text-center mb-8">
