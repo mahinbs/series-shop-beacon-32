@@ -215,7 +215,12 @@ export const BooksManager = () => {
 
       // Create new characters with their images
       for (const character of charactersToCreate) {
-        console.log('🎭 Creating character:', character.name);
+        console.log('🎭 Creating character:', character.name, 'with', character.images?.length || 0, 'images');
+        console.log('🔍 Character images data:', character.images?.map(img => ({ 
+          url: img.image_url, 
+          is_main: img.is_main, 
+          alt_text: img.alt_text 
+        })));
         
         const { id, created_at, updated_at, images, ...characterData } = character;
         
@@ -227,28 +232,65 @@ export const BooksManager = () => {
         
         console.log('✅ Character created with ID:', savedCharacter.id);
         
-        // Now save the character images
+        // Now save the character images with enhanced error handling
         if (images && images.length > 0) {
-          console.log('🖼️ Saving', images.length, 'images for character:', savedCharacter.id);
+          console.log('🖼️ Processing', images.length, 'images for character:', savedCharacter.id);
           
-          for (const image of images) {
+          const imageErrors: string[] = [];
+          let savedImageCount = 0;
+          
+          for (let i = 0; i < images.length; i++) {
+            const image = images[i];
             try {
+              console.log(`🖼️ Saving image ${i + 1}/${images.length} for character ${savedCharacter.id}:`, {
+                url: image.image_url,
+                is_main: image.is_main,
+                alt_text: image.alt_text,
+                display_order: image.display_order
+              });
+              
               const { id: imageId, character_id, created_at: imgCreated, updated_at: imgUpdated, ...imageData } = image;
               
-              await BookCharacterService.addCharacterImage({
+              // Validate image data before saving
+              if (!imageData.image_url || imageData.image_url.trim() === '') {
+                throw new Error(`Image ${i + 1} has no URL`);
+              }
+              
+              const savedImage = await BookCharacterService.addCharacterImage({
                 ...imageData,
                 character_id: savedCharacter.id,
               });
               
-              console.log('✅ Image saved for character:', savedCharacter.id);
+              console.log(`✅ Image ${i + 1} saved successfully for character:`, savedCharacter.id, 'Image ID:', savedImage.id);
+              savedImageCount++;
+              
+              // Add small delay to prevent potential race conditions
+              await new Promise(resolve => setTimeout(resolve, 100));
+              
             } catch (imageError) {
-              console.error('❌ Error saving image for character:', savedCharacter.id, imageError);
-              
-              // Rollback: delete the character we just created
-              await BookCharacterService.deleteBookCharacter(savedCharacter.id);
-              
-              throw new Error(`Failed to save images for character "${character.name}". Character creation rolled back.`);
+              const errorMsg = `Image ${i + 1}: ${imageError instanceof Error ? imageError.message : 'Unknown error'}`;
+              console.error('❌ Error saving image for character:', savedCharacter.id, errorMsg);
+              imageErrors.push(errorMsg);
             }
+          }
+          
+          console.log(`📊 Image save results for character ${savedCharacter.id}: ${savedImageCount}/${images.length} successful`);
+          
+          // If no images were saved successfully, rollback character creation
+          if (savedImageCount === 0 && images.length > 0) {
+            console.error('❌ No images saved for character, rolling back');
+            await BookCharacterService.deleteBookCharacter(savedCharacter.id);
+            throw new Error(`Failed to save any images for character "${character.name}". Errors: ${imageErrors.join(', ')}`);
+          }
+          
+          // If some images failed, show warning but don't rollback
+          if (imageErrors.length > 0) {
+            console.warn(`⚠️ Some images failed to save for character ${savedCharacter.id}:`, imageErrors);
+            toast({
+              title: "Partial Success",
+              description: `Character "${character.name}" saved with ${savedImageCount}/${images.length} images. Some images failed to save.`,
+              variant: "default",
+            });
           }
         }
       }
@@ -510,10 +552,28 @@ export const BooksManager = () => {
       return;
     }
 
+    // Validate images
+    if (characterForm.images.length === 0) {
+      toast({
+        title: "Warning",
+        description: "No images added for this character",
+        variant: "default",
+      });
+    }
+
+    console.log('🎭 Preparing character with', characterForm.images.length, 'images');
+    console.log('🔍 Character form images:', characterForm.images.map(img => ({ 
+      url: img.image_url, 
+      is_main: img.is_main, 
+      alt_text: img.alt_text,
+      display_order: img.display_order
+    })));
+
     const mainImage = characterForm.images.find(img => img.is_main) || characterForm.images[0];
+    const tempId = `temp_${Date.now()}_${Math.random()}`;
     
     const newCharacter: BookCharacter = {
-      id: `temp_${Date.now()}`, // Temporary ID with temp_ prefix
+      id: tempId,
       book_id: editingId || '',
       name: characterForm.name,
       description: characterForm.description,
@@ -523,10 +583,10 @@ export const BooksManager = () => {
       is_active: true,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-      images: characterForm.images.map(img => ({
+      images: characterForm.images.map((img, index) => ({
         ...img,
-        id: img.id || `temp_img_${Date.now()}_${Math.random()}`,
-        character_id: `temp_${Date.now()}`,
+        id: img.id || `temp_img_${tempId}_${index}`,
+        character_id: tempId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }))
@@ -535,7 +595,7 @@ export const BooksManager = () => {
     // If editing an existing book, save immediately
     if (editingId) {
       try {
-        console.log('🎭 Adding character to existing book:', editingId);
+        console.log('🎭 Adding character to existing book:', editingId, 'with', newCharacter.images?.length || 0, 'images');
         
         const { data: { session } } = await (supabase as any).auth.getSession();
         if (!session) {
@@ -557,33 +617,70 @@ export const BooksManager = () => {
 
         console.log('✅ Character created:', savedCharacter.id);
 
-        // Now save the character images
+        // Now save the character images with enhanced tracking
         if (images && images.length > 0) {
-          console.log('🖼️ Saving', images.length, 'images for character:', savedCharacter.id);
+          console.log('🖼️ Processing', images.length, 'images for character:', savedCharacter.id);
           
-          try {
-            for (const image of images) {
+          const imageErrors: string[] = [];
+          let savedImageCount = 0;
+          
+          for (let i = 0; i < images.length; i++) {
+            const image = images[i];
+            try {
+              console.log(`🖼️ Saving image ${i + 1}/${images.length}:`, {
+                url: image.image_url,
+                is_main: image.is_main,
+                alt_text: image.alt_text,
+                display_order: image.display_order
+              });
+              
               const { id: imageId, character_id, created_at: imgCreated, updated_at: imgUpdated, ...imageData } = image;
               
-              await BookCharacterService.addCharacterImage({
+              // Validate image data
+              if (!imageData.image_url || imageData.image_url.trim() === '') {
+                throw new Error(`Image ${i + 1} has no URL`);
+              }
+              
+              const savedImage = await BookCharacterService.addCharacterImage({
                 ...imageData,
                 character_id: savedCharacter.id,
               });
               
-              console.log('✅ Image saved for character:', savedCharacter.id);
+              console.log(`✅ Image ${i + 1} saved successfully. Image ID:`, savedImage.id);
+              savedImageCount++;
+              
+              // Add small delay between saves to prevent race conditions
+              await new Promise(resolve => setTimeout(resolve, 100));
+              
+            } catch (imageError) {
+              const errorMsg = `Image ${i + 1}: ${imageError instanceof Error ? imageError.message : 'Unknown error'}`;
+              console.error('❌ Error saving image:', errorMsg);
+              imageErrors.push(errorMsg);
             }
-          } catch (imageError) {
-            console.error('❌ Error saving images:', imageError);
-            
-            // Rollback: delete the character we just created
+          }
+          
+          console.log(`📊 Image save results: ${savedImageCount}/${images.length} successful`);
+          
+          // If no images were saved, rollback character
+          if (savedImageCount === 0 && images.length > 0) {
+            console.error('❌ No images saved, rolling back character');
             await BookCharacterService.deleteBookCharacter(savedCharacter.id);
             
             toast({
               title: "Error",
-              description: "Failed to save character images. Character creation rolled back.",
+              description: `Failed to save any images for character "${characterForm.name}". Character creation cancelled.`,
               variant: "destructive",
             });
             return;
+          }
+          
+          // Show appropriate success/warning message
+          if (imageErrors.length > 0) {
+            toast({
+              title: "Partial Success",
+              description: `Character saved with ${savedImageCount}/${images.length} images. Some images failed to save.`,
+              variant: "default",
+            });
           }
         }
 
