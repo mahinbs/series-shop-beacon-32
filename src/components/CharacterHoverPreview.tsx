@@ -30,42 +30,43 @@ export const CharacterHoverPreview = ({ character }: CharacterHoverPreviewProps)
           />
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/40" />
-          
-          {/* Character name overlay on image */}
-          <div className="absolute bottom-4 left-4">
+        </div>
+        
+        {/* Character Details & Image Grid Section - 50% */}
+        <div className="flex-1 p-4 flex flex-col">
+          {/* Character Name and Role */}
+          <div className="mb-3">
             <h4 className="font-bold text-lg text-foreground mb-2 flex items-center gap-2">
               {character.name}
               <Sparkles className="h-4 w-4 text-primary animate-pulse" />
             </h4>
-            <div className="flex gap-2">
+            <div className="flex gap-2 mb-3">
               {character.role && (
-                <Badge variant="outline" className="bg-primary/15 text-primary border-primary/30 text-xs backdrop-blur-sm">
+                <Badge variant="outline" className="bg-primary/15 text-primary border-primary/30 text-xs">
                   <Star className="h-3 w-3 mr-1" />
                   {character.role}
                 </Badge>
               )}
             </div>
           </div>
-        </div>
-        
-        {/* Image Grid & Details Section - 50% */}
-        <div className="flex-1 p-4 overflow-y-auto space-y-3">
+
           {/* Description */}
-          <p className="text-muted-foreground text-xs leading-relaxed bg-muted/30 p-2 rounded-lg border border-primary/10">
+          <p className="text-muted-foreground text-xs leading-relaxed bg-muted/30 p-2 rounded-lg border border-primary/10 mb-4">
             {character.description}
           </p>
 
-          {/* Character Images Grid */}
-          {character.images && character.images.length > 0 && (
-            <CharacterImageGrid
-              images={character.images}
-              characterName={character.name}
-              onImageSelect={handleImageSelect}
-              selectedImageUrl={character.image || ""}
-              variant="horizontal"
-            />
-          )}
-          
+          {/* Character Images Grid - positioned at bottom */}
+          <div className="flex-1 flex items-end">
+            {character.images && character.images.length > 0 && (
+              <CharacterImageGrid
+                images={character.images}
+                characterName={character.name}
+                onImageSelect={handleImageSelect}
+                selectedImageUrl={character.image || ""}
+                variant="horizontal"
+              />
+            )}
+          </div>
         </div>
       </div>
     </div>

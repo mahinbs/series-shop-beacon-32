@@ -39,7 +39,7 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
               onImageSelect(image.image_url);
             }}
             className={`relative group aspect-square rounded-lg overflow-hidden border-2 transition-all duration-200 ${
-              isHorizontal ? 'min-w-20 w-20 h-20' : ''
+              isHorizontal ? 'min-w-40 w-40 h-40' : ''
             } ${
               selectedImageUrl === image.image_url 
                 ? 'border-primary ring-2 ring-primary/20' 
