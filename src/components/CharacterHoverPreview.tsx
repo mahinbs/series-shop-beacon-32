@@ -20,9 +20,9 @@ export const CharacterHoverPreview = ({ character }: CharacterHoverPreviewProps)
       <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-primary/25 to-transparent rounded-full blur-2xl" />
       <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-primary/20 to-transparent rounded-full blur-xl" />
       
-      <div className="relative flex flex-col md:flex-row h-[350px]">
+      <div className="relative flex h-[350px]">
         {/* Main Image Section - 50% */}
-        <div className="relative w-full md:w-1/2 h-40 md:h-full">
+        <div className="relative w-1/2 h-full flex-shrink-0">
           <img
             src={character.image || "/placeholder.svg"}
             alt={character.name}
