@@ -72,6 +72,7 @@ export const booksService = {
       const { data, error } = await supabase
         .from('books')
         .select('*')
+        .or('is_volume.is.null,is_volume.eq.false')
         .order('display_order', { ascending: true });
       
       if (error) {
@@ -91,6 +92,7 @@ export const booksService = {
         .from('books')
         .select('*')
         .eq('is_active', true)
+        .or('is_volume.is.null,is_volume.eq.false')
         .order('display_order', { ascending: true });
       
       if (error) {
@@ -237,6 +239,7 @@ export const booksService = {
         .select('*')
         .eq('section_type', sectionType)
         .eq('is_active', true)
+        .or('is_volume.is.null,is_volume.eq.false')
         .order('display_order', { ascending: true });
       
       if (error) {
@@ -257,6 +260,7 @@ export const booksService = {
         .select('*')
         .eq('product_type', productType)
         .eq('is_active', true)
+        .or('is_volume.is.null,is_volume.eq.false')
         .order('display_order', { ascending: true });
       
       if (error) {
@@ -266,6 +270,44 @@ export const booksService = {
       return data || [];
     } catch (error) {
       console.error('Books service getByProductType error:', error);
+      throw error;
+    }
+  },
+
+  // Admin methods that include volumes
+  async getAllIncludingVolumes() {
+    try {
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .order('display_order', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching all books including volumes:', error);
+        throw new Error(`Failed to fetch books: ${error.message}`);
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Books service getAllIncludingVolumes error:', error);
+      throw error;
+    }
+  },
+
+  async getActiveIncludingVolumes() {
+    try {
+      const { data, error } = await supabase
+        .from('books')
+        .select('*')
+        .eq('is_active', true)
+        .order('display_order', { ascending: true });
+      
+      if (error) {
+        console.error('Error fetching active books including volumes:', error);
+        throw new Error(`Failed to fetch active books: ${error.message}`);
+      }
+      return data || [];
+    } catch (error) {
+      console.error('Books service getActiveIncludingVolumes error:', error);
       throw error;
     }
   },
