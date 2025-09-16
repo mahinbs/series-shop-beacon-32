@@ -195,12 +195,6 @@ const MerchandiseDetail = () => {
 
   // Mock data for new sections
   const mockGenres = ["HIGH SCHOOL", "ROMANCE", "DRAMA", "FANTASY"];
-  const mockCharacters = [
-    { id: 1, name: "MITSUMI IWAKURA", image: product?.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png' },
-    { id: 2, name: "SOUSUKE SHIMA", image: product?.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png' },
-    { id: 3, name: "MIKA EGASHIRA", image: product?.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png' },
-    { id: 4, name: "MAKOTO KURUME", image: product?.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png' }
-  ];
 
   const totalPrice = product ? (product.price || parseFloat(product.price?.toString().replace('$', '') || '0')) * quantity : 0;
 
@@ -343,25 +337,11 @@ const MerchandiseDetail = () => {
           </div>
 
           {/* Characters Section */}
-          <div className="mb-12">
-            <h2 className="text-white text-xl font-bold mb-6 uppercase tracking-wide bg-gray-900 p-3 rounded">Characters</h2>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {mockCharacters.map((character) => (
-                <div key={character.id} className="text-center bg-gray-900 p-4 rounded-lg">
-                  <div className="w-full h-32 mb-3 overflow-hidden bg-gray-800 rounded">
-                    <img
-                      src={character.image}
-                      alt={character.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  <p className="text-white font-semibold text-xs uppercase tracking-wide">
-                    {character.name}
-                  </p>
-                </div>
-              ))}
+          {product?.id && (
+            <div className="mb-12">
+              <BookCharacters bookId={String(product.id)} />
             </div>
-          </div>
+          )}
 
           {/* Bottom Details Grid */}
           <div className="flex flex-col md:flex-row gap-6 bg-gray-900 p-6 rounded-lg mb-8">
@@ -530,12 +510,6 @@ const MerchandiseDetail = () => {
             </div>
           </div>
 
-          {/* Existing Characters Section (if BookCharacters component needed) */}
-          {product && product.id && (
-            <div className="mt-12 mb-8" style={{ display: 'none' }}>
-              <BookCharacters bookId={product.id} />
-            </div>
-          )}
         </div>
       </div>
 
