@@ -1,9 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, Share2, Star, Sparkles } from "lucide-react";
+import { Heart, Share2, Sparkles } from "lucide-react";
 import { useState } from "react";
-import { CharacterImageGallery } from '@/components/CharacterImageGallery';
+import { CharacterImageGrid } from '@/components/CharacterImageGrid';
 import { BookCharacterImage } from '@/services/bookCharacterService';
 
 interface Character {
@@ -32,6 +32,13 @@ interface CharacterPreviewModalProps {
 
 export const CharacterPreviewModal = ({ character, isOpen, onClose }: CharacterPreviewModalProps) => {
   const [isFavorited, setIsFavorited] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(() => {
+    if (character?.images?.length > 0) {
+      const mainImage = character.images.find(img => img.is_main);
+      return mainImage?.image_url || character.images[0].image_url;
+    }
+    return character?.image || '/placeholder.svg';
+  });
 
   if (!character) return null;
 
@@ -80,60 +87,39 @@ export const CharacterPreviewModal = ({ character, isOpen, onClose }: CharacterP
           </Badge>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10 overflow-y-auto max-h-[70vh]">
-          {/* Character Images */}
+        <div className="grid grid-cols-2 gap-6 relative z-10 overflow-y-auto max-h-[70vh]">
+          {/* Main Image - Left Side */}
           <div className="relative">
-            {character.images && character.images.length > 0 ? (
-              <CharacterImageGallery 
-                images={character.images} 
-                characterName={character.name} 
+            <div className="aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 relative group">
+              <img
+                src={selectedImage}
+                alt={character.name}
+                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                onError={(e) => {
+                  e.currentTarget.src = "/placeholder.svg";
+                }}
               />
-            ) : (
-              <div className="aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 relative group">
-                <img
-                  src={character.image}
-                  alt={character.name}
-                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                  onError={(e) => {
-                    e.currentTarget.src = "/placeholder.svg";
-                  }}
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  <p className="text-white text-sm font-medium">{character.name}</p>
-                </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              <div className="absolute bottom-4 left-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                <p className="text-white text-sm font-medium">{character.name}</p>
               </div>
-            )}
+            </div>
+          </div>
 
-            {/* Character Stats */}
-            {character.stats && (
-              <div className="mt-4 p-4 rounded-lg bg-gradient-to-r from-primary/5 to-accent/5 border border-primary/10">
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <Star className="h-4 w-4 text-primary" />
-                  Character Stats
-                </h4>
-                <div className="space-y-2">
-                  {Object.entries(character.stats).map(([stat, value]) => (
-                    <div key={stat} className="flex items-center justify-between">
-                      <span className="text-sm capitalize text-muted-foreground">{stat}</span>
-                      <div className="flex items-center gap-2">
-                        <div className="w-20 h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-primary to-accent transition-all duration-700"
-                            style={{ width: `${(value / 100) * 100}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium w-8">{value}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          {/* Image Grid - Right Side */}
+          <div className="space-y-4">
+            {character.images && character.images.length > 0 && (
+              <CharacterImageGrid
+                images={character.images}
+                characterName={character.name}
+                onImageSelect={setSelectedImage}
+                selectedImageUrl={selectedImage}
+              />
             )}
           </div>
 
           {/* Character Details */}
-          <div className="space-y-6">
+          <div className="space-y-6 col-span-2">
             {/* Description */}
             <div>
               <h3 className="text-xl font-semibold mb-3 text-primary">Description</h3>

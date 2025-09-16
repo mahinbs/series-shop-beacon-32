@@ -5,7 +5,8 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { User, Users, Sparkles, Star, Heart, Sword, Shield } from 'lucide-react';
+import { User, Users, Sparkles, Star, Heart } from 'lucide-react';
+import { CharacterPreviewModal } from '@/components/CharacterPreviewModal';
 
 interface BookCharactersProps {
   bookId: string;
@@ -15,24 +16,20 @@ interface BookCharactersProps {
 export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) => {
   const [characters, setCharacters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCharacter, setSelectedCharacter] = useState<any>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const loadCharacters = async () => {
       setLoading(true);
       try {
         const data = await BookCharacterService.getBookCharacters(bookId);
-        // Transform data to include additional properties for enhanced preview
+        // Transform data for character preview
         const enhancedCharacters = data.map(char => {
           const mainImage = char.images?.find(img => img.is_main) || char.images?.[0];
           return {
             ...char,
             image: mainImage?.image_url || char.image_url || "/placeholder.svg",
-            stats: {
-              strength: Math.floor(Math.random() * 100) + 1,
-              intelligence: Math.floor(Math.random() * 100) + 1,
-              charisma: Math.floor(Math.random() * 100) + 1,
-              magic: Math.floor(Math.random() * 100) + 1,
-            },
             backstory: char.description + " Their journey has been filled with challenges that have shaped them into who they are today.",
             abilities: ['Unique Skill', 'Special Power', 'Ancient Knowledge', 'Hidden Talent'],
             relationships: ['Connected to the main story', 'Influences key events', 'Beloved by readers']
@@ -50,6 +47,11 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
       loadCharacters();
     }
   }, [bookId]);
+
+  const handleCharacterClick = (character: any) => {
+    setSelectedCharacter(character);
+    setIsModalOpen(true);
+  };
 
 
   if (loading) {
@@ -98,6 +100,7 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                 <HoverCardTrigger asChild>
                   <Card 
                     className="w-48 h-64 overflow-hidden group cursor-pointer transition-all duration-700 transform hover:scale-110 hover:-translate-y-2 hover:rotate-1 hover:shadow-2xl hover:shadow-primary/25 border-2 hover:border-primary/50"
+                    onClick={() => handleCharacterClick(character)}
                   >
                     <div className="relative h-full">
                       {/* Enhanced hover indicator */}
@@ -206,33 +209,6 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                           <p className="text-muted-foreground text-sm leading-relaxed bg-muted/30 p-3 rounded-lg border border-primary/10">
                             {character.description}
                           </p>
-                          
-                          {/* Stats display */}
-                          {character.stats && (
-                            <div className="mb-4">
-                              <h5 className="text-sm font-semibold text-primary mb-2 flex items-center gap-2">
-                                <Shield className="h-3 w-3" />
-                                Stats
-                              </h5>
-                              <div className="grid grid-cols-2 gap-2">
-                                {Object.entries(character.stats)
-                                  .sort(([,a], [,b]) => (Number(b) || 0) - (Number(a) || 0))
-                                  .slice(0, 4)
-                                  .map(([stat, value]) => (
-                                    <div key={stat} className="bg-muted/40 rounded-lg p-2 border border-primary/10">
-                                      <div className="text-xs text-muted-foreground capitalize">{stat}</div>
-                                      <div className="font-bold text-primary text-sm">{Number(value) || 0}</div>
-                                      <div className="w-full bg-muted/60 rounded-full h-1 mt-1">
-                                        <div 
-                                          className="bg-gradient-to-r from-primary to-primary/60 h-1 rounded-full transition-all duration-1000"
-                                          style={{ width: `${Number(value) || 0}%` }}
-                                        />
-                                      </div>
-                                    </div>
-                                  ))}
-                              </div>
-                            </div>
-                          )}
 
                           
                           {/* Interactive buttons */}
@@ -259,6 +235,11 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
         <CarouselNext className="hidden md:flex" />
       </Carousel>
 
+      <CharacterPreviewModal
+        character={selectedCharacter}
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+      />
     </div>
   );
 };
