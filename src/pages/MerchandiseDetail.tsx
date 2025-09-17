@@ -42,6 +42,14 @@ const MerchandiseDetail = () => {
     // Remove patterns like ", VOL.1", ", VOL 1", ", VOLUME 1", etc.
     return title.replace(/,\s*VOL\.?\s*\d+/i, '').replace(/,\s*VOLUME\s*\d+/i, '');
   };
+
+  // Function to extract volume information from title
+  const getVolumeInfo = (title: string) => {
+    if (!title) return null;
+    // Match patterns like ", VOL.1", ", VOL 1", ", VOLUME 1", etc.
+    const volumeMatch = title.match(/,\s*(VOL\.?\s*\d+|VOLUME\s*\d+)/i);
+    return volumeMatch ? volumeMatch[1].toUpperCase() : null;
+  };
   const [product, setProduct] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -345,6 +353,15 @@ const MerchandiseDetail = () => {
 
             {/* Right Side - Product Details */}
             <div className="space-y-4 min-h-96 py-8 w-full flex-1 pl-8 pr-24">
+              {/* Volume Information */}
+              {getVolumeInfo(product?.title) && (
+                <div className="mb-6">
+                  <h2 className="text-4xl font-bold text-white tracking-wide">
+                    {getVolumeInfo(product?.title)}
+                  </h2>
+                </div>
+              )}
+
               {/* Genre Tags */}
               <div className="flex flex-wrap gap-2">
                 {mockGenres.slice(0, 4).map((genre, index) => (
