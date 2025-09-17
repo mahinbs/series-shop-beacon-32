@@ -87,11 +87,7 @@ const RecommendedSection = (props: any) => {
   };
 
   const handleViewProduct = (book: BookType) => {
-    if (book.product_type === 'book') {
-      navigate(`/pre-order/${book.id}`);
-    } else {
-      navigate(`/product/${book.id}`);
-    }
+    navigate(`/product/${book.id}`);
   };
 
   const normalizeProductType = (t: any) =>
