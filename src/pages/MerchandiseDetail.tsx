@@ -8,6 +8,7 @@ import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
+import { useWishlist } from '@/hooks/useWishlist';
 import { booksService } from '@/services/database';
 import { ComicService } from '@/services/comicService';
 import { BookCharacters, BookCharactersRef } from '@/components/BookCharacters';
@@ -20,7 +21,7 @@ const MerchandiseDetail = () => {
   const location = useLocation();
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('M');
-  const [isWishlisted, setIsWishlisted] = useState(false);
+  
   const bookCharactersRef = useRef<BookCharactersRef>(null);
 
   const handleCharacterBoxClick = () => {
@@ -68,6 +69,7 @@ const MerchandiseDetail = () => {
   const [volumes, setVolumes] = useState<any[]>([]);
   const { addToCart } = useCart();
   const { toast } = useToast();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
   // Debug logging
   console.log('🎯 MerchandiseDetail: Component loaded');
@@ -415,13 +417,35 @@ const MerchandiseDetail = () => {
                      >
                        {product?.stock_quantity !== undefined && product.stock_quantity <= 0 ? 'OUT OF STOCK' : 'ADD TO CART'}
                      </Button>
-                     <Button
-                       variant="outline"
-                       onClick={() => setIsWishlisted(!isWishlisted)}
-                       className="border-gray-500 text-gray-300 hover:bg-gray-700 px-8 py-3 font-bold uppercase"
-                     >
-                       WISH TO BUY
-                     </Button>
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          if (isInWishlist(product.id)) {
+                            removeFromWishlist(product.id);
+                          } else {
+                            addToWishlist({
+                              product_id: product.id,
+                              title: product.title,
+                              author: product.author || 'Unknown Author',
+                              price: Number(product.price || 0),
+                              originalPrice: product.original_price ? Number(product.original_price) : undefined,
+                              imageUrl: product.image_url || product.imageUrl,
+                              category: product.category,
+                              product_type: (product.product_type || 'book') as 'book' | 'merchandise',
+                              inStock: product.stock_quantity !== undefined ? product.stock_quantity > 0 : true,
+                              volume: product.volume_number
+                            });
+                          }
+                        }}
+                        className={`border-gray-500 hover:bg-gray-700 px-8 py-3 font-bold uppercase transition-colors ${
+                          isInWishlist(product.id) 
+                            ? 'text-red-400 border-red-400' 
+                            : 'text-gray-300'
+                        }`}
+                      >
+                        <Heart className={`w-4 h-4 mr-2 ${isInWishlist(product.id) ? 'fill-current' : ''}`} />
+                        {isInWishlist(product.id) ? 'WISHLISTED' : 'WISH TO BUY'}
+                      </Button>
                    </div>
                  </div>
                </div>

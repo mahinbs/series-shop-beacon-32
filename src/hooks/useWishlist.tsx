@@ -28,12 +28,46 @@ export const useWishlist = () => {
   useEffect(() => {
     const loadWishlist = async () => {
       if (!isAuthenticated || !user) {
-        // Load from localStorage for non-authenticated users
+        // Load from localStorage for non-authenticated users and validate items
         try {
           const stored = localStorage.getItem('wishlist');
           if (stored) {
             const parsed = JSON.parse(stored);
-            setWishlist(Array.isArray(parsed) ? parsed : []);
+            if (Array.isArray(parsed)) {
+              // Validate each item exists in database
+              const validatedItems: WishlistItem[] = [];
+              for (const item of parsed) {
+                if (item.product_id) {
+                  try {
+                    const { data: productData } = await supabase
+                      .from('books')
+                      .select('*')
+                      .eq('id', item.product_id)
+                      .single();
+                    
+                    if (productData) {
+                      validatedItems.push({
+                        ...item,
+                        title: productData.title,
+                        author: productData.author || 'Unknown Author',
+                        price: Number(productData.price),
+                        originalPrice: productData.original_price ? Number(productData.original_price) : undefined,
+                        imageUrl: productData.image_url,
+                        category: productData.category,
+                        product_type: (productData.product_type as 'book' | 'merchandise') || 'book',
+                        inStock: productData.stock_quantity > 0,
+                        volume: productData.volume_number,
+                      });
+                    }
+                  } catch (error) {
+                    console.log('Item not found in database, removing from wishlist:', item.product_id);
+                  }
+                }
+              }
+              setWishlist(validatedItems);
+            } else {
+              setWishlist([]);
+            }
           }
         } catch (error) {
           console.error('Error loading wishlist from localStorage:', error);
