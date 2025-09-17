@@ -4,6 +4,7 @@ import { ShoppingCart, Diamond, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
+import { removeVolumeFromTitle } from '@/lib/utils';
 
 interface ProductCardProps {
   id?: string; // Make id optional to handle cases where it might be missing
@@ -144,7 +145,7 @@ const ProductCard = ({
         {/* Enhanced hover overlay with book details */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
           <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-            <h3 className="text-lg font-bold text-red-300">{title}</h3>
+            <h3 className="text-lg font-bold text-red-300">{removeVolumeFromTitle(title)}</h3>
             {author && (
               <p className="text-sm text-gray-300">by {author}</p>
             )}
@@ -187,7 +188,7 @@ const ProductCard = ({
       <div className="p-5 space-y-3 flex-1 flex flex-col">
         <div className="flex-1 space-y-3">
           <div className="flex items-center justify-between">
-            <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-300 transition-colors duration-300 flex-1 mr-2">{title}</h3>
+            <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-300 transition-colors duration-300 flex-1 mr-2">{removeVolumeFromTitle(title)}</h3>
             <Button 
               variant="ghost" 
               size="icon" 

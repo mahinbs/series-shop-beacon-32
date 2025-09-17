@@ -6,6 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ShoppingCart, Eye, Heart, Star, TrendingUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
+import { removeVolumeFromTitle } from '@/lib/utils';
 
 const PopularRecommendations = () => {
   const [books, setBooks] = useState<BookType[]>([]);
@@ -38,7 +39,18 @@ const PopularRecommendations = () => {
         }
 
         if (data) {
-          setBooks(data);
+          // Deduplicate books by removing volume information from titles
+          const deduplicatedBooks = data.reduce((acc: any[], book: any) => {
+            const baseTitle = removeVolumeFromTitle(book.title);
+            const existingBook = acc.find(b => removeVolumeFromTitle(b.title) === baseTitle);
+            
+            if (!existingBook) {
+              acc.push(book);
+            }
+            return acc;
+          }, []);
+          
+          setBooks(deduplicatedBooks);
         }
       } finally {
         setIsLoading(false);
@@ -225,7 +237,7 @@ const PopularRecommendations = () => {
                 
                 <div className="p-6 space-y-4 flex-1 flex flex-col">
                   <h3 className="text-white font-semibold text-lg group-hover:text-orange-300 transition-colors duration-300 line-clamp-2">
-                    {book.title}
+                    {removeVolumeFromTitle(book.title)}
                   </h3>
                   
                   {book.author && (

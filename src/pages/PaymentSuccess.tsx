@@ -4,6 +4,7 @@ import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Download, Mail, Package, Calendar, CreditCard, MapPin, User } from 'lucide-react';
+import { removeVolumeFromTitle } from '@/lib/utils';
 
 const PaymentSuccess = () => {
   const location = useLocation();
@@ -71,7 +72,7 @@ const PaymentSuccess = () => {
                       className="w-20 h-24 object-cover rounded-lg"
                     />
                     <div className="flex-1">
-                      <h3 className="text-white font-semibold text-lg">{orderData.product.title}</h3>
+                      <h3 className="text-white font-semibold text-lg">{removeVolumeFromTitle(orderData.product.title)}</h3>
                       <p className="text-gray-400">by {orderData.product.author}</p>
                       <p className="text-gray-400">Quantity: {orderData.quantity}</p>
                       <div className="flex items-center mt-2">

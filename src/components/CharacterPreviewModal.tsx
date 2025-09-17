@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, Share2, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
+import { Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { CharacterImageGrid } from '@/components/CharacterImageGrid';
 import { BookCharacterImage } from '@/services/bookCharacterService';
@@ -42,7 +42,6 @@ export const CharacterPreviewModal = ({
   onNext,
   onNavigateToCharacter
 }: CharacterPreviewModalProps) => {
-  const [isFavorited, setIsFavorited] = useState(false);
   const [selectedImage, setSelectedImage] = useState('/placeholder.svg');
   const [currentCharacterIndex, setCurrentCharacterIndex] = useState(currentIndex);
   const [selectedCharacter, setSelectedCharacter] = useState(character);
@@ -74,13 +73,6 @@ export const CharacterPreviewModal = ({
 
   if (!character) return null;
 
-  const handleFavorite = () => {
-    setIsFavorited(!isFavorited);
-  };
-
-  const handleShare = () => {
-    navigator.clipboard.writeText(`Check out ${character.name}!`);
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -118,24 +110,6 @@ export const CharacterPreviewModal = ({
               <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
                 Character Details
               </DialogTitle>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleFavorite}
-                className="hover:scale-110 transition-transform duration-200"
-              >
-                <Heart className={`h-5 w-5 ${isFavorited ? 'fill-red-500 text-red-500' : ''}`} />
-              </Button>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleShare}
-                className="hover:scale-110 transition-transform duration-200"
-              >
-                <Share2 className="h-5 w-5" />
-              </Button>
             </div>
           </div>
         </DialogHeader>

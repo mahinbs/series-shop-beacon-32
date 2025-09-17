@@ -12,15 +12,20 @@ export const CharacterPreviewBox: React.FC<CharacterPreviewBoxProps> = ({ bookId
 
   useEffect(() => {
     const loadCharacters = async () => {
-      if (!bookId) return;
+      if (!bookId) {
+        console.log('🎭 CharacterPreviewBox: No bookId provided');
+        return;
+      }
       
+      console.log('🎭 CharacterPreviewBox: Loading characters for bookId:', bookId);
       setLoading(true);
       try {
         const data = await BookCharacterService.getBookCharacters(bookId);
         console.log('🎭 CharacterPreviewBox: Loaded characters:', data);
+        console.log('🎭 CharacterPreviewBox: Number of characters:', data.length);
         setCharacters(data.slice(0, 4)); // Only show first 4 characters
       } catch (error) {
-        console.error("Failed to load characters:", error);
+        console.error("🎭 CharacterPreviewBox: Failed to load characters:", error);
       } finally {
         setLoading(false);
       }
@@ -74,7 +79,7 @@ export const CharacterPreviewBox: React.FC<CharacterPreviewBoxProps> = ({ bookId
   };
 
   return (
-    <div className="w-full h-full relative cursor-pointer hover:scale-105 transition-all duration-200" onClick={handleClick}>
+    <div className="w-full h-full relative cursor-pointer" onClick={handleClick}>
       {characters.length === 1 ? (
         // Single character - full size
         <img
@@ -157,13 +162,6 @@ export const CharacterPreviewBox: React.FC<CharacterPreviewBoxProps> = ({ bookId
         </div>
       )}
       
-      {/* Overlay with character names on hover */}
-      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300 flex items-end">
-        <div className="p-2 text-white">
-          <p className="text-sm font-bold">Characters ({characters.length})</p>
-          <p className="text-xs opacity-90">Click to view details</p>
-        </div>
-      </div>
     </div>
   );
 };

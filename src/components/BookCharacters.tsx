@@ -200,47 +200,31 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
               className="pl-2 md:pl-4 basis-auto"
             >
               <Card
-                className="w-48 h-64 overflow-hidden group cursor-pointer transition-all duration-700 transform hover:scale-110 hover:-translate-y-2 hover:rotate-1 hover:shadow-2xl hover:shadow-primary/25 border-2 hover:border-primary/50"
+                className="w-48 h-64 overflow-hidden cursor-pointer border-2"
                 onClick={() => handleCharacterClick(character)}
               >
                     <div className="relative h-full">
-                      {/* Enhanced floating particles */}
-                      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10">
-                        {[...Array(4)].map((_, i) => (
-                          <div
-                            key={i}
-                            className="absolute w-1 h-1 bg-primary rounded-full animate-bounce"
-                            style={{
-                              left: `${20 + i * 20}%`,
-                              top: `${25 + i * 15}%`,
-                              animationDelay: `${i * 0.2}s`,
-                              animationDuration: `${1.2 + i * 0.1}s`,
-                            }}
-                          />
-                        ))}
-                      </div>
 
                       {character.image ? (
                         <img
                           src={character.image}
                           alt={character.name}
-                          className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-125 group-hover:brightness-110"
+                          className="w-full h-full object-cover"
                         />
                       ) : (
                         <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center relative overflow-hidden">
-                          <User className="h-16 w-16 text-primary/60 group-hover:text-primary group-hover:scale-110 transition-all duration-500 relative z-10" />
+                          <User className="h-16 w-16 text-primary/60 relative z-10" />
                         </div>
                       )}
 
                       {/* Enhanced overlays and info */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/60 transition-all duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
                       <div className="absolute bottom-0 left-0 right-0 p-3 text-white z-20">
                         <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-bold text-sm group-hover:text-primary transition-colors duration-500">
+                          <h4 className="font-bold text-sm">
                             {character.name}
                           </h4>
-                          <Sparkles className="h-3 w-3 text-primary animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
                         {character.role && (
                           <Badge

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, CreditCard, Lock, ShoppingCart, MapPin, Mail, Plus, Clock, Star } from 'lucide-react';
+import { removeVolumeFromTitle } from '@/lib/utils';
 
 interface CheckoutFormData {
   email: string;
@@ -266,7 +267,7 @@ const Checkout = () => {
                     className="w-16 h-20 object-cover rounded-lg"
                   />
                   <div className="flex-1">
-                    <h4 className="text-white font-semibold text-sm">{product.title}</h4>
+                    <h4 className="text-white font-semibold text-sm">{removeVolumeFromTitle(product.title)}</h4>
                     <p className="text-gray-400 text-xs">by {product.author}</p>
                     <p className="text-gray-400 text-xs">Qty: {quantity}</p>
                     <p className="text-white font-semibold">${product.price}</p>

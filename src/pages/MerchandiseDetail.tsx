@@ -46,9 +46,21 @@ const MerchandiseDetail = () => {
   // Function to extract volume information from title
   const getVolumeInfo = (title: string) => {
     if (!title) return null;
-    // Match patterns like ", VOL.1", ", VOL 1", ", VOLUME 1", etc.
-    const volumeMatch = title.match(/,\s*(VOL\.?\s*\d+|VOLUME\s*\d+)/i);
-    return volumeMatch ? volumeMatch[1].toUpperCase() : null;
+    
+    // First try to match explicit volume patterns like ", VOL.1", ", VOL 1", ", VOLUME 1", etc.
+    const explicitVolumeMatch = title.match(/,\s*(VOL\.?\s*\d+|VOLUME\s*\d+)/i);
+    if (explicitVolumeMatch) {
+      return explicitVolumeMatch[1].toUpperCase();
+    }
+    
+    // If no explicit volume found, try to extract from title patterns like "Test Book 1", "Book 2", etc.
+    const numberMatch = title.match(/(\d+)$/);
+    if (numberMatch) {
+      const volumeNumber = numberMatch[1];
+      return `VOL ${volumeNumber}`;
+    }
+    
+    return null;
   };
   const [product, setProduct] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -419,27 +431,34 @@ const MerchandiseDetail = () => {
           {/* Trailer and Preview Section */}
           {product?.video_url && (
             <div className="mt-8 bg-gray-900 p-6 rounded-lg mb-8">
-              <div className="flex flex-col lg:flex-row gap-6">
+              <div className="flex flex-col lg:flex-row gap-6 h-[500px]">
                 {/* Left Side - Trailer Video */}
                 <div className="lg:w-[60%]">
                   <YouTubeVideo 
                     url={product.video_url} 
-                    className="w-full h-[400px] lg:h-[500px]"
+                    className="w-full h-full"
                   />
                 </div>
 
                 {/* Right Side - Chapter Preview List */}
                 <div className="lg:w-[40%]">
-                  <div className="bg-white rounded-lg p-4">
+                  <div className="bg-white rounded-lg p-4 h-full flex flex-col">
                     <h3 className="text-black font-bold text-lg mb-4 uppercase">Preview</h3>
-                    <div className="space-y-3">
+                    <div 
+                      className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative"
+                      style={{
+                        scrollbarWidth: 'thin',
+                        scrollbarColor: '#cbd5e1 #f1f5f9',
+                        msOverflowStyle: 'scrollbar'
+                      }}
+                    >
                       <div className="flex items-center justify-between py-2 border-b border-gray-200">
                         <span className="text-black font-bold">CH. 1</span>
                         <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded text-sm font-bold">
                           📖 READ NOW
                         </button>
                       </div>
-                      {[2, 3, 4, 5, 6].map((ch) => (
+                      {[2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20].map((ch) => (
                         <div key={ch} className="flex items-center justify-between py-2 border-b border-gray-200">
                           <span className="text-black font-bold">CH. {ch}</span>
                           <button className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1 rounded text-sm font-bold">
@@ -447,11 +466,11 @@ const MerchandiseDetail = () => {
                           </button>
                         </div>
                       ))}
-                      <div className="text-center pt-2">
-                        <button className="text-gray-600 hover:text-gray-800">
-                          ▼
-                        </button>
-                      </div>
+                    </div>
+                    <div className="text-center pt-2 mt-2 border-t border-gray-200">
+                      <button className="text-gray-600 hover:text-gray-800">
+                        ▼
+                      </button>
                     </div>
                   </div>
                 </div>

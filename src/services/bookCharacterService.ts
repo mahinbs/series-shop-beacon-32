@@ -29,6 +29,8 @@ export class BookCharacterService {
   // Get characters for a specific book with their images
   static async getBookCharacters(bookId: string): Promise<BookCharacter[]> {
     try {
+      console.log('🎭 BookCharacterService: Fetching characters for bookId:', bookId);
+      
       const { data, error } = await (supabase as any)
         .from('book_characters')
         .select(`
@@ -47,12 +49,15 @@ export class BookCharacterService {
         .eq('is_active', true)
         .order('display_order', { ascending: true });
 
+      console.log('🎭 BookCharacterService: Raw data from database:', data);
+      console.log('🎭 BookCharacterService: Error from database:', error);
+
       if (error) {
-        console.error('Error fetching book characters:', error);
+        console.error('🎭 BookCharacterService: Error fetching book characters:', error);
         return [];
       }
 
-      return (data as any[])?.map(character => ({
+      const result = (data as any[])?.map(character => ({
         ...character,
         images: character.book_character_images?.sort((a: BookCharacterImage, b: BookCharacterImage) => {
           if (a.is_main && !b.is_main) return -1;
@@ -60,8 +65,11 @@ export class BookCharacterService {
           return a.display_order - b.display_order;
         }) || []
       })) || [];
+      
+      console.log('🎭 BookCharacterService: Processed result:', result);
+      return result;
     } catch (error) {
-      console.error('Error in getBookCharacters:', error);
+      console.error('🎭 BookCharacterService: Error in getBookCharacters:', error);
       return [];
     }
   }

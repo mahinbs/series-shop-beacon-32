@@ -4,6 +4,7 @@ import { useCart } from '@/hooks/useCart';
 import { Heart, ShoppingCart, Eye, BookOpen, ShoppingBag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { removeVolumeFromTitle } from '@/lib/utils';
 
 const SimpleProductGrid = () => {
   const { books, isLoading, error } = useBooks();
@@ -26,20 +27,51 @@ const SimpleProductGrid = () => {
       filteredProducts = books.filter(book => (book.product_type || 'book') === 'merchandise');
     }
     
-    // If "all" is selected, show all products of the selected type
+    // If "all" is selected, show all products of the selected type (deduplicated)
     if (activeSection === 'all') {
-      return filteredProducts;
+      const deduplicatedProducts = filteredProducts.reduce((acc: any[], product: any) => {
+        const baseTitle = removeVolumeFromTitle(product.title);
+        const existingProduct = acc.find(p => removeVolumeFromTitle(p.title) === baseTitle);
+        
+        if (!existingProduct) {
+          acc.push(product);
+        }
+        return acc;
+      }, []);
+      
+      return deduplicatedProducts;
     }
     
     // Filter by section
     const sectionProducts = filteredProducts.filter(product => product.section_type === activeSection);
     
-    // If no products in current section, show all products of the selected type for debugging
+    // If no products in current section, show all products of the selected type for debugging (deduplicated)
     if (sectionProducts.length === 0 && filteredProducts.length > 0) {
-      return filteredProducts;
+      const deduplicatedProducts = filteredProducts.reduce((acc: any[], product: any) => {
+        const baseTitle = removeVolumeFromTitle(product.title);
+        const existingProduct = acc.find(p => removeVolumeFromTitle(p.title) === baseTitle);
+        
+        if (!existingProduct) {
+          acc.push(product);
+        }
+        return acc;
+      }, []);
+      
+      return deduplicatedProducts;
     }
     
-    return sectionProducts;
+    // Deduplicate products by removing volume information from titles
+    const deduplicatedProducts = sectionProducts.reduce((acc: any[], product: any) => {
+      const baseTitle = removeVolumeFromTitle(product.title);
+      const existingProduct = acc.find(p => removeVolumeFromTitle(p.title) === baseTitle);
+      
+      if (!existingProduct) {
+        acc.push(product);
+      }
+      return acc;
+    }, []);
+    
+    return deduplicatedProducts;
   };
 
   const filteredProducts = getFilteredProducts();
@@ -210,7 +242,7 @@ const SimpleProductGrid = () => {
                   {/* Enhanced hover overlay with book details */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
                     <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      <h3 className="text-lg font-bold text-red-300">{product.title}</h3>
+                      <h3 className="text-lg font-bold text-red-300">{removeVolumeFromTitle(product.title)}</h3>
                       {product.author && (
                         <p className="text-sm text-gray-300">by {product.author}</p>
                       )}
@@ -266,7 +298,7 @@ const SimpleProductGrid = () => {
                 </div>
                 
                 <div className="p-3 space-y-3 flex-1 flex flex-col">
-                  <h3 className="text-white font-semibold text-lg">{product.title}</h3>
+                  <h3 className="text-white font-semibold text-lg">{removeVolumeFromTitle(product.title)}</h3>
                   {activeTab === 'books' && product.author && (
                     <p className="text-gray-400 text-sm">{product.author}</p>
                   )}

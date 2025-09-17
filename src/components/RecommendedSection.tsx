@@ -5,6 +5,7 @@ import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
 import { ShoppingCart, Eye, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { removeVolumeFromTitle } from '@/lib/utils';
 
 const RecommendedSection = (props: any) => {
   const [books, setBooks] = useState<BookType[]>([]);
@@ -36,7 +37,18 @@ const RecommendedSection = (props: any) => {
         }
 
         if (data) {
-          setBooks(data);
+          // Deduplicate books by removing volume information from titles
+          const deduplicatedBooks = data.reduce((acc: any[], book: any) => {
+            const baseTitle = removeVolumeFromTitle(book.title);
+            const existingBook = acc.find(b => removeVolumeFromTitle(b.title) === baseTitle);
+            
+            if (!existingBook) {
+              acc.push(book);
+            }
+            return acc;
+          }, []);
+          
+          setBooks(deduplicatedBooks);
         }
       } finally {
         setIsLoading(false);
@@ -175,7 +187,7 @@ const RecommendedSection = (props: any) => {
                   {/* Enhanced hover overlay with book details */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
                     <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                      <h3 className="text-lg font-bold text-red-300">{book.title}</h3>
+                      <h3 className="text-lg font-bold text-red-300">{removeVolumeFromTitle(book.title)}</h3>
                       {book.author && (
                         <p className="text-sm text-gray-300">by {book.author}</p>
                       )}
@@ -195,7 +207,7 @@ const RecommendedSection = (props: any) => {
                 
                 <div className="p-5 space-y-3 flex-1 flex flex-col">
                   <h3 className="text-white font-semibold text-lg group-hover:text-red-300 transition-colors duration-300 line-clamp-2">
-                    {book.title}
+                    {removeVolumeFromTitle(book.title)}
                   </h3>
                   
                   {book.author && (

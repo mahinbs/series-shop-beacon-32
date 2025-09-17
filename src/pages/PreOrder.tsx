@@ -9,6 +9,7 @@ import { Diamond, ShoppingCart, Plus, Minus, ArrowLeft, Truck, Shield, RotateCcw
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/hooks/use-toast';
+import { removeVolumeFromTitle } from '@/lib/utils';
 
 const PreOrder = () => {
   const { productId } = useParams();
@@ -60,7 +61,7 @@ const PreOrder = () => {
       addToCart(cartItem);
       toast({
         title: "Added to Cart!",
-        description: `${product.title} has been added to your cart.`,
+        description: `${removeVolumeFromTitle(product.title)} has been added to your cart.`,
         duration: 3000,
       });
     } catch (error) {
@@ -268,7 +269,7 @@ const PreOrder = () => {
                   onClick={handleSeriesClick}
                   className="text-2xl lg:text-3xl font-bold text-white hover:text-red-400 transition-colors duration-200 text-left block"
                 >
-                  {product.title}, VOL.{selectedVolume}
+                  {removeVolumeFromTitle(product.title)}, VOL.{selectedVolume}
                 </button>
                 <p className="text-gray-400 text-sm mt-1">ORIGINAL TITLE: SUKIPPU TU RŌFĀ</p>
               </div>

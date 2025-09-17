@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, CreditCard, Lock, ShoppingCart, MapPin, Mail } from 'lucide-react';
+import { removeVolumeFromTitle } from '@/lib/utils';
 
 interface DirectCheckoutFormData {
   email: string;
@@ -130,7 +131,7 @@ const DirectCheckout = () => {
                     className="w-20 h-24 object-cover rounded-lg"
                   />
                   <div className="flex-1">
-                    <h4 className="text-white font-semibold text-sm">{product.title}</h4>
+                    <h4 className="text-white font-semibold text-sm">{removeVolumeFromTitle(product.title)}</h4>
                     <p className="text-gray-400 text-xs">by {product.author}</p>
                     <p className="text-gray-400 text-xs">Qty: {quantity || 1}</p>
                     <p className="text-white font-semibold">${product.price}</p>
