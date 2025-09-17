@@ -6,111 +6,29 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Heart, Search, Trash2, ShoppingCart, Filter, Grid, List } from 'lucide-react';
+import { Heart, Search, Trash2, ShoppingCart, Grid, List } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useToast } from '@/hooks/use-toast';
+import { useWishlist } from '@/hooks/useWishlist';
 
 const Wishlist = () => {
-  const { toast } = useToast();
-  
-  // Mock wishlist data
-  const wishlistItems = [
-    {
-      id: 1,
-      title: "Demon Slayer: Complete Box Set",
-      author: "Koyoharu Gotouge",
-      price: 299.99,
-      originalPrice: 349.99,
-      image: "/lovable-uploads/26efc76c-fa83-4369-8d8d-354eab1433e6.png",
-      category: "Manga",
-      isOnSale: true,
-      discount: 15,
-      addedDate: "2025-01-15",
-      availability: "In Stock"
-    },
-    {
-      id: 2,
-      title: "One Piece Volume 105",
-      author: "Eiichiro Oda",
-      price: 14.99,
-      originalPrice: null,
-      image: "/lovable-uploads/503cc23b-a28f-4564-86f9-53896fa75f10.png",
-      category: "Manga",
-      isOnSale: false,
-      discount: 0,
-      addedDate: "2025-01-10",
-      availability: "Pre-order"
-    },
-    {
-      id: 3,
-      title: "Attack on Titan Figure",
-      author: "Good Smile Company",
-      price: 89.99,
-      originalPrice: 99.99,
-      image: "/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png",
-      category: "Merchandise",
-      isOnSale: true,
-      discount: 10,
-      addedDate: "2025-01-05",
-      availability: "Limited Stock"
-    },
-    {
-      id: 4,
-      title: "Naruto Anniversary Edition",
-      author: "Masashi Kishimoto",
-      price: 199.99,
-      originalPrice: null,
-      image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png",
-      category: "Manga",
-      isOnSale: false,
-      discount: 0,
-      addedDate: "2025-01-03",
-      availability: "In Stock"
-    }
-  ];
-
+  const { wishlist: items, removeFromWishlist, isLoading, addToWishlist } = useWishlist();
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('newest');
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [items, setItems] = useState(wishlistItems);
 
-  const handleRemoveFromWishlist = (itemId: number) => {
-    const item = items.find(item => item.id === itemId);
-    setItems(items.filter(item => item.id !== itemId));
-    toast({
-      title: "Removed from wishlist",
-      description: `${item?.title} has been removed from your wishlist.`,
-    });
-  };
-
-  const handleAddToCart = (itemId: number) => {
+  const handleAddToCart = (itemId: string) => {
     const item = items.find(item => item.id === itemId);
     if (!item) return;
 
     // Simulate adding to cart with realistic behavior
-    if (item.availability === 'Out of Stock') {
-      toast({
-        title: "Item unavailable",
-        description: "This item is currently out of stock.",
-        variant: "destructive",
-      });
+    if (!item.inStock) {
       return;
     }
 
-    // Show success message
-    toast({
-      title: "Added to cart",
-      description: `${item.title} has been added to your cart.`,
-    });
-
-    // Optionally remove from wishlist after adding to cart
+    // Show success message and remove from wishlist
     setTimeout(() => {
-      setItems(prevItems => prevItems.filter(prevItem => prevItem.id !== itemId));
-      toast({
-        title: "Moved to cart",
-        description: `${item.title} was removed from your wishlist since it's now in your cart.`,
-      });
+      removeFromWishlist(itemId);
     }, 1000);
   };
 
@@ -152,7 +70,7 @@ const Wishlist = () => {
                 My Wishlist
               </h1>
               <p className="text-muted-foreground">
-                {sortedItems.length} {sortedItems.length === 1 ? 'item' : 'items'} saved for later
+                {isLoading ? 'Loading...' : `${sortedItems.length} ${sortedItems.length === 1 ? 'item' : 'items'} saved for later`}
               </p>
             </div>
             <div className="flex items-center gap-3">
@@ -212,141 +130,145 @@ const Wishlist = () => {
           </Select>
         </div>
 
-        {/* Wishlist Items */}
-        {sortedItems.length === 0 ? (
+        {/* Loading State */}
+        {isLoading ? (
           <div className="text-center py-16">
-            <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-foreground mb-2">Your wishlist is empty</h3>
-            <p className="text-muted-foreground mb-6">
-              {searchQuery || filterCategory !== 'all' 
-                ? 'No items match your current filters.'
-                : 'Start adding items you love to keep track of them!'}
-            </p>
-            <Link to="/shop-all">
-              <Button variant="destructive">
-                Explore Our Collection
-              </Button>
-            </Link>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading your wishlist...</p>
           </div>
         ) : (
-          <div className={
-            viewMode === 'grid' 
-              ? 'grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-              : 'space-y-4'
-          }>
-            {sortedItems.map((item) => (
-              <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                {viewMode === 'grid' ? (
-                  <div className="relative">
-                    <img 
-                      src={item.image} 
-                      alt={item.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    {item.isOnSale && (
-                      <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground">
-                        -{item.discount}% OFF
-                      </Badge>
-                    )}
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-3 right-3 bg-background/80 hover:bg-background"
-                      onClick={() => handleRemoveFromWishlist(item.id)}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </Button>
-                    <CardContent className="p-4">
-                      <h3 className="font-semibold text-foreground mb-1 line-clamp-2">{item.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">{item.author}</p>
-                      <div className="flex items-center justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-foreground">${item.price}</span>
-                          {item.originalPrice && (
-                            <span className="text-sm text-muted-foreground line-through">
-                              ${item.originalPrice}
-                            </span>
-                          )}
-                        </div>
-                        <Badge variant={item.availability === 'In Stock' ? 'default' : 'secondary'}>
-                          {item.availability}
-                        </Badge>
-                      </div>
-                      <Button 
-                        className="w-full" 
-                        variant="destructive"
-                        onClick={() => handleAddToCart(item.id)}
-                        disabled={item.availability === 'Out of Stock'}
-                      >
-                        <ShoppingCart className="w-4 h-4 mr-2" />
-                        Add to Cart
-                      </Button>
-                    </CardContent>
-                  </div>
-                ) : (
-                  <CardContent className="p-4">
-                    <div className="flex gap-4">
+          <>
+            {/* Wishlist Items */}
+            {sortedItems.length === 0 ? (
+              <div className="text-center py-16">
+                <Heart className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
+                <h3 className="text-xl font-semibold text-foreground mb-2">Your wishlist is empty</h3>
+                <p className="text-muted-foreground mb-6">
+                  {searchQuery || filterCategory !== 'all' 
+                    ? 'No items match your current filters.'
+                    : 'Start adding items you love to keep track of them!'}
+                </p>
+                <Link to="/shop-all">
+                  <Button variant="destructive">
+                    Explore Our Collection
+                  </Button>
+                </Link>
+              </div>
+            ) : (
+              <div className={
+                viewMode === 'grid' 
+                  ? 'grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+                  : 'space-y-4'
+              }>
+                {sortedItems.map((item) => (
+                  <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                    {viewMode === 'grid' ? (
                       <div className="relative">
                         <img 
-                          src={item.image} 
+                          src={item.imageUrl} 
                           alt={item.title}
-                          className="w-20 h-28 object-cover rounded"
+                          className="w-full h-48 object-cover"
                         />
-                        {item.isOnSale && (
-                          <Badge className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs">
-                            -{item.discount}%
+                        {item.originalPrice && item.originalPrice > item.price && (
+                          <Badge className="absolute top-3 left-3 bg-destructive text-destructive-foreground">
+                            -{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% OFF
                           </Badge>
                         )}
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-2">
-                          <div>
-                            <h3 className="font-semibold text-foreground">{item.title}</h3>
-                            <p className="text-sm text-muted-foreground">{item.author}</p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveFromWishlist(item.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-destructive" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold text-foreground">${item.price}</span>
-                            {item.originalPrice && (
-                              <span className="text-sm text-muted-foreground line-through">
-                                ${item.originalPrice}
-                              </span>
-                            )}
-                            <Badge variant={item.availability === 'In Stock' ? 'default' : 'secondary'}>
-                              {item.availability}
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="absolute top-3 right-3 bg-background/80 hover:bg-background"
+                          onClick={() => removeFromWishlist(item.id)}
+                        >
+                          <Trash2 className="w-4 h-4 text-destructive" />
+                        </Button>
+                        <CardContent className="p-4">
+                          <h3 className="font-semibold text-foreground mb-1 line-clamp-2">{item.title}</h3>
+                          <p className="text-sm text-muted-foreground mb-2">{item.author}</p>
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-foreground">${item.price}</span>
+                              {item.originalPrice && item.originalPrice > item.price && (
+                                <span className="text-sm text-muted-foreground line-through">
+                                  ${item.originalPrice}
+                                </span>
+                              )}
+                            </div>
+                            <Badge variant={item.inStock ? 'default' : 'secondary'}>
+                              {item.inStock ? 'In Stock' : 'Out of Stock'}
                             </Badge>
                           </div>
                           <Button 
+                            className="w-full" 
                             variant="destructive"
-                            size="sm"
                             onClick={() => handleAddToCart(item.id)}
-                            disabled={item.availability === 'Out of Stock'}
+                            disabled={!item.inStock}
                           >
                             <ShoppingCart className="w-4 h-4 mr-2" />
                             Add to Cart
                           </Button>
-                        </div>
+                        </CardContent>
                       </div>
-                    </div>
-                  </CardContent>
-                )}
-              </Card>
-            ))}
-          </div>
-        )}
-
-        {/* Wishlist Actions */}
-        {sortedItems.length > 0 && (
-          <div className="mt-12 text-center">
-          </div>
+                    ) : (
+                      <CardContent className="p-4">
+                        <div className="flex gap-4">
+                          <div className="relative">
+                            <img 
+                              src={item.imageUrl} 
+                              alt={item.title}
+                              className="w-20 h-28 object-cover rounded"
+                            />
+                            {item.originalPrice && item.originalPrice > item.price && (
+                              <Badge className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground text-xs">
+                                -{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}%
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex-1">
+                            <div className="flex justify-between items-start mb-2">
+                              <div>
+                                <h3 className="font-semibold text-foreground">{item.title}</h3>
+                                <p className="text-sm text-muted-foreground">{item.author}</p>
+                              </div>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeFromWishlist(item.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-foreground">${item.price}</span>
+                                {item.originalPrice && item.originalPrice > item.price && (
+                                  <span className="text-sm text-muted-foreground line-through">
+                                    ${item.originalPrice}
+                                  </span>
+                                )}
+                                <Badge variant={item.inStock ? 'default' : 'secondary'}>
+                                  {item.inStock ? 'In Stock' : 'Out of Stock'}
+                                </Badge>
+                              </div>
+                              <Button 
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => handleAddToCart(item.id)}
+                                disabled={!item.inStock}
+                              >
+                                <ShoppingCart className="w-4 h-4 mr-2" />
+                                Add to Cart
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    )}
+                  </Card>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </div>
       

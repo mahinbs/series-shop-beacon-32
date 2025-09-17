@@ -102,7 +102,7 @@ const PreOrder = () => {
     } else {
       // Create wishlist item with proper data structure
       const wishlistItem = {
-        id: volumeId,
+        product_id: volumeId,
         title: `Skip and Loafer, Vol.${volumeId.split('-vol-')[1] || '1'}`,
         author: product.author,
         price: product.price,

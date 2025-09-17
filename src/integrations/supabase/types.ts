@@ -1459,6 +1459,36 @@ export type Database = {
         }
         Relationships: []
       }
+      wishlist: {
+        Row: {
+          added_at: string
+          created_at: string
+          id: string
+          product_id: string
+          product_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          added_at?: string
+          created_at?: string
+          id?: string
+          product_id: string
+          product_type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          added_at?: string
+          created_at?: string
+          id?: string
+          product_id?: string
+          product_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
