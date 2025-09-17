@@ -77,30 +77,60 @@ const MerchandiseDetail = () => {
 
         // Primary method: Try to fetch directly from books service
          console.log('🔍 Fetching product from books service with ID:', productId);
-         try {
-           const book = await booksService.getById(productId);
-           if (book) {
-             console.log('✅ Found product in books:', book);
-             setProduct(book);
-             
-             // Load volumes for this book if it's not a volume itself
-             if (!book.is_volume) {
-               try {
-                 const bookVolumes = await booksService.getVolumes(book.id);
-                 console.log('📚 Loaded volumes:', bookVolumes);
-                 setVolumes(bookVolumes);
-               } catch (volumeError) {
-                 console.error('Error loading volumes:', volumeError);
-                 setVolumes([]);
-               }
-             }
-             
-             setIsLoading(false);
-             return;
-           }
-         } catch (bookError) {
-           console.log('📚 Book not found, trying comic series...');
-         }
+          try {
+            const book = await booksService.getById(productId);
+            if (book) {
+              console.log('✅ Found product in books:', book);
+              
+              // If this is a volume, load the parent book details instead
+              if (book.is_volume && book.parent_book_id) {
+                console.log('📖 This is a volume, loading parent book details...');
+                try {
+                  const parentBook = await booksService.getById(book.parent_book_id);
+                  if (parentBook) {
+                    console.log('✅ Found parent book:', parentBook);
+                    setProduct(parentBook);
+                    
+                    // Load all volumes for the parent book
+                    try {
+                      const bookVolumes = await booksService.getVolumes(parentBook.id);
+                      console.log('📚 Loaded volumes for parent book:', bookVolumes);
+                      setVolumes(bookVolumes);
+                    } catch (volumeError) {
+                      console.error('Error loading volumes for parent book:', volumeError);
+                      setVolumes([]);
+                    }
+                  } else {
+                    console.log('❌ Parent book not found, showing volume details');
+                    setProduct(book);
+                  }
+                } catch (parentError) {
+                  console.error('Error loading parent book:', parentError);
+                  setProduct(book);
+                }
+              } else {
+                // Regular book or volume without parent
+                setProduct(book);
+                
+                // Load volumes for this book if it's not a volume itself
+                if (!book.is_volume) {
+                  try {
+                    const bookVolumes = await booksService.getVolumes(book.id);
+                    console.log('📚 Loaded volumes:', bookVolumes);
+                    setVolumes(bookVolumes);
+                  } catch (volumeError) {
+                    console.error('Error loading volumes:', volumeError);
+                    setVolumes([]);
+                  }
+                }
+              }
+              
+              setIsLoading(false);
+              return;
+            }
+          } catch (bookError) {
+            console.log('📚 Book not found, trying comic series...');
+          }
 
         // Fallback: Try comic series
         await searchInComicSeries();
