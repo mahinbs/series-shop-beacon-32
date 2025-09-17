@@ -82,6 +82,7 @@ export const BooksManager = () => {
     display_order: 0,
     images: []
   });
+  const [editingCharacterId, setEditingCharacterId] = useState<string | null>(null);
   
   // Volume management state
   const [volumes, setVolumes] = useState<any[]>([]);
@@ -148,6 +149,7 @@ export const BooksManager = () => {
       display_order: 0,
       images: []
     });
+    setEditingCharacterId(null);
   };
 
   const testDatabase = async () => {
@@ -542,7 +544,25 @@ export const BooksManager = () => {
     }
   };
 
-  const handleAddCharacter = async () => {
+  const handleEditCharacter = (character: BookCharacter) => {
+    setCharacterForm({
+      name: character.name,
+      description: character.description || '',
+      role: character.role,
+      display_order: character.display_order,
+      images: character.images?.map(img => ({
+        id: img.id,
+        image_url: img.image_url,
+        is_main: img.is_main,
+        display_order: img.display_order,
+        alt_text: img.alt_text || ''
+      })) || []
+    });
+    setEditingCharacterId(character.id);
+    setShowCharacterForm(true);
+  };
+
+  const handleSubmitCharacter = async () => {
     if (!characterForm.name.trim()) {
       toast({
         title: "Error",
@@ -569,146 +589,174 @@ export const BooksManager = () => {
       display_order: img.display_order
     })));
 
-    const mainImage = characterForm.images.find(img => img.is_main) || characterForm.images[0];
-    const tempId = `temp_${Date.now()}_${Math.random()}`;
-    
-    const newCharacter: BookCharacter = {
-      id: tempId,
-      book_id: editingId || '',
-      name: characterForm.name,
-      description: characterForm.description,
-      image_url: mainImage?.image_url || null, // Use main image for backward compatibility
-      role: characterForm.role,
-      display_order: characterForm.display_order,
-      is_active: true,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      images: characterForm.images.map((img, index) => ({
-        ...img,
-        id: img.id || `temp_img_${tempId}_${index}`,
-        character_id: tempId,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }))
-    };
-
-    // If editing an existing book, save immediately
-    if (editingId) {
+    // Check if we're editing an existing character
+    if (editingCharacterId) {
+      // Update existing character
       try {
-        console.log('🎭 Adding character to existing book:', editingId, 'with', newCharacter.images?.length || 0, 'images');
-        
         const { data: { session } } = await (supabase as any).auth.getSession();
         if (!session) {
           toast({
             title: "Authentication Required",
-            description: "Please sign in to save characters",
+            description: "Please sign in to update characters",
             variant: "destructive",
           });
           return;
         }
 
-        const { id, created_at, updated_at, images, ...characterData } = newCharacter;
+        const mainImage = characterForm.images.find(img => img.is_main) || characterForm.images[0];
         
-        // Create the character first
-        const savedCharacter = await BookCharacterService.createBookCharacter({
-          ...characterData,
-          book_id: editingId,
+        // Update the character data
+        await BookCharacterService.updateBookCharacter(editingCharacterId, {
+          name: characterForm.name,
+          description: characterForm.description,
+          image_url: mainImage?.image_url || null,
+          role: characterForm.role,
+          display_order: characterForm.display_order,
         });
 
-        console.log('✅ Character created:', savedCharacter.id);
-
-        // Now save the character images with enhanced tracking
-        if (images && images.length > 0) {
-          console.log('🖼️ Processing', images.length, 'images for character:', savedCharacter.id);
+        // Handle image updates
+        if (characterForm.images.length > 0) {
+          // Get current images for this character
+          const currentImages = await BookCharacterService.getCharacterImages(editingCharacterId);
           
-          const imageErrors: string[] = [];
-          let savedImageCount = 0;
+          // Delete images that are no longer present
+          const imagesToDelete = currentImages.filter(currentImg => 
+            !characterForm.images.some(newImg => newImg.id === currentImg.id)
+          );
           
-          for (let i = 0; i < images.length; i++) {
-            const image = images[i];
-            try {
-              console.log(`🖼️ Saving image ${i + 1}/${images.length}:`, {
-                url: image.image_url,
+          for (const imageToDelete of imagesToDelete) {
+            await BookCharacterService.deleteCharacterImage(imageToDelete.id);
+          }
+          
+          // Update or create images
+          for (const image of characterForm.images) {
+            if (image.id && !image.id.startsWith('temp_')) {
+              // Update existing image
+              await BookCharacterService.updateCharacterImage(image.id, {
+                image_url: image.image_url,
                 is_main: image.is_main,
+                display_order: image.display_order,
+                alt_text: image.alt_text
+              });
+            } else {
+              // Create new image
+              await BookCharacterService.addCharacterImage({
+                image_url: image.image_url,
+                is_main: image.is_main,
+                display_order: image.display_order,
                 alt_text: image.alt_text,
-                display_order: image.display_order
+                character_id: editingCharacterId,
               });
-              
-              const { id: imageId, character_id, created_at: imgCreated, updated_at: imgUpdated, ...imageData } = image;
-              
-              // Validate image data
-              if (!imageData.image_url || imageData.image_url.trim() === '') {
-                throw new Error(`Image ${i + 1} has no URL`);
-              }
-              
-              const savedImage = await BookCharacterService.addCharacterImage({
-                ...imageData,
-                character_id: savedCharacter.id,
-              });
-              
-              console.log(`✅ Image ${i + 1} saved successfully. Image ID:`, savedImage.id);
-              savedImageCount++;
-              
-              // Add small delay between saves to prevent race conditions
-              await new Promise(resolve => setTimeout(resolve, 100));
-              
-            } catch (imageError) {
-              const errorMsg = `Image ${i + 1}: ${imageError instanceof Error ? imageError.message : 'Unknown error'}`;
-              console.error('❌ Error saving image:', errorMsg);
-              imageErrors.push(errorMsg);
             }
-          }
-          
-          console.log(`📊 Image save results: ${savedImageCount}/${images.length} successful`);
-          
-          // If no images were saved, rollback character
-          if (savedImageCount === 0 && images.length > 0) {
-            console.error('❌ No images saved, rolling back character');
-            await BookCharacterService.deleteBookCharacter(savedCharacter.id);
-            
-            toast({
-              title: "Error",
-              description: `Failed to save any images for character "${characterForm.name}". Character creation cancelled.`,
-              variant: "destructive",
-            });
-            return;
-          }
-          
-          // Show appropriate success/warning message
-          if (imageErrors.length > 0) {
-            toast({
-              title: "Partial Success",
-              description: `Character saved with ${savedImageCount}/${images.length} images. Some images failed to save.`,
-              variant: "default",
-            });
           }
         }
 
-        // Reload characters to get the saved character with images
-        const updatedCharacters = await BookCharacterService.getBookCharacters(editingId);
-        setCharacters(updatedCharacters);
-        setOriginalCharacters([...updatedCharacters]);
+        // Reload characters to reflect changes
+        if (editingId) {
+          const updatedCharacters = await BookCharacterService.getBookCharacters(editingId);
+          setCharacters(updatedCharacters);
+          setOriginalCharacters([...updatedCharacters]);
+        }
 
         toast({
           title: "Success",
-          description: "Character and images added successfully",
+          description: "Character updated successfully",
         });
       } catch (error) {
-        console.error('❌ Error saving character:', error);
+        console.error('❌ Error updating character:', error);
         toast({
           title: "Error",
-          description: "Failed to save character",
+          description: "Failed to update character",
           variant: "destructive",
         });
         return;
       }
     } else {
-      // For new books, just add to local state
-      setCharacters([...characters, newCharacter]);
-      toast({
-        title: "Success",
-        description: "Character added to book",
-      });
+      // Create new character
+      const mainImage = characterForm.images.find(img => img.is_main) || characterForm.images[0];
+      const tempId = `temp_${Date.now()}_${Math.random()}`;
+      
+      const newCharacter: BookCharacter = {
+        id: tempId,
+        book_id: editingId || '',
+        name: characterForm.name,
+        description: characterForm.description,
+        image_url: mainImage?.image_url || null,
+        role: characterForm.role,
+        display_order: characterForm.display_order,
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        images: characterForm.images.map((img, index) => ({
+          ...img,
+          id: img.id || `temp_img_${tempId}_${index}`,
+          character_id: tempId,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }))
+      };
+
+      // If editing an existing book, save immediately
+      if (editingId) {
+        try {
+          const { data: { session } } = await (supabase as any).auth.getSession();
+          if (!session) {
+            toast({
+              title: "Authentication Required",
+              description: "Please sign in to save characters",
+              variant: "destructive",
+            });
+            return;
+          }
+
+          const { id, created_at, updated_at, images, ...characterData } = newCharacter;
+          
+          // Create the character first
+          const savedCharacter = await BookCharacterService.createBookCharacter({
+            ...characterData,
+            book_id: editingId,
+          });
+
+          // Now save the character images
+          if (images && images.length > 0) {
+            for (const image of images) {
+              const { id: imageId, character_id, created_at: imgCreated, updated_at: imgUpdated, ...imageData } = image;
+              
+              if (imageData.image_url && imageData.image_url.trim()) {
+                await BookCharacterService.addCharacterImage({
+                  ...imageData,
+                  character_id: savedCharacter.id,
+                });
+              }
+            }
+          }
+
+          // Reload characters to get the saved character with images
+          const updatedCharacters = await BookCharacterService.getBookCharacters(editingId);
+          setCharacters(updatedCharacters);
+          setOriginalCharacters([...updatedCharacters]);
+
+          toast({
+            title: "Success",
+            description: "Character created successfully",
+          });
+        } catch (error) {
+          console.error('❌ Error saving character:', error);
+          toast({
+            title: "Error",
+            description: "Failed to save character",
+            variant: "destructive",
+          });
+          return;
+        }
+      } else {
+        // For new books, just add to local state
+        setCharacters([...characters, newCharacter]);
+        toast({
+          title: "Success",
+          description: "Character added to book",
+        });
+      }
     }
 
     setCharacterForm({
@@ -718,6 +766,7 @@ export const BooksManager = () => {
       display_order: characters.length,
       images: []
     });
+    setEditingCharacterId(null);
     setShowCharacterForm(false);
   };
 
@@ -1156,15 +1205,26 @@ export const BooksManager = () => {
                               </p>
                             </div>
                           </div>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRemoveCharacter(character.id)}
-                            disabled={submitting}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditCharacter(character)}
+                              disabled={submitting}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRemoveCharacter(character.id)}
+                              disabled={submitting}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </div>
                       );
                     })}
@@ -1175,12 +1235,22 @@ export const BooksManager = () => {
                   <Card className="border-2 border-blue-200">
                     <CardContent className="p-4 space-y-4">
                       <div className="flex items-center justify-between">
-                        <h4 className="font-semibold">Add Character</h4>
+                        <h4 className="font-semibold">{editingCharacterId ? 'Edit Character' : 'Add Character'}</h4>
                         <Button
                           type="button"
                           variant="ghost"
                           size="sm"
-                          onClick={() => setShowCharacterForm(false)}
+                          onClick={() => {
+                            setShowCharacterForm(false);
+                            setEditingCharacterId(null);
+                            setCharacterForm({
+                              name: '',
+                              description: '',
+                              role: 'main',
+                              display_order: 0,
+                              images: []
+                            });
+                          }}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -1240,17 +1310,27 @@ export const BooksManager = () => {
                         <Button
                           type="button"
                           variant="outline"
-                          onClick={() => setShowCharacterForm(false)}
+                          onClick={() => {
+                            setShowCharacterForm(false);
+                            setEditingCharacterId(null);
+                            setCharacterForm({
+                              name: '',
+                              description: '',
+                              role: 'main',
+                              display_order: 0,
+                              images: []
+                            });
+                          }}
                           disabled={submitting}
                         >
                           Cancel
                         </Button>
                         <Button
                           type="button"
-                          onClick={handleAddCharacter}
+                          onClick={handleSubmitCharacter}
                           disabled={submitting}
                         >
-                          Add Character
+                          {editingCharacterId ? 'Update Character' : 'Add Character'}
                         </Button>
                       </div>
                     </CardContent>

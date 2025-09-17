@@ -57,14 +57,18 @@ export class BookCharacterService {
         return [];
       }
 
-      const result = (data as any[])?.map(character => ({
-        ...character,
-        images: character.book_character_images?.sort((a: BookCharacterImage, b: BookCharacterImage) => {
-          if (a.is_main && !b.is_main) return -1;
-          if (!a.is_main && b.is_main) return 1;
-          return a.display_order - b.display_order;
-        }) || []
-      })) || [];
+      const result = (data as any[])?.map(character => {
+        // Fix circular reference by properly mapping book_character_images to images
+        const { book_character_images, ...characterData } = character;
+        return {
+          ...characterData,
+          images: book_character_images?.sort((a: BookCharacterImage, b: BookCharacterImage) => {
+            if (a.is_main && !b.is_main) return -1;
+            if (!a.is_main && b.is_main) return 1;
+            return a.display_order - b.display_order;
+          }) || []
+        };
+      }) || [];
       
       console.log('🎭 BookCharacterService: Processed result:', result);
       return result;
