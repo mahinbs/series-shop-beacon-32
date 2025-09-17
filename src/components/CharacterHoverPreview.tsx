@@ -14,29 +14,30 @@ export const CharacterHoverPreview = ({ character }: CharacterHoverPreviewProps)
   };
 
   return (
-    <div className="relative overflow-hidden rounded-lg">
+    <div className="relative overflow-auto md:overflow-hidden rounded-lg">
       {/* Enhanced background effects */}
       <div className="absolute inset-0 bg-gradient-radial from-primary/15 via-transparent to-transparent opacity-60" />
       <div className="absolute top-0 right-0 w-28 h-28 bg-gradient-to-bl from-primary/25 to-transparent rounded-full blur-2xl" />
       <div className="absolute bottom-0 left-0 w-20 h-20 bg-gradient-to-tr from-primary/20 to-transparent rounded-full blur-xl" />
       
-      <div className="relative flex h-[700px]">
+      <div className="relative grid md:grid-cols-2 h-[70vh]">
+      {/* <div className="relative flex h-[700px]"> */}
         {/* Main Image Section - 50% */}
-        <div className="relative w-1/2 h-full flex-shrink-0">
+        <div className="relative w-full md:h-full aspect-[4/3] md:aspect-auto flex-shrink-0">
           <img
             src={character.image || "/placeholder.svg"}
             alt={character.name}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain md:object-cover"
           />
           {/* Gradient overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-transparent to-background/40" />
         </div>
         
         {/* Character Details & Image Grid Section - 50% */}
-        <div className="flex-1 p-4 flex flex-col">
+        <div className="flex-1 p-4 flex flex-col w-full">
           {/* Character Name and Role */}
           <div className="mb-6">
-            <h4 className="font-bold text-lg text-foreground mb-3 flex items-center gap-2">
+            <h4 className="font-bold text-lg text-red-500 mb-3 flex items-center gap-2">
               {character.name}
               <Sparkles className="h-4 w-4 text-primary animate-pulse" />
             </h4>
@@ -51,12 +52,18 @@ export const CharacterHoverPreview = ({ character }: CharacterHoverPreviewProps)
           </div>
 
           {/* Description */}
-          <p className="text-muted-foreground text-xs leading-relaxed bg-muted/30 p-4 rounded-lg border border-primary/10 mb-8">
-            {character.description}
-          </p>
+          <p 
+            className="text-muted-foreground text-xs leading-relaxed bg-muted/30 p-4 rounded-lg border border-primary/10 mb-8 w-full max-h-32 md:max-h-40 overflow-y-auto custom-scrollbar"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#ef4444 transparent',
+            }}
+          >
+            {character.description} Lorem ipsum dolor sit amet consectetur adipisicing elit. Unde repudiandae omnis ad totam laboriosam fugiat ratione earum, distinctio facere consequatur accusamus expedita, ex dolorum esse, minima libero eius magni. Unde.Lorem ipsum dolor sit amet consectetur adipisicing elit. Unde repudiandae omnis ad totam laboriosam fugiat ratione earum, distinctio facere consequatur accusamus expedita, ex dolorum esse, minima libero eius magni. Unde.Lorem ipsum dolor sit amet consectetur adipisicing elit. Unde repudiandae omnis ad totam laboriosam fugiat ratione earum, distinctio facere consequatur accusamus expedita, ex dolorum esse, minima libero eius magni. Unde.
+          </p> 
 
           {/* Character Images Grid - positioned at bottom */}
-          <div className="flex-1 flex items-end">
+          <div className="md:h-full items-end w-full">
             {character.images && character.images.length > 0 && (
               <CharacterImageGrid
                 images={character.images}

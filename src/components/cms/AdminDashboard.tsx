@@ -16,6 +16,9 @@ export const AdminDashboard = () => {
   });
   const [loadingTimeout, setLoadingTimeout] = useState(false);
   const [stableSession, setStableSession] = useState(false);
+  
+  // Track if we've completed initial loading check to prevent reloading on window focus
+  const [initialLoadingComplete, setInitialLoadingComplete] = useState(false);
 
   // Persist selected page to localStorage
   useEffect(() => {
@@ -34,6 +37,15 @@ export const AdminDashboard = () => {
       setStableSession(false);
     }
   }, [user, isAdmin, authLoading]);
+
+  // Track when initial loading is complete
+  useEffect(() => {
+    if (!authLoading && !isLoading && user && isAdmin) {
+      if (!initialLoadingComplete) {
+        setInitialLoadingComplete(true);
+      }
+    }
+  }, [authLoading, isLoading, user, isAdmin, initialLoadingComplete]);
 
   // Add a timeout fallback for loading - but only if session isn't stable
   useEffect(() => {
@@ -66,8 +78,8 @@ export const AdminDashboard = () => {
     );
   }
 
-  // Show loading only if auth is loading or CMS is loading for new sessions
-  if ((authLoading || (isLoading && !stableSession)) && !loadingTimeout) {
+  // Show loading only on initial load, not when switching windows
+  if ((authLoading || (isLoading && !stableSession)) && !loadingTimeout && !initialLoadingComplete) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center justify-center h-64 gap-4">

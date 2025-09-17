@@ -22,6 +22,9 @@ const AdminPanel = () => {
   const [fullName, setFullName] = useState('Admin User');
   const [authLoading, setAuthLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('signin');
+  
+  // Track if we've completed initial auth check to prevent reloading on window focus
+  const [initialAuthCheckComplete, setInitialAuthCheckComplete] = useState(false);
 
   useEffect(() => {
     // Wait for auth to finish before deciding
@@ -29,11 +32,16 @@ const AdminPanel = () => {
       return;
     }
 
+    // Mark initial auth check as complete
+    if (!initialAuthCheckComplete) {
+      setInitialAuthCheckComplete(true);
+    }
+
     // Logged-in but not an admin: send to home
     if (user && !isAdmin) {
       navigate('/');
     }
-  }, [user, isAdmin, isLoading, navigate]);
+  }, [user, isAdmin, isLoading, navigate, initialAuthCheckComplete]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -82,8 +90,8 @@ const AdminPanel = () => {
     }
   };
 
-  // Show loading while resolving auth/admin status
-  if (isLoading) {
+  // Show loading only on initial auth check, not when switching windows
+  if (isLoading && !initialAuthCheckComplete) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Card className="w-full max-w-md">

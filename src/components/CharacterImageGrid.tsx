@@ -86,7 +86,7 @@ export const CharacterImageGrid = ({ images, characterName, onImageSelect, selec
   
   if (isHorizontal) {
     return (
-      <div className="relative">
+      <div className="relative w-full">
         {/* Left fade gradient */}
         {hasMultipleImages && (
           <div className="absolute left-0 top-0 bottom-0 w-8 bg-gradient-to-r from-background to-transparent z-[5] pointer-events-none" />

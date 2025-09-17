@@ -1,20 +1,36 @@
-import { useState, useEffect } from 'react';
-import { BookCharacterService, BookCharacter } from '@/services/bookCharacterService';
-import { Card } from '@/components/ui/card';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@/components/ui/carousel';
-import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { User, Users, Sparkles, Star, Heart } from 'lucide-react';
-import { CharacterPreviewModal } from '@/components/CharacterPreviewModal';
-import { CharacterHoverPreview } from '@/components/CharacterHoverPreview';
+import { useState, useEffect } from "react";
+import {
+  BookCharacterService,
+  BookCharacter,
+} from "@/services/bookCharacterService";
+import { Card } from "@/components/ui/card";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { User, Users, Sparkles, Star, Heart } from "lucide-react";
+import { CharacterPreviewModal } from "@/components/CharacterPreviewModal";
+import { CharacterHoverPreview } from "@/components/CharacterHoverPreview";
 
 interface BookCharactersProps {
   bookId: string;
   className?: string;
 }
 
-export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) => {
+export const BookCharacters = ({
+  bookId,
+  className = "",
+}: BookCharactersProps) => {
   const [characters, setCharacters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCharacter, setSelectedCharacter] = useState<any>(null);
@@ -26,19 +42,31 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
       try {
         const data = await BookCharacterService.getBookCharacters(bookId);
         // Transform data for character preview
-        const enhancedCharacters = data.map(char => {
-          const mainImage = char.images?.find(img => img.is_main) || char.images?.[0];
+        const enhancedCharacters = data.map((char) => {
+          const mainImage =
+            char.images?.find((img) => img.is_main) || char.images?.[0];
           return {
             ...char,
             image: mainImage?.image_url || char.image_url || "/placeholder.svg",
-            backstory: char.description + " Their journey has been filled with challenges that have shaped them into who they are today.",
-            abilities: ['Unique Skill', 'Special Power', 'Ancient Knowledge', 'Hidden Talent'],
-            relationships: ['Connected to the main story', 'Influences key events', 'Beloved by readers']
+            backstory:
+              char.description +
+              " Their journey has been filled with challenges that have shaped them into who they are today.",
+            abilities: [
+              "Unique Skill",
+              "Special Power",
+              "Ancient Knowledge",
+              "Hidden Talent",
+            ],
+            relationships: [
+              "Connected to the main story",
+              "Influences key events",
+              "Beloved by readers",
+            ],
           };
         });
         setCharacters(enhancedCharacters);
       } catch (error) {
-        console.error('Failed to load characters:', error);
+        console.error("Failed to load characters:", error);
       } finally {
         setLoading(false);
       }
@@ -53,7 +81,6 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
     setSelectedCharacter(character);
     setIsModalOpen(true);
   };
-
 
   if (loading) {
     return (
@@ -96,21 +123,17 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
       >
         <CarouselContent className="-ml-2 md:-ml-4">
           {characters.map((character, index) => (
-            <CarouselItem key={character.id} className="pl-2 md:pl-4 basis-auto">
+            <CarouselItem
+              key={character.id}
+              className="pl-2 md:pl-4 basis-auto"
+            >
               <HoverCard openDelay={300} closeDelay={200}>
                 <HoverCardTrigger asChild>
-                  <Card 
+                  <Card
                     className="w-48 h-64 overflow-hidden group cursor-pointer transition-all duration-700 transform hover:scale-110 hover:-translate-y-2 hover:rotate-1 hover:shadow-2xl hover:shadow-primary/25 border-2 hover:border-primary/50"
                     onClick={() => handleCharacterClick(character)}
                   >
                     <div className="relative h-full">
-                      {/* Enhanced hover indicator */}
-                      <div className="absolute top-2 right-2 z-30 opacity-0 group-hover:opacity-100 transition-all duration-300 transform scale-0 group-hover:scale-100">
-                        <div className="bg-primary/25 backdrop-blur-sm rounded-full p-1.5 border border-primary/40">
-                          <Sparkles className="h-3 w-3 text-primary animate-pulse" />
-                        </div>
-                      </div>
-
                       {/* Enhanced floating particles */}
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10">
                         {[...Array(4)].map((_, i) => (
@@ -118,10 +141,10 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                             key={i}
                             className="absolute w-1 h-1 bg-primary rounded-full animate-bounce"
                             style={{
-                              left: `${20 + (i * 20)}%`,
-                              top: `${25 + (i * 15)}%`,
+                              left: `${20 + i * 20}%`,
+                              top: `${25 + i * 15}%`,
                               animationDelay: `${i * 0.2}s`,
-                              animationDuration: `${1.2 + (i * 0.1)}s`
+                              animationDuration: `${1.2 + i * 0.1}s`,
                             }}
                           />
                         ))}
@@ -138,10 +161,10 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                           <User className="h-16 w-16 text-primary/60 group-hover:text-primary group-hover:scale-110 transition-all duration-500 relative z-10" />
                         </div>
                       )}
-                      
+
                       {/* Enhanced overlays and info */}
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent group-hover:from-black/60 transition-all duration-500" />
-                      
+
                       <div className="absolute bottom-0 left-0 right-0 p-3 text-white z-20">
                         <div className="flex items-center justify-between mb-1">
                           <h4 className="font-bold text-sm group-hover:text-primary transition-colors duration-500">
@@ -150,8 +173,11 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                           <Sparkles className="h-3 w-3 text-primary animate-pulse opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                         </div>
                         {character.role && (
-                          <Badge variant="secondary" className="bg-primary/90 text-primary-foreground border-primary/50 text-xs backdrop-blur-sm">
-                            <Star className="w-2 w-2 mr-1" />
+                          <Badge
+                            variant="secondary"
+                            className="bg-primary/90 text-primary-foreground border-primary/50 text-xs backdrop-blur-sm"
+                          >
+                            <Star className="w-2 min-w-2 mr-1" />
                             {character.role}
                           </Badge>
                         )}
@@ -159,10 +185,10 @@ export const BookCharacters = ({ bookId, className = '' }: BookCharactersProps) 
                     </div>
                   </Card>
                 </HoverCardTrigger>
-                
-                <HoverCardContent 
-                  side="top" 
-                  className="w-[650px] p-0 border-primary/20 bg-gradient-to-br from-background/98 via-background/95 to-primary/10 backdrop-blur-xl shadow-2xl shadow-primary/20 ring-1 ring-primary/20"
+
+                <HoverCardContent
+                  side="left"
+                  className="hidden md:block w-[90vw] md:w-[650px] h-[70vh] p-0 border-primary/20 bg-gradient-to-br from-background/98 via-background/95 to-primary/10 backdrop-blur-xl shadow-2xl shadow-primary/20 ring-1 ring-primary/20"
                   sideOffset={18}
                   align="center"
                 >
