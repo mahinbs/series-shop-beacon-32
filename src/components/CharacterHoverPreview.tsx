@@ -59,7 +59,7 @@ export const CharacterHoverPreview = ({ character }: CharacterHoverPreviewProps)
               scrollbarColor: '#ef4444 transparent',
             }}
           >
-            {character.description} Lorem ipsum dolor sit amet consectetur adipisicing elit. Unde repudiandae omnis ad totam laboriosam fugiat ratione earum, distinctio facere consequatur accusamus expedita, ex dolorum esse, minima libero eius magni. Unde.Lorem ipsum dolor sit amet consectetur adipisicing elit. Unde repudiandae omnis ad totam laboriosam fugiat ratione earum, distinctio facere consequatur accusamus expedita, ex dolorum esse, minima libero eius magni. Unde.Lorem ipsum dolor sit amet consectetur adipisicing elit. Unde repudiandae omnis ad totam laboriosam fugiat ratione earum, distinctio facere consequatur accusamus expedita, ex dolorum esse, minima libero eius magni. Unde.
+            {character.description}
           </p> 
 
           {/* Character Images Grid - positioned at bottom */}

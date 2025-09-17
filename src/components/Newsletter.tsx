@@ -51,7 +51,7 @@ const Newsletter = () => {
   return (
     <section 
       ref={elementRef}
-      className={`relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 py-20 mt-16 mb-48 border-t border-gray-700/50 overflow-hidden transition-all duration-1000 transform ${
+      className={`relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 py-20 pt-16 pb-48 border-t border-gray-700/50 overflow-hidden transition-all duration-1000 transform ${
         isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
       }`}
     >

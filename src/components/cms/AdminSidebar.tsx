@@ -263,14 +263,14 @@ export function AdminSidebar({ selectedPage, onPageSelect }: AdminSidebarProps) 
         </div>
 
         {/* Brand/Logo Area */}
-        {!collapsed && (
+        {/* {!collapsed && (
           <div className="mt-auto p-4 border-t">
             <div className="text-center space-y-1">
               <p className="text-xs font-medium text-muted-foreground">CMS Dashboard</p>
               <p className="text-xs text-muted-foreground/70">v2.1.0</p>
             </div>
           </div>
-        )}
+        )} */}
       </SidebarContent>
     </Sidebar>
   );

@@ -80,21 +80,37 @@ export const useAnnouncements = () => {
     try {
       setError(null);
       
-      // For local storage auth users, skip Supabase loading
-      if (user && user.id && user.id.startsWith('local-')) {
-        setAnnouncements([]);
-        setIsLoading(false);
-        return;
-      }
-      
       const { data, error } = await supabase
         .from('announcements')
         .select('*')
         .eq('is_active', true)
         .order('display_order', { ascending: true });
 
-      if (error) throw error;
-      setAnnouncements((data || []) as unknown as Announcement[]);
+      if (error) {
+        console.error('Error loading announcements:', error);
+        // If there's an error, try to provide fallback data
+        setAnnouncements([]);
+        return;
+      }
+
+      // Transform data to ensure all required fields exist
+      const transformedData = (data || []).map((item: any) => ({
+        id: item.id,
+        title: item.title || 'Untitled Announcement',
+        description: item.description || item.content || 'No description available',
+        full_description: item.full_description || item.description || item.content || 'No detailed description available',
+        date_info: item.date_info || 'Available Now',
+        image_url: item.image_url || 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=800&h=600&fit=crop',
+        status: item.status || 'Available',
+        features: item.features || ['Great content', 'High quality', 'Exclusive access'],
+        badge_type: item.badge_type || 'new',
+        display_order: item.display_order || 0,
+        is_active: item.is_active !== false,
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      }));
+
+      setAnnouncements(transformedData as Announcement[]);
     } catch (error) {
       setError(error instanceof Error ? error.message : 'Failed to load announcements');
       console.error('Error loading announcements:', error);

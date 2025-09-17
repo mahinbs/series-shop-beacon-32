@@ -6,40 +6,48 @@ import { useAnnouncements } from '@/hooks/useAnnouncements';
 
 const AnnouncementsSection = () => {
   const { elementRef, isVisible } = useScrollAnimation(0.1);
-  const { announcements, isLoading } = useAnnouncements();
+  const { announcements, isLoading, error } = useAnnouncements();
 
-  // Debug logging (commented out for cleaner console)
-  // console.log('AnnouncementsSection rendering:', { 
-  //   announcementsCount: announcements?.length || 0, 
-  //   isLoading, 
-  //   announcements: announcements 
-  // });
+  // Debug logging
+  console.log('AnnouncementsSection Debug:', { 
+    announcementsCount: announcements?.length || 0, 
+    isLoading, 
+    error,
+    announcements: announcements 
+  });
 
   if (isLoading) {
-    // console.log('AnnouncementsSection: Showing loading state');
     return (
       <section className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 py-16">
         <div className="container mx-auto px-4 text-center">
           <div className="text-white text-lg">Loading announcements...</div>
-          <div className="text-green-500 text-xl mt-4 font-bold">LOADING STATE VISIBLE</div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 py-16">
+        <div className="container mx-auto px-4 text-center">
+          <div className="text-red-400 text-lg">Error loading announcements: {error}</div>
+          <div className="text-gray-400 text-sm mt-2">Please try refreshing the page</div>
         </div>
       </section>
     );
   }
 
   if (announcements.length === 0) {
-    // console.log('AnnouncementsSection: Showing no announcements state');
     return (
       <section className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 py-16">
         <div className="container mx-auto px-4 text-center">
           <div className="text-gray-400 text-lg">No announcements available</div>
-          <div className="text-red-500 text-xl mt-4 font-bold">NO ANNOUNCEMENTS STATE VISIBLE</div>
+          <div className="text-gray-500 text-sm mt-2">Check back soon for updates!</div>
         </div>
       </section>
     );
   }
 
-  // console.log('AnnouncementsSection: Showing announcements list');
   return (
     <section 
       ref={elementRef}
@@ -54,10 +62,6 @@ const AnnouncementsSection = () => {
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
-        {/* Test visibility */}
-        <div className="text-green-500 text-xl mb-4 font-bold text-center">
-          ANNOUNCEMENTS SECTION VISIBLE - Count: {announcements.length}
-        </div>
         <div className={`text-center mb-12 transition-all duration-1000 delay-200 transform ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
         }`}>
@@ -143,7 +147,7 @@ const AnnouncementsSection = () => {
                       Learn More
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl bg-gray-900 border-gray-700 text-white">
+                  <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-gray-900 border-gray-700 text-white custom-scrollbar">
                     <DialogHeader>
                       <DialogTitle className="text-2xl font-bold text-white flex items-center gap-2">
                         {index === 0 && <Heart className="w-6 h-6 text-red-500" />}
