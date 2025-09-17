@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useImperativeHandle, forwardRef } from "react";
 import {
   BookCharacterService,
   BookCharacter,
@@ -11,30 +11,44 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { User, Users, Sparkles, Star, Heart } from "lucide-react";
 import { CharacterPreviewModal } from "@/components/CharacterPreviewModal";
-import { CharacterHoverPreview } from "@/components/CharacterHoverPreview";
 
 interface BookCharactersProps {
   bookId: string;
   className?: string;
 }
 
-export const BookCharacters = ({
+export interface BookCharactersRef {
+  openFirstCharacter: () => void;
+}
+
+export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>(({
   bookId,
   className = "",
-}: BookCharactersProps) => {
+}, ref) => {
   const [characters, setCharacters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCharacter, setSelectedCharacter] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [userClickedCharacter, setUserClickedCharacter] = useState(false);
+  const [currentCharacterIndex, setCurrentCharacterIndex] = useState(0);
+
+  // Debug logging to track modal state
+  console.log('🎭 BookCharacters: Modal state:', { isModalOpen, selectedCharacter: selectedCharacter?.name || 'none' });
+
+  // Safeguard: Reset modal state if it somehow gets opened without a character or user interaction
+  useEffect(() => {
+    if (isModalOpen && (!selectedCharacter || !userClickedCharacter)) {
+      console.log('🚨 BookCharacters: Modal is open without proper conditions, closing it');
+      console.log('🚨 BookCharacters: Conditions:', { isModalOpen, selectedCharacter: selectedCharacter?.name || 'none', userClickedCharacter });
+      setIsModalOpen(false);
+      setSelectedCharacter(null);
+      setUserClickedCharacter(false);
+    }
+  }, [isModalOpen, selectedCharacter, userClickedCharacter]);
 
   useEffect(() => {
     const loadCharacters = async () => {
@@ -65,6 +79,20 @@ export const BookCharacters = ({
           };
         });
         setCharacters(enhancedCharacters);
+        console.log('🎭 BookCharacters: Loaded', enhancedCharacters.length, 'characters for book:', bookId);
+        console.log('🎭 BookCharacters: Modal should remain closed after loading');
+        console.log('🎭 BookCharacters: Current modal state after loading:', { isModalOpen, selectedCharacter: selectedCharacter?.name || 'none' });
+        
+        // Ensure modal is closed and reset when characters are loaded
+        setIsModalOpen(false);
+        setSelectedCharacter(null);
+        setUserClickedCharacter(false);
+        console.log('🎭 BookCharacters: Reset modal state after character loading');
+        
+        // Check if any character is being automatically selected
+        if (enhancedCharacters.length > 0) {
+          console.log('🎭 BookCharacters: First character data:', enhancedCharacters[0]);
+        }
       } catch (error) {
         console.error("Failed to load characters:", error);
       } finally {
@@ -78,9 +106,53 @@ export const BookCharacters = ({
   }, [bookId]);
 
   const handleCharacterClick = (character: any) => {
+    console.log('🎭 BookCharacters: Character clicked:', character.name);
+    const characterIndex = characters.findIndex(char => char.id === character.id);
+    setCurrentCharacterIndex(characterIndex);
+    setUserClickedCharacter(true);
     setSelectedCharacter(character);
     setIsModalOpen(true);
+    console.log('🎭 BookCharacters: Modal opened for character:', character.name, 'at index:', characterIndex);
   };
+
+  const handlePreviousCharacter = () => {
+    if (currentCharacterIndex > 0) {
+      const newIndex = currentCharacterIndex - 1;
+      setCurrentCharacterIndex(newIndex);
+      setSelectedCharacter(characters[newIndex]);
+      console.log('🎭 BookCharacters: Navigated to previous character:', characters[newIndex].name);
+    }
+  };
+
+  const handleNextCharacter = () => {
+    if (currentCharacterIndex < characters.length - 1) {
+      const newIndex = currentCharacterIndex + 1;
+      setCurrentCharacterIndex(newIndex);
+      setSelectedCharacter(characters[newIndex]);
+      console.log('🎭 BookCharacters: Navigated to next character:', characters[newIndex].name);
+    }
+  };
+
+  const handleNavigateToCharacter = (index: number) => {
+    if (index >= 0 && index < characters.length) {
+      setCurrentCharacterIndex(index);
+      setSelectedCharacter(characters[index]);
+      console.log('🎭 BookCharacters: Navigated to character at index:', index, characters[index].name);
+    }
+  };
+
+  // Expose methods to parent component
+  useImperativeHandle(ref, () => ({
+    openFirstCharacter: () => {
+      if (characters.length > 0) {
+        console.log('🎭 BookCharacters: Opening first character from external trigger');
+        setCurrentCharacterIndex(0);
+        setUserClickedCharacter(true);
+        setSelectedCharacter(characters[0]);
+        setIsModalOpen(true);
+      }
+    }
+  }), [characters]);
 
   if (loading) {
     return (
@@ -127,12 +199,10 @@ export const BookCharacters = ({
               key={character.id}
               className="pl-2 md:pl-4 basis-auto"
             >
-              <HoverCard openDelay={300} closeDelay={200}>
-                <HoverCardTrigger asChild>
-                  <Card
-                    className="w-48 h-64 overflow-hidden group cursor-pointer transition-all duration-700 transform hover:scale-110 hover:-translate-y-2 hover:rotate-1 hover:shadow-2xl hover:shadow-primary/25 border-2 hover:border-primary/50"
-                    onClick={() => handleCharacterClick(character)}
-                  >
+              <Card
+                className="w-48 h-64 overflow-hidden group cursor-pointer transition-all duration-700 transform hover:scale-110 hover:-translate-y-2 hover:rotate-1 hover:shadow-2xl hover:shadow-primary/25 border-2 hover:border-primary/50"
+                onClick={() => handleCharacterClick(character)}
+              >
                     <div className="relative h-full">
                       {/* Enhanced floating particles */}
                       <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none z-10">
@@ -184,17 +254,6 @@ export const BookCharacters = ({
                       </div>
                     </div>
                   </Card>
-                </HoverCardTrigger>
-
-                <HoverCardContent
-                  side="left"
-                  className="hidden md:block w-[90vw] md:w-[650px] h-[70vh] p-0 border-primary/20 bg-gradient-to-br from-background/98 via-background/95 to-primary/10 backdrop-blur-xl shadow-2xl shadow-primary/20 ring-1 ring-primary/20"
-                  sideOffset={18}
-                  align="center"
-                >
-                  <CharacterHoverPreview character={character} />
-                </HoverCardContent>
-              </HoverCard>
             </CarouselItem>
           ))}
         </CarouselContent>
@@ -204,9 +263,21 @@ export const BookCharacters = ({
 
       <CharacterPreviewModal
         character={selectedCharacter}
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isModalOpen && selectedCharacter !== null && userClickedCharacter}
+        characters={characters}
+        currentIndex={currentCharacterIndex}
+        onPrevious={handlePreviousCharacter}
+        onNext={handleNextCharacter}
+        onNavigateToCharacter={handleNavigateToCharacter}
+        onClose={() => {
+          console.log('🎭 BookCharacters: Modal closing');
+          setIsModalOpen(false);
+          setSelectedCharacter(null);
+          setUserClickedCharacter(false);
+        }}
       />
     </div>
   );
-};
+});
+
+BookCharacters.displayName = 'BookCharacters';

@@ -1,16 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Heart, ShoppingCart, Package, Truck, Shield, RotateCcw, Loader2, Star } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingCart, Package, Truck, Shield, RotateCcw, Loader2 } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
 import { booksService } from '@/services/database';
 import { ComicService } from '@/services/comicService';
-import { BookCharacters } from '@/components/BookCharacters';
+import { BookCharacters, BookCharactersRef } from '@/components/BookCharacters';
+import { CharacterPreviewBox } from '@/components/CharacterPreviewBox';
 import { YouTubeVideo } from '@/components/YouTubeVideo';
 
 const MerchandiseDetail = () => {
@@ -20,6 +21,27 @@ const MerchandiseDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('M');
   const [isWishlisted, setIsWishlisted] = useState(false);
+  const bookCharactersRef = useRef<BookCharactersRef>(null);
+
+  const handleCharacterBoxClick = () => {
+    console.log('🎭 MerchandiseDetail: Character box clicked!', { 
+      refExists: !!bookCharactersRef.current,
+      refMethods: bookCharactersRef.current ? Object.keys(bookCharactersRef.current) : 'no ref'
+    });
+    // Open the first character's popup using the ref
+    if (bookCharactersRef.current) {
+      bookCharactersRef.current.openFirstCharacter();
+    } else {
+      console.log('🎭 MerchandiseDetail: No ref available');
+    }
+  };
+
+  // Function to remove volume information from title
+  const getCleanTitle = (title: string) => {
+    if (!title) return 'Product Title';
+    // Remove patterns like ", VOL.1", ", VOL 1", ", VOLUME 1", etc.
+    return title.replace(/,\s*VOL\.?\s*\d+/i, '').replace(/,\s*VOLUME\s*\d+/i, '');
+  };
   const [product, setProduct] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -305,52 +327,45 @@ const MerchandiseDetail = () => {
                 ))}
               </div>
 
-              {/* Series Title (Clickable) */}
-              <div>
-                <button
-                  onClick={handleSeriesClick}
-                  className="text-2xl lg:text-3xl font-bold text-white hover:text-red-400 transition-colors duration-200 text-left block"
-                >
-                  {product?.title || 'Product Title'}
-                </button>
-                <p className="text-gray-400 text-sm mt-1">by {product?.author || 'Author'}</p>
-              </div>
-
-              {/* Rating */}
-              <div className="flex items-center space-x-2">
-                <span className="text-white font-semibold">Rating</span>
-                <div className="flex items-center">
-                  {[...Array(5)].map((_, i) => (
-                    <Star 
-                      key={i} 
-                      className="w-4 h-4 text-red-500 fill-current"
-                    />
-                  ))}
-                  <span className="text-white ml-2 font-bold">★★★★★</span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex space-x-4 pt-4">
-                <Button
-                  onClick={handleAddToCart}
-                  disabled={product?.stock_quantity !== undefined ? product.stock_quantity <= 0 : false}
-                  className={`px-8 py-3 font-bold uppercase transition-all duration-200 ${
-                    product?.stock_quantity !== undefined && product.stock_quantity <= 0
-                      ? 'bg-gray-500 text-gray-300 cursor-not-allowed hover:bg-gray-500'
-                      : 'bg-red-600 hover:bg-red-700 text-white'
-                  }`}
-                >
-                  {product?.stock_quantity !== undefined && product.stock_quantity <= 0 ? 'OUT OF STOCK' : 'ADD TO CART'}
-                </Button>
-                <Button
-                  variant="outline"
-                  onClick={() => setIsWishlisted(!isWishlisted)}
-                  className="border-gray-500 text-gray-300 hover:bg-gray-700 px-8 py-3 font-bold uppercase"
-                >
-                  WISH TO BUY
-                </Button>
-              </div>
+               {/* Series Title and Character Preview */}
+               <div className="flex items-start gap-6 mt-12">
+                 {/* Character Preview Box - Moved to left */}
+                 <div className="w-48 h-48 bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 rounded-lg overflow-hidden relative flex-shrink-0">
+                   <CharacterPreviewBox bookId={productId} onCharacterBoxClick={handleCharacterBoxClick} />
+                 </div>
+                 
+                 <div className="flex-1">
+                   <button
+                     onClick={handleSeriesClick}
+                     className="text-2xl lg:text-3xl font-bold text-white hover:text-red-400 transition-colors duration-200 text-left block"
+                   >
+                     {getCleanTitle(product?.title)}
+                   </button>
+                   <p className="text-gray-400 text-sm mt-1">by {product?.author || 'Author'}</p>
+                   
+                   {/* Action Buttons - Right below author */}
+                   <div className="flex space-x-4 mt-4">
+                     <Button
+                       onClick={handleAddToCart}
+                       disabled={product?.stock_quantity !== undefined ? product.stock_quantity <= 0 : false}
+                       className={`px-8 py-3 font-bold uppercase transition-all duration-200 ${
+                         product?.stock_quantity !== undefined && product.stock_quantity <= 0
+                           ? 'bg-gray-500 text-gray-300 cursor-not-allowed hover:bg-gray-500'
+                           : 'bg-red-600 hover:bg-red-700 text-white'
+                       }`}
+                     >
+                       {product?.stock_quantity !== undefined && product.stock_quantity <= 0 ? 'OUT OF STOCK' : 'ADD TO CART'}
+                     </Button>
+                     <Button
+                       variant="outline"
+                       onClick={() => setIsWishlisted(!isWishlisted)}
+                       className="border-gray-500 text-gray-300 hover:bg-gray-700 px-8 py-3 font-bold uppercase"
+                     >
+                       WISH TO BUY
+                     </Button>
+                   </div>
+                 </div>
+               </div>
             </div>
           </div>
 
@@ -399,8 +414,8 @@ const MerchandiseDetail = () => {
 
           {/* Characters Section */}
           {product?.id && (
-            <div className="mb-12">
-              <BookCharacters bookId={String(product.id)} />
+            <div id="characters-section" className="mb-12">
+              <BookCharacters ref={bookCharactersRef} bookId={String(product.id)} />
             </div>
           )}
 

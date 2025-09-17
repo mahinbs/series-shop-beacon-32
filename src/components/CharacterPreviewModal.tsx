@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Heart, Share2, Sparkles } from "lucide-react";
+import { Heart, Share2, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { CharacterImageGrid } from '@/components/CharacterImageGrid';
 import { BookCharacterImage } from '@/services/bookCharacterService';
@@ -19,20 +19,42 @@ interface Character {
     charisma?: number;
     magic?: number;
   };
-  backstory?: string;
-  abilities?: string[];
-  relationships?: string[];
 }
 
 interface CharacterPreviewModalProps {
   character: Character | null;
   isOpen: boolean;
   onClose: () => void;
+  characters?: Character[];
+  currentIndex?: number;
+  onPrevious?: () => void;
+  onNext?: () => void;
+  onNavigateToCharacter?: (index: number) => void;
 }
 
-export const CharacterPreviewModal = ({ character, isOpen, onClose }: CharacterPreviewModalProps) => {
+export const CharacterPreviewModal = ({ 
+  character, 
+  isOpen, 
+  onClose, 
+  characters = [], 
+  currentIndex = 0, 
+  onPrevious, 
+  onNext,
+  onNavigateToCharacter
+}: CharacterPreviewModalProps) => {
   const [isFavorited, setIsFavorited] = useState(false);
   const [selectedImage, setSelectedImage] = useState('/placeholder.svg');
+  const [currentCharacterIndex, setCurrentCharacterIndex] = useState(currentIndex);
+  const [selectedCharacter, setSelectedCharacter] = useState(character);
+
+  // Sync local state with props
+  useEffect(() => {
+    setCurrentCharacterIndex(currentIndex);
+  }, [currentIndex]);
+
+  useEffect(() => {
+    setSelectedCharacter(character);
+  }, [character]);
 
   // Update selected image when character changes
   useEffect(() => {
@@ -69,9 +91,34 @@ export const CharacterPreviewModal = ({ character, isOpen, onClose }: CharacterP
         
         <DialogHeader className="relative z-10">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              {character.name}
-            </DialogTitle>
+            <div className="flex items-center gap-4">
+              {/* Navigation Arrows */}
+              {characters.length > 1 && (
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onPrevious}
+                    disabled={currentIndex === 0}
+                    className="hover:scale-110 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={onNext}
+                    disabled={currentIndex === characters.length - 1}
+                    className="hover:scale-110 transition-transform duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </Button>
+                </div>
+              )}
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Character Details
+              </DialogTitle>
+            </div>
             <div className="flex gap-2">
               <Button
                 variant="ghost"
@@ -91,14 +138,10 @@ export const CharacterPreviewModal = ({ character, isOpen, onClose }: CharacterP
               </Button>
             </div>
           </div>
-          <Badge variant="secondary" className="w-fit bg-primary/10 text-primary border-primary/20">
-            <Sparkles className="h-3 w-3 mr-1" />
-            {character.role}
-          </Badge>
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-6 relative z-10 overflow-y-auto max-h-[70vh]">
-          {/* Main Image - Left Side */}
+          {/* Left Side - Main Image */}
           <div className="relative">
             <div className="aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 relative group">
               <img
@@ -116,70 +159,95 @@ export const CharacterPreviewModal = ({ character, isOpen, onClose }: CharacterP
             </div>
           </div>
 
-          {/* Image Grid - Right Side */}
-          <div className="space-y-4">
-            {character.images && character.images.length > 0 && (
-              <CharacterImageGrid
-                images={character.images}
-                characterName={character.name}
-                onImageSelect={setSelectedImage}
-                selectedImageUrl={selectedImage}
-              />
-            )}
-          </div>
-
-          {/* Character Details */}
-          <div className="space-y-6 col-span-2">
-            {/* Description */}
+          {/* Right Side - Character Info */}
+          <div className="space-y-6">
+            {/* Character Name and Role */}
             <div>
-              <h3 className="text-xl font-semibold mb-3 text-primary">Description</h3>
-              <p className="text-muted-foreground leading-relaxed">{character.description}</p>
+              <h2 className="text-2xl font-bold text-primary mb-2">{character.name}</h2>
+              <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+                <Sparkles className="h-3 w-3 mr-1" />
+                {character.role}
+              </Badge>
             </div>
 
-            {/* Backstory */}
-            {character.backstory && (
-              <div>
-                <h3 className="text-xl font-semibold mb-3 text-primary">Backstory</h3>
-                <p className="text-muted-foreground leading-relaxed">{character.backstory}</p>
-              </div>
-            )}
+             {/* Description */}
+             <div>
+               <h3 className="text-lg font-semibold mb-3 text-primary">Description</h3>
+               <p className="text-muted-foreground leading-relaxed">{character.description}</p>
+             </div>
 
-            {/* Abilities */}
-            {character.abilities && character.abilities.length > 0 && (
-              <div>
-                <h3 className="text-xl font-semibold mb-3 text-primary">Special Abilities</h3>
-                <div className="flex flex-wrap gap-2">
-                  {character.abilities.map((ability, index) => (
-                    <Badge
-                      key={index}
-                      variant="outline"
-                      className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20 hover:border-primary/40 transition-colors duration-200"
-                    >
-                      {ability}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-            )}
+             {/* All Images Section - Below Description */}
+             {character.images && character.images.length > 0 && (
+               <div className="mt-6">
+                 <div 
+                   className="flex gap-4 overflow-x-auto pb-4" 
+                   style={{ 
+                     scrollbarWidth: 'auto', 
+                     msOverflowStyle: 'scrollbar',
+                     scrollbarColor: '#3b82f6 #f1f5f9',
+                     scrollbarGutter: 'stable'
+                   }}
+                 >
+                   {character.images.map((image, index) => (
+                      <div
+                        key={index}
+                        className={`flex-shrink-0 w-48 h-52 rounded-lg overflow-hidden cursor-pointer transition-all duration-200 ${
+                          selectedImage === image.image_url 
+                            ? 'ring-2 ring-primary shadow-lg scale-105' 
+                            : 'hover:scale-105 opacity-80 hover:opacity-100'
+                        }`}
+                        onClick={() => setSelectedImage(image.image_url)}
+                      >
+                       <img
+                         src={image.image_url}
+                         alt={`${character.name} - Image ${index + 1}`}
+                         className="w-full h-full object-cover"
+                         onError={(e) => {
+                           e.currentTarget.src = "/placeholder.svg";
+                         }}
+                       />
+                     </div>
+                   ))}
+                 </div>
+               </div>
+             )}
+           </div>
+         </div>
 
-            {/* Relationships */}
-            {character.relationships && character.relationships.length > 0 && (
-              <div>
-                <h3 className="text-xl font-semibold mb-3 text-primary">Relationships</h3>
-                <div className="space-y-2">
-                  {character.relationships.map((relationship, index) => (
-                    <div
-                      key={index}
-                      className="p-3 rounded-lg bg-gradient-to-r from-muted/50 to-muted/30 border border-muted-foreground/10"
-                    >
-                      <p className="text-sm text-muted-foreground">{relationship}</p>
-                    </div>
-                  ))}
-                </div>
+        {/* Bottom Right Navigation */}
+        {characters.length > 1 && (
+          <div className="absolute bottom-6 right-6 z-20">
+            <div className="flex flex-col gap-3 items-end">
+              
+              {/* Navigation Arrows */}
+              <div className="flex gap-2">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onPrevious}
+                  disabled={currentIndex === 0}
+                  className="bg-gradient-to-r from-primary/80 to-primary/60 hover:from-primary hover:to-primary text-white hover:text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed h-12 w-12 rounded-full shadow-lg hover:shadow-xl hover:scale-110 border-2 border-primary/30 hover:border-primary"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={onNext}
+                  disabled={currentIndex === characters.length - 1}
+                  className="bg-gradient-to-r from-primary/80 to-primary/60 hover:from-primary hover:to-primary text-white hover:text-white transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed h-12 w-12 rounded-full shadow-lg hover:shadow-xl hover:scale-110 border-2 border-primary/30 hover:border-primary"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </Button>
               </div>
-            )}
+              
+              {/* Character Counter */}
+              <div className="bg-black/80 backdrop-blur-sm rounded-lg px-3 py-1 text-white text-xs font-bold border border-primary/30">
+                {currentIndex + 1} of {characters.length}
+              </div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Floating Particles */}
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
