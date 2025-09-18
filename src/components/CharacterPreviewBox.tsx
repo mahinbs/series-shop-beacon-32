@@ -79,7 +79,7 @@ export const CharacterPreviewBox: React.FC<CharacterPreviewBoxProps> = ({ bookId
   };
 
   return (
-    <div className="w-full h-full relative cursor-pointer" onClick={handleClick}>
+    <div className="w-full h-full relative cursor-pointer group" onClick={handleClick}>
       {characters.length === 1 ? (
         // Single character - full size
         <img
@@ -153,15 +153,22 @@ export const CharacterPreviewBox: React.FC<CharacterPreviewBoxProps> = ({ bookId
             />
           ))}
         </div>
-      )}
-      
-      {/* Show character count if more than 4 */}
-      {characters.length > 4 && (
-        <div className="absolute top-2 right-2 bg-black/80 text-white text-sm px-2 py-1 rounded font-bold">
-          +{characters.length - 4}
+        )}
+        
+        {/* Preview overlay */}
+        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+          <span className="text-white text-sm font-semibold px-3 py-1 rounded backdrop-blur-sm">
+            Preview
+          </span>
         </div>
-      )}
-      
-    </div>
+        
+        {/* Show character count if more than 4 */}
+        {characters.length > 4 && (
+          <div className="absolute top-2 right-2 bg-black/80 text-white text-sm px-2 py-1 rounded font-bold">
+            +{characters.length - 4}
+          </div>
+        )}
+        
+      </div>
   );
 };

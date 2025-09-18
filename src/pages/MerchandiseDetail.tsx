@@ -32,6 +32,17 @@ const MerchandiseDetail = () => {
   const [selectedSize, setSelectedSize] = useState("M");
 
   const bookCharactersRef = useRef<BookCharactersRef>(null);
+  const chapterListRef = useRef<HTMLDivElement>(null);
+
+  const handleScrollDown = () => {
+    if (chapterListRef.current) {
+      const scrollAmount = 100; // Scroll by 100px each click
+      chapterListRef.current.scrollBy({
+        top: scrollAmount,
+        behavior: 'smooth'
+      });
+    }
+  };
 
   const handleCharacterBoxClick = () => {
     console.log("🎭 MerchandiseDetail: Character box clicked!", {
@@ -431,13 +442,13 @@ const MerchandiseDetail = () => {
             {/* Right Side - Product Details */}
             <div className="space-y-4 min-h-96 py-8 w-full flex-1 pl-8 pr-24">
               {/* Volume Information */}
-              {getVolumeInfo(product?.title) && (
+              {/* {getVolumeInfo(product?.title) && (
                 <div className="mb-6">
                   <h2 className="text-4xl font-bold text-white tracking-wide">
                     {getVolumeInfo(product?.title)}
                   </h2>
                 </div>
-              )}
+              )} */}
 
               {/* Genre Tags */}
               <div className="flex flex-wrap gap-2">
@@ -449,19 +460,16 @@ const MerchandiseDetail = () => {
                     {genre}
                   </span>
                 ))}
+                {getVolumeInfo(product?.title) && (
+                  <span className="px-3 py-1 bg-red-600 text-white text-xs font-bold rounded uppercase tracking-wide">
+                    {getVolumeInfo(product?.title)}
+                  </span>
+                )}
               </div>
 
               {/* Series Title and Character Preview */}
               <div className="flex items-start gap-6 mt-12">
-                {/* Character Preview Box - Moved to left */}
-                <div className="w-48 h-48 bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 rounded-lg overflow-hidden relative flex-shrink-0">
-                  <CharacterPreviewBox
-                    bookId={productId}
-                    onCharacterBoxClick={handleCharacterBoxClick}
-                  />
-                </div>
-
-                <div className="flex-1">
+                <div className="flex- !w-fit">
                   <button
                     onClick={handleSeriesClick}
                     className="text-2xl lg:text-3xl font-bold text-white hover:text-red-400 transition-colors duration-200 text-left block"
@@ -535,6 +543,13 @@ const MerchandiseDetail = () => {
                     </Button>
                   </div>
                 </div>
+                  {/* Character Preview Box - Moved to left */}
+                  <div className="w-32 h-32 bg-gradient-to-br from-primary/20 to-accent/20 border border-primary/30 rounded-lg overflow-hidden relative flex-shrink-0">
+                    <CharacterPreviewBox
+                      bookId={productId}
+                      onCharacterBoxClick={handleCharacterBoxClick}
+                    />
+                  </div>
               </div>
             </div>
           </div>
@@ -558,6 +573,7 @@ const MerchandiseDetail = () => {
                       Preview
                     </h3>
                     <div
+                      ref={chapterListRef}
                       className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative"
                       style={{
                         scrollbarWidth: "thin",
@@ -587,7 +603,10 @@ const MerchandiseDetail = () => {
                       ))}
                     </div>
                     <div className="text-center pt-2 mt-2 border-t border-gray-200">
-                      <button className="text-gray-600 hover:text-gray-800">
+                      <button 
+                        onClick={handleScrollDown}
+                        className="text-gray-600 hover:text-gray-800 transition-colors duration-200"
+                      >
                         ▼
                       </button>
                     </div>
@@ -624,7 +643,7 @@ const MerchandiseDetail = () => {
             <div className="md:w-[40%] space-y-3 border border-gray-700 p-4 rounded-lg">
               <div className="text-sm">
                 <span className="text-red-400 font-bold uppercase">
-                  Creator:{" "}
+                  Creators:{" "}
                 </span>
                 <span className="text-white font-bold">
                   {product?.author || "Creator Name"}

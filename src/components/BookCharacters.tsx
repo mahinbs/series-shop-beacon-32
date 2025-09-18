@@ -262,7 +262,7 @@ export const BookCharacters = forwardRef<
                   {/* Enhanced overlays and info */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
 
-                  <div className="absolute bottom-0 left-0 right-0 p-3 text-white z-20">
+                  {/* <div className="absolute bottom-0 left-0 right-0 p-3 text-white z-20">
                     <div className="flex items-center justify-between mb-1">
                       <h4 className="font-bold text-sm">{character.name}</h4>
                     </div>
@@ -275,7 +275,7 @@ export const BookCharacters = forwardRef<
                         {character.role}
                       </Badge>
                     )}
-                  </div>
+                  </div> */}
                 </div>
               </Card>
             </CarouselItem>
