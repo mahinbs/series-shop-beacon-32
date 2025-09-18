@@ -107,14 +107,14 @@ export const CharacterPreviewModal = ({
                   </Button>
                 </div>
               )}
-              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              <DialogTitle className="text-2xl font-bold text-red-400 uppercase">
                 Character Details
               </DialogTitle>
             </div>
           </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-6 relative z-10 overflow-y-auto max-h-[70vh]">
+        <div className="grid grid-cols-2 gap-6 relative z-10 overflow-y-auto custom-scrollbar max-h-[70vh]">
           {/* Left Side - Main Image */}
           <div className="relative">
             <div className="aspect-[3/4] rounded-xl overflow-hidden bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 relative group">
@@ -154,13 +154,13 @@ export const CharacterPreviewModal = ({
              {character.images && character.images.length > 0 && (
                <div className="mt-6">
                  <div 
-                   className="flex gap-4 overflow-x-auto pb-4" 
-                   style={{ 
-                     scrollbarWidth: 'auto', 
-                     msOverflowStyle: 'scrollbar',
-                     scrollbarColor: '#3b82f6 #f1f5f9',
-                     scrollbarGutter: 'stable'
-                   }}
+                   className="flex gap-4 overflow-x-auto pb-4 custom-scrollbar" 
+                  //  style={{ 
+                  //    scrollbarWidth: 'auto', 
+                  //    msOverflowStyle: 'scrollbar',
+                  //    scrollbarColor: '#3b82f6 #f1f5f9',
+                  //    scrollbarGutter: 'stable'
+                  //  }}
                  >
                    {character.images.map((image, index) => (
                       <div
@@ -190,7 +190,7 @@ export const CharacterPreviewModal = ({
 
         {/* Bottom Right Navigation */}
         {characters.length > 1 && (
-          <div className="absolute bottom-6 right-6 z-20">
+          <div className="absolute bottom-4 right-9 z-20">
             <div className="flex flex-col gap-3 items-end">
               
               {/* Navigation Arrows */}

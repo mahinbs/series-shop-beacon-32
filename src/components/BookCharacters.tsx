@@ -25,10 +25,10 @@ export interface BookCharactersRef {
   openFirstCharacter: () => void;
 }
 
-export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>(({
-  bookId,
-  className = "",
-}, ref) => {
+export const BookCharacters = forwardRef<
+  BookCharactersRef,
+  BookCharactersProps
+>(({ bookId, className = "" }, ref) => {
   const [characters, setCharacters] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCharacter, setSelectedCharacter] = useState<any>(null);
@@ -37,13 +37,22 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
   const [currentCharacterIndex, setCurrentCharacterIndex] = useState(0);
 
   // Debug logging to track modal state
-  console.log('🎭 BookCharacters: Modal state:', { isModalOpen, selectedCharacter: selectedCharacter?.name || 'none' });
+  console.log("🎭 BookCharacters: Modal state:", {
+    isModalOpen,
+    selectedCharacter: selectedCharacter?.name || "none",
+  });
 
   // Safeguard: Reset modal state if it somehow gets opened without a character or user interaction
   useEffect(() => {
     if (isModalOpen && (!selectedCharacter || !userClickedCharacter)) {
-      console.log('🚨 BookCharacters: Modal is open without proper conditions, closing it');
-      console.log('🚨 BookCharacters: Conditions:', { isModalOpen, selectedCharacter: selectedCharacter?.name || 'none', userClickedCharacter });
+      console.log(
+        "🚨 BookCharacters: Modal is open without proper conditions, closing it"
+      );
+      console.log("🚨 BookCharacters: Conditions:", {
+        isModalOpen,
+        selectedCharacter: selectedCharacter?.name || "none",
+        userClickedCharacter,
+      });
       setIsModalOpen(false);
       setSelectedCharacter(null);
       setUserClickedCharacter(false);
@@ -79,19 +88,34 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
           };
         });
         setCharacters(enhancedCharacters);
-        console.log('🎭 BookCharacters: Loaded', enhancedCharacters.length, 'characters for book:', bookId);
-        console.log('🎭 BookCharacters: Modal should remain closed after loading');
-        console.log('🎭 BookCharacters: Current modal state after loading:', { isModalOpen, selectedCharacter: selectedCharacter?.name || 'none' });
-        
+        console.log(
+          "🎭 BookCharacters: Loaded",
+          enhancedCharacters.length,
+          "characters for book:",
+          bookId
+        );
+        console.log(
+          "🎭 BookCharacters: Modal should remain closed after loading"
+        );
+        console.log("🎭 BookCharacters: Current modal state after loading:", {
+          isModalOpen,
+          selectedCharacter: selectedCharacter?.name || "none",
+        });
+
         // Ensure modal is closed and reset when characters are loaded
         setIsModalOpen(false);
         setSelectedCharacter(null);
         setUserClickedCharacter(false);
-        console.log('🎭 BookCharacters: Reset modal state after character loading');
-        
+        console.log(
+          "🎭 BookCharacters: Reset modal state after character loading"
+        );
+
         // Check if any character is being automatically selected
         if (enhancedCharacters.length > 0) {
-          console.log('🎭 BookCharacters: First character data:', enhancedCharacters[0]);
+          console.log(
+            "🎭 BookCharacters: First character data:",
+            enhancedCharacters[0]
+          );
         }
       } catch (error) {
         console.error("Failed to load characters:", error);
@@ -106,13 +130,20 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
   }, [bookId]);
 
   const handleCharacterClick = (character: any) => {
-    console.log('🎭 BookCharacters: Character clicked:', character.name);
-    const characterIndex = characters.findIndex(char => char.id === character.id);
+    console.log("🎭 BookCharacters: Character clicked:", character.name);
+    const characterIndex = characters.findIndex(
+      (char) => char.id === character.id
+    );
     setCurrentCharacterIndex(characterIndex);
     setUserClickedCharacter(true);
     setSelectedCharacter(character);
     setIsModalOpen(true);
-    console.log('🎭 BookCharacters: Modal opened for character:', character.name, 'at index:', characterIndex);
+    console.log(
+      "🎭 BookCharacters: Modal opened for character:",
+      character.name,
+      "at index:",
+      characterIndex
+    );
   };
 
   const handlePreviousCharacter = () => {
@@ -120,7 +151,10 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
       const newIndex = currentCharacterIndex - 1;
       setCurrentCharacterIndex(newIndex);
       setSelectedCharacter(characters[newIndex]);
-      console.log('🎭 BookCharacters: Navigated to previous character:', characters[newIndex].name);
+      console.log(
+        "🎭 BookCharacters: Navigated to previous character:",
+        characters[newIndex].name
+      );
     }
   };
 
@@ -129,7 +163,10 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
       const newIndex = currentCharacterIndex + 1;
       setCurrentCharacterIndex(newIndex);
       setSelectedCharacter(characters[newIndex]);
-      console.log('🎭 BookCharacters: Navigated to next character:', characters[newIndex].name);
+      console.log(
+        "🎭 BookCharacters: Navigated to next character:",
+        characters[newIndex].name
+      );
     }
   };
 
@@ -137,22 +174,32 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
     if (index >= 0 && index < characters.length) {
       setCurrentCharacterIndex(index);
       setSelectedCharacter(characters[index]);
-      console.log('🎭 BookCharacters: Navigated to character at index:', index, characters[index].name);
+      console.log(
+        "🎭 BookCharacters: Navigated to character at index:",
+        index,
+        characters[index].name
+      );
     }
   };
 
   // Expose methods to parent component
-  useImperativeHandle(ref, () => ({
-    openFirstCharacter: () => {
-      if (characters.length > 0) {
-        console.log('🎭 BookCharacters: Opening first character from external trigger');
-        setCurrentCharacterIndex(0);
-        setUserClickedCharacter(true);
-        setSelectedCharacter(characters[0]);
-        setIsModalOpen(true);
-      }
-    }
-  }), [characters]);
+  useImperativeHandle(
+    ref,
+    () => ({
+      openFirstCharacter: () => {
+        if (characters.length > 0) {
+          console.log(
+            "🎭 BookCharacters: Opening first character from external trigger"
+          );
+          setCurrentCharacterIndex(0);
+          setUserClickedCharacter(true);
+          setSelectedCharacter(characters[0]);
+          setIsModalOpen(true);
+        }
+      },
+    }),
+    [characters]
+  );
 
   if (loading) {
     return (
@@ -177,12 +224,8 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="flex items-center gap-3 mb-6">
-        <div className="p-2 bg-gradient-to-br from-primary/20 to-primary/30 rounded-lg">
-          <Users className="h-5 w-5 text-primary" />
-        </div>
-        <h3 className="text-lg font-semibold flex items-center gap-2">
+        <h3 className="text-red-400 font-bold text-lg mb-4 uppercase">
           Characters
-          <Sparkles className="h-4 w-4 text-primary animate-pulse" />
         </h3>
       </div>
 
@@ -203,41 +246,38 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
                 className="w-48 h-64 overflow-hidden cursor-pointer border-2"
                 onClick={() => handleCharacterClick(character)}
               >
-                    <div className="relative h-full">
-
-                      {character.image ? (
-                        <img
-                          src={character.image}
-                          alt={character.name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center relative overflow-hidden">
-                          <User className="h-16 w-16 text-primary/60 relative z-10" />
-                        </div>
-                      )}
-
-                      {/* Enhanced overlays and info */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
-
-                      <div className="absolute bottom-0 left-0 right-0 p-3 text-white z-20">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className="font-bold text-sm">
-                            {character.name}
-                          </h4>
-                        </div>
-                        {character.role && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-primary/90 text-primary-foreground border-primary/50 text-xs backdrop-blur-sm"
-                          >
-                            <Star className="w-2 min-w-2 mr-1" />
-                            {character.role}
-                          </Badge>
-                        )}
-                      </div>
+                <div className="relative h-full">
+                  {character.image ? (
+                    <img
+                      src={character.image}
+                      alt={character.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center relative overflow-hidden">
+                      <User className="h-16 w-16 text-primary/60 relative z-10" />
                     </div>
-                  </Card>
+                  )}
+
+                  {/* Enhanced overlays and info */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+                  <div className="absolute bottom-0 left-0 right-0 p-3 text-white z-20">
+                    <div className="flex items-center justify-between mb-1">
+                      <h4 className="font-bold text-sm">{character.name}</h4>
+                    </div>
+                    {character.role && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-primary/90 text-primary-foreground border-primary/50 text-xs backdrop-blur-sm"
+                      >
+                        <Star className="w-2 min-w-2 mr-1" />
+                        {character.role}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </Card>
             </CarouselItem>
           ))}
         </CarouselContent>
@@ -247,14 +287,16 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
 
       <CharacterPreviewModal
         character={selectedCharacter}
-        isOpen={isModalOpen && selectedCharacter !== null && userClickedCharacter}
+        isOpen={
+          isModalOpen && selectedCharacter !== null && userClickedCharacter
+        }
         characters={characters}
         currentIndex={currentCharacterIndex}
         onPrevious={handlePreviousCharacter}
         onNext={handleNextCharacter}
         onNavigateToCharacter={handleNavigateToCharacter}
         onClose={() => {
-          console.log('🎭 BookCharacters: Modal closing');
+          console.log("🎭 BookCharacters: Modal closing");
           setIsModalOpen(false);
           setSelectedCharacter(null);
           setUserClickedCharacter(false);
@@ -264,4 +306,4 @@ export const BookCharacters = forwardRef<BookCharactersRef, BookCharactersProps>
   );
 });
 
-BookCharacters.displayName = 'BookCharacters';
+BookCharacters.displayName = "BookCharacters";
