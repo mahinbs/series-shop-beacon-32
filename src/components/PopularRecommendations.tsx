@@ -13,6 +13,7 @@ const PopularRecommendations = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredBook, setHoveredBook] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<'digital' | 'print' | 'merchandise'>('digital');
+  const [activeTab, setActiveTab] = useState<'recommendations' | 'genres'>('recommendations');
   const { addToCart } = useCart();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -154,18 +155,36 @@ const PopularRecommendations = () => {
             <div className="p-2 bg-gradient-to-br from-orange-500/20 to-red-500/30 rounded-lg">
               <TrendingUp className="h-6 w-6 text-orange-500" />
             </div>
-            <h2 className="text-4xl font-bold text-white">
-              <span className="bg-gradient-to-r from-orange-600 via-red-500 to-red-400 bg-clip-text text-transparent">
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setActiveTab('recommendations')}
+                className={`text-4xl font-bold transition-all duration-300 ${
+                  activeTab === 'recommendations'
+                    ? 'bg-gradient-to-r from-orange-600 via-red-500 to-red-400 bg-clip-text text-transparent'
+                    : 'text-gray-400 hover:text-orange-400'
+                }`}
+              >
                 Popular Recommendations
-              </span>
-              <span className="text-white"> | </span>
-              <span className="text-red-400 underline">Genres</span>
-            </h2>
+              </button>
+              <span className="text-white text-4xl">|</span>
+              <button
+                onClick={() => setActiveTab('genres')}
+                className={`text-4xl font-bold transition-all duration-300 ${
+                  activeTab === 'genres'
+                    ? 'text-red-400 underline'
+                    : 'text-gray-400 hover:text-red-400'
+                }`}
+              >
+                Genres
+              </button>
+            </div>
             <div className="p-2 bg-gradient-to-br from-red-500/20 to-orange-500/30 rounded-lg">
               <Star className="h-6 w-6 text-red-500" />
             </div>
           </div>
-          <p className="text-gray-400 text-lg">Discover your favorite genres</p>
+          <p className="text-gray-400 text-lg">
+            {activeTab === 'recommendations' ? 'Discover trending books and series' : 'Discover your favorite genres'}
+          </p>
         </div>
 
         {/* Filter Buttons */}
@@ -207,7 +226,7 @@ const PopularRecommendations = () => {
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-500 mx-auto mb-4"></div>
             <div className="text-white text-lg">Loading popular recommendations...</div>
           </div>
-        ) : (
+        ) : activeTab === 'recommendations' ? (
           <div className="space-y-12">
             {genreSections.map((genre, genreIndex) => (
               <div key={genre.name} className="space-y-6">
@@ -309,9 +328,61 @@ const PopularRecommendations = () => {
               </div>
             ))}
           </div>
+        ) : (
+          /* Genres Tab Content */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {[
+              { name: 'Action', count: 24, color: 'from-red-500 to-red-600', books: 156 },
+              { name: 'Romance', count: 18, color: 'from-pink-500 to-pink-600', books: 98 },
+              { name: 'Fantasy', count: 15, color: 'from-purple-500 to-purple-600', books: 87 },
+              { name: 'Sci-Fi', count: 12, color: 'from-blue-500 to-blue-600', books: 65 },
+              { name: 'Horror', count: 9, color: 'from-gray-600 to-gray-700', books: 43 },
+              { name: 'Comedy', count: 7, color: 'from-yellow-500 to-yellow-600', books: 32 },
+              { name: 'Drama', count: 6, color: 'from-green-500 to-green-600', books: 28 },
+              { name: 'Adventure', count: 5, color: 'from-orange-500 to-orange-600', books: 21 }
+            ].map((genre, index) => (
+              <div 
+                key={genre.name}
+                className="group cursor-pointer bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl border border-gray-700/50 p-6 hover:border-orange-500/30 transition-all duration-300 hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20"
+                onClick={() => handleGenreClick(genre.name)}
+                style={{ 
+                  transitionDelay: `${index * 100}ms`,
+                  opacity: isVisible ? 1 : 0,
+                  transform: isVisible ? 'translateY(0)' : 'translateY(20px)'
+                }}
+              >
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-4 h-4 rounded-full bg-gradient-to-r ${genre.color}`}></div>
+                    <h3 className="text-white font-bold text-lg">{genre.name}</h3>
+                  </div>
+                  <span className="text-gray-400 text-sm">{genre.count} series</span>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-400">Books available</span>
+                    <span className="text-white font-semibold">{genre.books}</span>
+                  </div>
+                  <div className="w-full h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div 
+                      className={`h-full bg-gradient-to-r ${genre.color} transition-all duration-500`}
+                      style={{ width: `${(genre.count / 24) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+                
+                <div className="mt-4 pt-4 border-t border-gray-700">
+                  <button className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-semibold py-2 px-4 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/30">
+                    Explore {genre.name}
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
         
-        {books.length === 0 && !isLoading && (
+        {books.length === 0 && !isLoading && activeTab === 'recommendations' && (
           <div className="text-center py-12">
             <div className="text-white text-lg">No popular recommendations available</div>
             <div className="text-gray-400 text-sm mt-2">Check back soon for trending items!</div>
