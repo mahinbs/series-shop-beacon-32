@@ -204,8 +204,8 @@ export const useWishlist = () => {
     });
   };
 
-  const removeFromWishlist = async (itemId: string) => {
-    const item = wishlist.find(item => item.id === itemId);
+  const removeFromWishlist = async (productId: string) => {
+    const item = wishlist.find(item => item.product_id === productId);
     if (!item) return;
 
     if (isAuthenticated && user) {
@@ -213,7 +213,7 @@ export const useWishlist = () => {
         const { error } = await supabase
           .from('wishlist')
           .delete()
-          .eq('id', itemId)
+          .eq('product_id', productId)
           .eq('user_id', user.id);
 
         if (error) throw error;
@@ -229,7 +229,7 @@ export const useWishlist = () => {
       }
     }
 
-    setWishlist(prev => prev.filter(item => item.id !== itemId));
+    setWishlist(prev => prev.filter(item => item.product_id !== productId));
     
     toast({
       title: "Removed from Wishlist",
