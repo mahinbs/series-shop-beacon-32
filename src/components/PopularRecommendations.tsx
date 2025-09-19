@@ -213,7 +213,7 @@ const PopularRecommendations = () => {
                 onClick={() => setActiveTab('recommendations')}
                 className={`text-4xl font-bold transition-all duration-300 ${
                   activeTab === 'recommendations'
-                    ? 'bg-gradient-to-r from-orange-600 via-red-500 to-red-400 bg-clip-text text-transparent underline decoration-2 underline-offset-4'
+                    ? 'text-orange-400 underline decoration-2 underline-offset-4'
                     : 'text-gray-400 hover:text-orange-400'
                 }`}
               >
