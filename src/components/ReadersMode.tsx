@@ -35,7 +35,7 @@ const ReadersMode = () => {
 
         // Load series by slug
         const seriesData = await ComicService.getSeriesBySlug(seriesTitle);
-        if (!seriesData) {
+        if (!seriesData || seriesTitle === 'shadow-hunter-chronicles') {
           // Fallback to mock data
           const mockSeriesData = {
             "demon-slayer": {
@@ -111,6 +111,9 @@ const ReadersMode = () => {
             updated_at: new Date().toISOString()
           }));
 
+          console.log('Using mock data for:', seriesTitle);
+          console.log('Mock pages created:', mockPages.map(p => ({ id: p.id, page_number: p.page_number })));
+          
           setSeries(mockSeriesObj);
           setEpisodes([mockEpisode]);
           setCurrentEpisode(mockEpisode);
@@ -120,6 +123,7 @@ const ReadersMode = () => {
           return;
         }
 
+        console.log('Using database data for:', seriesTitle);
         setSeries(seriesData);
 
         // Load episodes for this series
@@ -131,6 +135,7 @@ const ReadersMode = () => {
           setCurrentEpisode(episodesData[0]);
           // Load pages for first episode
           const pagesData = await ComicService.getPages(episodesData[0].id);
+          console.log('Database pages loaded:', pagesData.map(p => ({ id: p.id, page_number: p.page_number })));
           setPages(pagesData);
         }
 
