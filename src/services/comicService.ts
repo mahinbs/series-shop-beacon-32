@@ -794,6 +794,10 @@ export class ComicService {
     }
   }
 
+  static async getPagesByEpisode(episodeId: string): Promise<ComicPage[]> {
+    return this.getPages(episodeId);
+  }
+
   static async createPage(page: Omit<ComicPage, 'id' | 'created_at' | 'updated_at'>): Promise<ComicPage> {
     try {
       if (shouldUseLocalStorage()) {

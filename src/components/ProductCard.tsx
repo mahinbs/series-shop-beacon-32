@@ -118,7 +118,7 @@ const ProductCard = ({
         category: category || 'General',
         product_type: 'book' as const,
         inStock: true,
-        volume: volume,
+        volume: volume ? parseInt(volume) : undefined,
       });
       toast({
         title: "Added to Wishlist",

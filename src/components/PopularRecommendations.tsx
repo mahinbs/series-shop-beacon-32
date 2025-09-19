@@ -299,9 +299,9 @@ const PopularRecommendations = () => {
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg"
                 >
                   View All ({books.filter(book => {
-                    if (selectedFilter === 'digital') return book.type === 'digital';
-                    if (selectedFilter === 'print') return book.type === 'print';
-                    if (selectedFilter === 'merchandise') return book.type === 'merchandise';
+                    if (selectedFilter === 'digital') return book.product_type === 'digital';
+                    if (selectedFilter === 'print') return book.product_type === 'print';
+                    if (selectedFilter === 'merchandise') return book.product_type === 'merchandise';
                     return true;
                   }).length})
                 </button>

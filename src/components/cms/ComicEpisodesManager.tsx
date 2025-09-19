@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Trash2, Plus, Save, Edit, Upload, BookOpen, Eye, EyeOff, Lock, Unlock, Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ComicService, type ComicEpisode, type ComicSeries, type ComicPage } from '@/services/comicService';
+import { EnhancedPageManager } from './EnhancedPageManager';
 
 interface EpisodeForm {
   series_id: string;
@@ -550,145 +551,12 @@ export const ComicEpisodesManager = () => {
         </TabsContent>
 
         <TabsContent value="pages" className="space-y-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold">Page Management</h3>
-              <p className="text-sm text-muted-foreground">
-                Manage individual comic pages and upload images
-              </p>
-            </div>
-            <Button onClick={() => setShowPageForm(true)} className="flex items-center gap-2">
-              <Plus className="h-4 w-4" />
-              Add Pages
-            </Button>
-          </div>
-
-          {showPageForm && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Add New Page</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handlePageSubmit} className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="page-episode">Episode</Label>
-                        <Select 
-                          value={pageForm.episode_id} 
-                          onValueChange={(value) => setPageForm(prev => ({ ...prev, episode_id: value }))}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select episode" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {episodes.map(episode => (
-                              <SelectItem key={episode.id} value={episode.id}>
-                                {episode.series?.title} - Episode {episode.episode_number}: {episode.title}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="page-number">Page Number</Label>
-                        <Input
-                          id="page-number"
-                          type="number"
-                          value={pageForm.page_number}
-                          onChange={(e) => setPageForm(prev => ({ ...prev, page_number: parseInt(e.target.value) || 1 }))}
-                          min="1"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="page-image-url">Image URL</Label>
-                        <Input
-                          id="page-image-url"
-                          value={pageForm.image_url}
-                          onChange={(e) => setPageForm(prev => ({ ...prev, image_url: e.target.value }))}
-                          placeholder="https://example.com/page.jpg"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="page-alt-text">Alt Text</Label>
-                        <Input
-                          id="page-alt-text"
-                          value={pageForm.alt_text}
-                          onChange={(e) => setPageForm(prev => ({ ...prev, alt_text: e.target.value }))}
-                          placeholder="Description of the page"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex gap-3">
-                    <Button type="submit" className="flex items-center gap-2">
-                      <Save className="h-4 w-4" />
-                      Create Page
-                    </Button>
-                    <Button type="button" onClick={() => setShowPageForm(false)} variant="outline">
-                      Cancel
-                    </Button>
-                  </div>
-                </form>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Episode Selection for Pages */}
-          <div className="mb-6">
-            <Label>Select Episode to View Pages:</Label>
-            <Select value={selectedEpisodeForPages} onValueChange={setSelectedEpisodeForPages}>
-              <SelectTrigger className="w-full mt-2">
-                <SelectValue placeholder="Choose an episode to view its pages" />
-              </SelectTrigger>
-              <SelectContent>
-                {episodes.map(episode => (
-                  <SelectItem key={episode.id} value={episode.id}>
-                    {episode.series?.title} - Episode {episode.episode_number}: {episode.title}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* Pages List */}
-          {selectedEpisodeForPages && (
-            <div className="space-y-4">
-              <h4 className="text-lg font-semibold">Pages for Selected Episode</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {episodes
-                  .find(e => e.id === selectedEpisodeForPages)
-                  ?.pages?.map((page) => (
-                    <Card key={page.id} className="overflow-hidden">
-                      <div className="aspect-[3/4] bg-muted">
-                        <img
-                          src={page.image_url}
-                          alt={page.alt_text || `Page ${page.page_number}`}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <CardContent className="p-2">
-                        <p className="text-sm font-medium text-center">Page {page.page_number}</p>
-                      </CardContent>
-                    </Card>
-                  ))}
-              </div>
-            </div>
-          )}
-
-          {!selectedEpisodeForPages && (
-            <div className="text-center py-8 text-muted-foreground">
-              <BookOpen className="h-12 w-12 mx-auto mb-4" />
-              <p>Select an episode to view and manage its pages</p>
-              <p className="text-sm">You can add new pages using the "Add Pages" button above</p>
-            </div>
-          )}
+          <EnhancedPageManager 
+            episodes={episodes}
+            selectedEpisodeId={selectedEpisodeForPages}
+            onEpisodeChange={setSelectedEpisodeForPages}
+            onRefresh={loadData}
+          />
         </TabsContent>
       </Tabs>
     </div>
