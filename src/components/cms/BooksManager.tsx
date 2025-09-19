@@ -512,12 +512,6 @@ export const BooksManager = () => {
       weight: book.weight,
       stock_quantity: book.stock_quantity || 0
     });
-      label: book.label || '',
-      is_new: book.is_new || false,
-      is_on_sale: book.is_on_sale || false,
-      display_order: book.display_order || 0,
-      is_active: book.is_active !== undefined ? book.is_active : true,
-    });
     setEditingId(book.id);
     
     // Load existing characters for this book
