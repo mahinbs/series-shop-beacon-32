@@ -213,7 +213,10 @@ const SimpleProductGrid = () => {
               </button>
             )}
           </div>
-          <button className="text-red-500 hover:text-red-400 text-sm font-medium">
+          <button 
+            onClick={() => window.location.href = '/shop-all'}
+            className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors duration-200"
+          >
             View All
           </button>
         </div>
@@ -325,13 +328,6 @@ const SimpleProductGrid = () => {
                     >
                       <ShoppingCart className="w-3 h-3 inline mr-1" />
                       Add to Cart
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleViewProduct(product); }}
-                      className="w-full bg-gray-700 hover:bg-gray-600 text-white text-xs py-2 rounded transition-all duration-300 hover:shadow-lg"
-                    >
-                      <Eye className="w-3 h-3 inline mr-1" />
-                      View Details
                     </button>
                     <button 
                       onClick={(e) => { e.stopPropagation(); handleBuyNow(product); }}

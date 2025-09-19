@@ -237,17 +237,6 @@ const ProductCard = ({
           <Button 
             size="sm" 
             variant="outline"
-            className="w-full bg-gray-700 hover:bg-gray-600 text-white hover:text-white text-xs transform hover:scale-105 transition-all duration-300"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleViewProduct();
-            }}
-          >
-            View Details
-          </Button>
-          <Button 
-            size="sm" 
-            variant="outline"
             className="w-full bg-white border-gray-600 text-black hover:bg-gray-100 hover:text-black text-xs transform hover:scale-105 transition-all duration-300"
             onClick={(e) => {
               e.stopPropagation();

@@ -111,7 +111,10 @@ const ProfileLastViewed = () => {
           <Eye className="w-5 h-5 text-blue-400" />
           Last Viewed
         </h3>
-        <button className="text-red-400 hover:text-red-300 text-sm font-medium">
+        <button 
+          onClick={() => window.location.href = '/shop-all'}
+          className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors duration-200"
+        >
           View All
         </button>
       </div>

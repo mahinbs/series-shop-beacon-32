@@ -20,7 +20,7 @@ const ShopAll = () => {
   const { elementRef: filtersRef, isVisible: filtersVisible } = useScrollAnimation(0.2);
   const { elementRef: gridRef, isVisible: gridVisible } = useScrollAnimation(0.2);
   
-  const [viewMode, setViewMode] = useState<'series' | 'volume'>('series');
+  const [viewMode, setViewMode] = useState<'series' | 'volume'>('volume');
   const [appliedFilters, setAppliedFilters] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState('Newest First');
   const [searchTerm, setSearchTerm] = useState('');

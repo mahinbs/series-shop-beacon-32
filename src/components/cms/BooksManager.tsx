@@ -1038,7 +1038,7 @@ export const BooksManager = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="category">Category *</Label>
+                  <Label htmlFor="category">Rated as *</Label>
                   <Input
                     id="category"
                     value={formData.category}

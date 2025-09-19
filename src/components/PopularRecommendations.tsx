@@ -273,12 +273,6 @@ const PopularRecommendations = () => {
                       Add to Cart
                     </button>
                     
-                    <button 
-                      onClick={() => handleViewProduct(book)}
-                      className="w-full bg-white hover:bg-gray-100 text-black text-sm font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                    >
-                      View Details
-                    </button>
                     
                     {book.can_unlock_with_coins && (
                       <button className="w-full text-gray-400 hover:text-white text-sm border border-gray-600 hover:border-gray-400 py-3 rounded-lg transition-all duration-300 hover:bg-gray-800">

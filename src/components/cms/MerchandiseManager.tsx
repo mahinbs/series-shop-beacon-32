@@ -424,10 +424,10 @@ export const MerchandiseManager = () => {
                 </div>
                 
                 <div>
-                  <Label htmlFor="category">Category *</Label>
+                  <Label htmlFor="category">Rated as *</Label>
                   <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder="Select rating" />
                     </SelectTrigger>
                     <SelectContent>
                       {MERCHANDISE_CATEGORIES.map((category) => (

@@ -989,10 +989,10 @@ export const ProductsManager = () => {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="category">Category *</Label>
+                  <Label htmlFor="category">Rated as *</Label>
                   <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
+                      <SelectValue placeholder="Select rating" />
                     </SelectTrigger>
                     <SelectContent>
                       {CATEGORIES.map((category) => (

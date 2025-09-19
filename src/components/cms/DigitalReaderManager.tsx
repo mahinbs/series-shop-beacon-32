@@ -364,7 +364,7 @@ export const DigitalReaderManager = () => {
                             <p className="font-semibold">{formatDate(spec.release_date)}</p>
                           </div>
                           <div>
-                            <Label className="text-sm font-medium text-muted-foreground">CATEGORY</Label>
+                            <Label className="text-sm font-medium text-muted-foreground">RATED AS</Label>
                             <p className="font-semibold">{getCategoryLabel(spec.category).toUpperCase()}</p>
                           </div>
                           <div>
@@ -504,13 +504,13 @@ export const DigitalReaderManager = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="category">Category *</Label>
+                      <Label htmlFor="category">Rated as *</Label>
                       <Select
                         value={formData.category}
                         onValueChange={(value) => setFormData({ ...formData, category: value })}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select category" />
+                          <SelectValue placeholder="Select rating" />
                         </SelectTrigger>
                         <SelectContent>
                           {CATEGORY_OPTIONS.map((option) => (

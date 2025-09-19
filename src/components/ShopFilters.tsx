@@ -330,6 +330,34 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
           </div>
         </div>
 
+        {/* View Mode Toggle */}
+        <div className="flex items-center gap-4 mb-6">
+          <div className="flex bg-gray-800 rounded-lg p-1">
+            <Button
+              onClick={() => setViewMode('volume')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'volume'
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-transparent text-gray-300 hover:text-white hover:bg-gray-700'
+              }`}
+              variant="ghost"
+            >
+              Books
+            </Button>
+            <Button
+              onClick={() => setViewMode('series')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'series'
+                  ? 'bg-red-600 text-white hover:bg-red-700'
+                  : 'bg-transparent text-gray-300 hover:text-white hover:bg-gray-700'
+              }`}
+              variant="ghost"
+            >
+              Series
+            </Button>
+          </div>
+        </div>
+
         {/* Category Filter Buttons */}
         <div className="flex flex-wrap gap-2">
           {categories.map((category) => (

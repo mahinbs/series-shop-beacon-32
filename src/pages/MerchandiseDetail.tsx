@@ -652,7 +652,7 @@ const MerchandiseDetail = () => {
 
               <div className="text-sm">
                 <span className="text-red-400 font-bold uppercase">
-                  Category:{" "}
+                  Rated as:{" "}
                 </span>
                 <span className="text-white font-bold">
                   {product?.category || "Category"}

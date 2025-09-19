@@ -254,7 +254,7 @@ const DigitalReaderSpecs = () => {
                         <div className="space-y-1">
                           <div className="flex items-center gap-2 text-gray-400 text-sm">
                             <Tag className="h-4 w-4" />
-                            <span className="font-medium">CATEGORY</span>
+                            <span className="font-medium">RATED AS</span>
                           </div>
                           <p className="text-white font-semibold">{getCategoryLabel(spec.category).toUpperCase()}</p>
                         </div>
