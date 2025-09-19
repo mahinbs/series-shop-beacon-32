@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ComicService, type ComicEpisode, type ComicPage } from '@/services/comicService';
+import { StorageService } from '@/services/storageService';
 
 interface EnhancedPageManagerProps {
   episodes: ComicEpisode[];
@@ -218,6 +219,15 @@ export const EnhancedPageManager = ({
     setUploadProgress(0);
 
     try {
+      // Get series information for storage folder structure
+      const series = await ComicService.getSeriesBySlug('shadow-hunter-chronicles');
+      const seriesSlug = series?.slug || 'unknown-series';
+      const episode = episodes.find(e => e.id === selectedEpisodeId);
+      
+      if (!episode) {
+        throw new Error('Episode not found');
+      }
+
       for (let i = 0; i < bulkFiles.length; i++) {
         const bulkFile = bulkFiles[i];
         
@@ -226,12 +236,23 @@ export const EnhancedPageManager = ({
         ));
 
         try {
-          // In a real implementation, you'd upload the file to your storage service
-          // For now, we'll simulate this with the existing URL
+          // Upload file to permanent storage
+          const uploadResult = await StorageService.uploadComicPage(
+            bulkFile.file,
+            seriesSlug,
+            episode.episode_number,
+            bulkFile.page_number
+          );
+
+          if (uploadResult.error) {
+            throw new Error(uploadResult.error);
+          }
+
+          // Create page record with permanent storage URL
           await ComicService.createPage({
             episode_id: selectedEpisodeId,
             page_number: bulkFile.page_number,
-            image_url: bulkFile.preview, // In real implementation, this would be the uploaded URL
+            image_url: uploadResult.url, // Now using permanent storage URL
             alt_text: bulkFile.alt_text,
             is_active: true
           });
@@ -240,8 +261,9 @@ export const EnhancedPageManager = ({
             idx === i ? { ...f, status: 'success' } : f
           ));
         } catch (error) {
+          console.error('Error uploading page:', error);
           setBulkFiles(prev => prev.map((f, idx) => 
-            idx === i ? { ...f, status: 'error', error: 'Upload failed' } : f
+            idx === i ? { ...f, status: 'error', error: error instanceof Error ? error.message : 'Upload failed' } : f
           ));
         }
 
@@ -264,17 +286,39 @@ export const EnhancedPageManager = ({
       }
 
       loadPages();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to upload pages",
+        variant: "destructive"
+      });
     } finally {
       setIsUploading(false);
     }
   };
 
   const resetBulkUpload = () => {
-    bulkFiles.forEach(f => URL.revokeObjectURL(f.preview));
+    // Clean up blob URLs to prevent memory leaks
+    bulkFiles.forEach(f => {
+      if (f.preview.startsWith('blob:')) {
+        URL.revokeObjectURL(f.preview);
+      }
+    });
     setBulkFiles([]);
     setShowBulkUpload(false);
     setUploadProgress(0);
   };
+
+  // Clean up blob URLs on component unmount
+  useEffect(() => {
+    return () => {
+      bulkFiles.forEach(f => {
+        if (f.preview.startsWith('blob:')) {
+          URL.revokeObjectURL(f.preview);
+        }
+      });
+    };
+  }, []);
 
   if (!selectedEpisodeId) {
     return (

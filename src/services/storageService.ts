@@ -8,6 +8,7 @@ export interface UploadResult {
 
 export class StorageService {
   private static readonly BUCKET_NAME = 'product-images';
+  private static readonly COMIC_BUCKET_NAME = 'comic-pages';
   private static readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
   private static readonly ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 
@@ -17,7 +18,8 @@ export class StorageService {
   static async uploadFile(
     file: File, 
     folder: string = 'products',
-    fileName?: string
+    fileName?: string,
+    bucketName: string = StorageService.BUCKET_NAME
   ): Promise<UploadResult> {
     try {
       // Validate file
@@ -35,7 +37,7 @@ export class StorageService {
 
       // Upload file to Supabase Storage
       const { data, error } = await supabase.storage
-        .from(this.BUCKET_NAME)
+        .from(bucketName)
         .upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
@@ -48,7 +50,7 @@ export class StorageService {
 
       // Get public URL
       const { data: urlData } = supabase.storage
-        .from(this.BUCKET_NAME)
+        .from(bucketName)
         .getPublicUrl(filePath);
 
       return {
@@ -67,12 +69,26 @@ export class StorageService {
   }
 
   /**
+   * Upload a comic page image
+   */
+  static async uploadComicPage(
+    file: File, 
+    seriesSlug: string,
+    episodeNumber: number,
+    pageNumber: number
+  ): Promise<UploadResult> {
+    const folder = `series/${seriesSlug}/episode-${episodeNumber}`;
+    const fileName = `page-${pageNumber}.${file.name.split('.').pop()}`;
+    return this.uploadFile(file, folder, fileName, this.COMIC_BUCKET_NAME);
+  }
+
+  /**
    * Delete a file from Supabase Storage
    */
-  static async deleteFile(filePath: string): Promise<{ success: boolean; error?: string }> {
+  static async deleteFile(filePath: string, bucketName: string = StorageService.BUCKET_NAME): Promise<{ success: boolean; error?: string }> {
     try {
       const { error } = await supabase.storage
-        .from(this.BUCKET_NAME)
+        .from(bucketName)
         .remove([filePath]);
 
       if (error) {
@@ -93,9 +109,9 @@ export class StorageService {
   /**
    * Get public URL for a file
    */
-  static getPublicUrl(filePath: string): string {
+  static getPublicUrl(filePath: string, bucketName: string = StorageService.BUCKET_NAME): string {
     const { data } = supabase.storage
-      .from(this.BUCKET_NAME)
+      .from(bucketName)
       .getPublicUrl(filePath);
     
     return data.publicUrl;
