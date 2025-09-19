@@ -35,95 +35,12 @@ const ReadersMode = () => {
 
         // Load series by slug
         const seriesData = await ComicService.getSeriesBySlug(seriesTitle);
-        if (!seriesData || seriesTitle === 'shadow-hunter-chronicles') {
-          // Fallback to mock data
-          const mockSeriesData = {
-            "demon-slayer": {
-              title: "Demon Slayer",
-              totalPages: 24,
-              pages: Array.from({ length: 24 }, (_, i) => `/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png`)
-            },
-            "jujutsu-kaisen": {
-              title: "Jujutsu Kaisen",
-              totalPages: 24,
-              pages: Array.from({ length: 24 }, (_, i) => `https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&h=600&fit=crop&crop=center`)
-            },
-            "one-piece": {
-              title: "One Piece",
-              totalPages: 1000,
-              pages: Array.from({ length: 1000 }, (_, i) => `https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400&h=600&fit=crop&crop=center`)
-            },
-            "shadow-hunter-chronicles": {
-              title: "Shadow Hunter Chronicles",
-              totalPages: 45,
-              pages: Array.from({ length: 45 }, (_, i) => `/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png`)
-            },
-            "romantic-coffee-shop": {
-              title: "Romantic Coffee Shop",
-              totalPages: 28,
-              pages: Array.from({ length: 28 }, (_, i) => `/lovable-uploads/6ce223e4-a7e8-4282-a3a6-0f55f5341a03.png`)
-            },
-            "cyberpunk-dreams": {
-              title: "Cyberpunk Dreams",
-              totalPages: 67,
-              pages: Array.from({ length: 67 }, (_, i) => `/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png`)
-            }
-          };
-
-          const mockSeries = mockSeriesData[seriesTitle as keyof typeof mockSeriesData] || {
-            title: seriesTitle?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown Series',
-            totalPages: 24,
-            pages: Array.from({ length: 24 }, (_, i) => `/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png`)
-          };
-
-          // Create mock series and episode data
-          const mockSeriesObj = {
-            id: seriesTitle || 'mock-series',
-            title: mockSeries.title,
-            slug: seriesTitle || 'mock-series',
-            description: `Read ${mockSeries.title} online`,
-            cover_image_url: mockSeries.pages[0],
-            status: 'ongoing',
-            is_featured: true,
-            is_active: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-
-          const mockEpisode = {
-            id: `${seriesTitle}-episode-1`,
-            series_id: seriesTitle || 'mock-series',
-            episode_number: 1,
-            title: `${mockSeries.title} - Episode 1`,
-            description: `First episode of ${mockSeries.title}`,
-            is_free: true,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          };
-
-          const mockPages = mockSeries.pages.map((pageUrl, index) => ({
-            id: `${seriesTitle}-page-${index + 1}`,
-            episode_id: `${seriesTitle}-episode-1`,
-            page_number: index + 1,
-            image_url: pageUrl,
-            alt_text: `${mockSeries.title} - Page ${index + 1}`,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }));
-
-          console.log('Using mock data for:', seriesTitle);
-          console.log('Mock pages created:', mockPages.map(p => ({ id: p.id, page_number: p.page_number })));
-          
-          setSeries(mockSeriesObj);
-          setEpisodes([mockEpisode]);
-          setCurrentEpisode(mockEpisode);
-          setPages(mockPages);
-          setCurrentPage(1); // Ensure we start at page 1
+        if (!seriesData) {
+          setError('Series not found');
           setIsLoading(false);
           return;
         }
 
-        console.log('Using database data for:', seriesTitle);
         setSeries(seriesData);
 
         // Load episodes for this series
@@ -135,7 +52,6 @@ const ReadersMode = () => {
           setCurrentEpisode(episodesData[0]);
           // Load pages for first episode
           const pagesData = await ComicService.getPages(episodesData[0].id);
-          console.log('Database pages loaded:', pagesData.map(p => ({ id: p.id, page_number: p.page_number })));
           setPages(pagesData);
         }
 
@@ -171,13 +87,6 @@ const ReadersMode = () => {
 
     loadEpisodePages();
   }, [currentEpisode, toast]);
-
-  // Ensure currentPage is set to 1 when pages are loaded
-  useEffect(() => {
-    if (pages.length > 0 && currentPage !== 1) {
-      setCurrentPage(1);
-    }
-  }, [pages, currentPage]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= pages.length) {
@@ -417,23 +326,13 @@ const ReadersMode = () => {
               className="bg-white rounded-lg shadow-2xl"
               style={{ transform: `scale(${zoomLevel / 100})` }}
             >
-              {(() => {
-                const currentPageData = pages.find(p => p.page_number === currentPage);
-                const firstPageData = pages.find(p => p.page_number === 1);
-                console.log('Current page:', currentPage);
-                console.log('Pages available:', pages.map(p => p.page_number));
-                console.log('Current page data:', currentPageData);
-                console.log('First page data:', firstPageData);
-                
-                const pageToShow = currentPageData || firstPageData;
-                return pageToShow && (
-                  <img
-                    src={pageToShow.image_url}
-                    alt={pageToShow.alt_text || `${series.title} - Page ${currentPage}`}
-                    className="max-w-none w-[600px] h-auto rounded-lg"
-                  />
-                );
-              })()}
+              {pages.find(p => p.page_number === currentPage) && (
+                <img
+                  src={pages.find(p => p.page_number === currentPage)?.image_url}
+                  alt={pages.find(p => p.page_number === currentPage)?.alt_text || `${series.title} - Page ${currentPage}`}
+                  className="max-w-none w-[600px] h-auto rounded-lg"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -441,23 +340,13 @@ const ReadersMode = () => {
         /* Page Mode - Full screen single page */
         <div className="flex-1 flex justify-center items-center min-h-screen bg-gray-900 p-4">
           <div className="max-w-4xl w-full">
-            {(() => {
-              const currentPageData = pages.find(p => p.page_number === currentPage);
-              const firstPageData = pages.find(p => p.page_number === 1);
-              console.log('Page Mode - Current page:', currentPage);
-              console.log('Page Mode - Pages available:', pages.map(p => p.page_number));
-              console.log('Page Mode - Current page data:', currentPageData);
-              console.log('Page Mode - First page data:', firstPageData);
-              
-              const pageToShow = currentPageData || firstPageData;
-              return pageToShow && (
-                <img
-                  src={pageToShow.image_url}
-                  alt={pageToShow.alt_text || `${series.title} - Page ${currentPage}`}
-                  className="w-full h-auto rounded-lg shadow-2xl"
-                />
-              );
-            })()}
+            {pages.find(p => p.page_number === currentPage) && (
+              <img
+                src={pages.find(p => p.page_number === currentPage)?.image_url}
+                alt={pages.find(p => p.page_number === currentPage)?.alt_text || `${series.title} - Page ${currentPage}`}
+                className="w-full h-auto rounded-lg shadow-2xl"
+              />
+            )}
           </div>
         </div>
       )}
