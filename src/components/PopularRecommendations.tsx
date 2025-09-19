@@ -4,7 +4,7 @@ import type { Book as BookType } from '@/services/database';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/hooks/use-toast';
-import { ShoppingCart, Eye, Heart, Star, TrendingUp, Diamond } from 'lucide-react';
+import { ShoppingCart, Eye, Heart, Diamond } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { removeVolumeFromTitle } from '@/lib/utils';
@@ -208,9 +208,6 @@ const PopularRecommendations = () => {
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
         }`}>
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-2 bg-gradient-to-br from-orange-500/20 to-red-500/30 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-orange-500" />
-            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setActiveTab('recommendations')}
@@ -233,9 +230,6 @@ const PopularRecommendations = () => {
               >
                 Genres
               </button>
-            </div>
-            <div className="p-2 bg-gradient-to-br from-red-500/20 to-orange-500/30 rounded-lg">
-              <Star className="h-6 w-6 text-red-500" />
             </div>
           </div>
           <p className="text-gray-400 text-lg">
