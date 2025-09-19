@@ -130,6 +130,33 @@ const PopularRecommendations = () => {
         { title: 'Naruto Vol. 72', author: 'Masashi Kishimoto', price: '$9.99', coins: '999 coins', type: 'digital' },
         { title: 'My Hero Academia Vol. 35', author: 'Kohei Horikoshi', price: '$11.99', coins: '1199 coins', type: 'digital' }
       ]
+    },
+    {
+      name: 'HIGH SCHOOL ROMANCE',
+      books: [
+        { title: 'Your Name Vol. 1', author: 'Makoto Shinkai', price: '$14.99', coins: '1499 coins', type: 'digital' },
+        { title: 'A Silent Voice Vol. 7', author: 'Yoshitoki Oima', price: '$13.99', coins: '1399 coins', type: 'digital' },
+        { title: 'Orange Vol. 3', author: 'Ichigo Takano', price: '$12.99', coins: '1299 coins', type: 'digital' },
+        { title: 'Toradora! Vol. 10', author: 'Yuyuko Takemiya', price: '$11.99', coins: '1199 coins', type: 'digital' }
+      ]
+    },
+    {
+      name: 'FANTASY',
+      books: [
+        { title: 'Attack on Titan Vol. 34', author: 'Hajime Isayama', price: '$15.99', coins: '1599 coins', type: 'digital' },
+        { title: 'One Piece Vol. 100', author: 'Eiichiro Oda', price: '$16.99', coins: '1699 coins', type: 'digital' },
+        { title: 'Demon Slayer Vol. 23', author: 'Koyoharu Gotouge', price: '$14.99', coins: '1499 coins', type: 'digital' },
+        { title: 'Jujutsu Kaisen Vol. 20', author: 'Gege Akutami', price: '$13.99', coins: '1399 coins', type: 'digital' }
+      ]
+    },
+    {
+      name: 'ACTION TALES',
+      books: [
+        { title: 'Bleach Vol. 74', author: 'Tite Kubo', price: '$15.99', coins: '1599 coins', type: 'digital' },
+        { title: 'Dragon Ball Super Vol. 18', author: 'Akira Toriyama', price: '$16.99', coins: '1699 coins', type: 'digital' },
+        { title: 'Black Clover Vol. 32', author: 'Yuki Tabata', price: '$14.99', coins: '1499 coins', type: 'digital' },
+        { title: 'Chainsaw Man Vol. 11', author: 'Tatsuki Fujimoto', price: '$13.99', coins: '1399 coins', type: 'digital' }
+      ]
     }
   ];
 
