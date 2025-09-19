@@ -347,8 +347,8 @@ export const EnhancedPageManager = ({
     const newRow: LinkRow = {
       id: `link-${Date.now()}`,
       url: '',
-      page_number: (pages.length || 0) + linkRows.length + 1,
-      alt_text: `Page ${(pages.length || 0) + linkRows.length + 1}`,
+      page_number: 0, // Will be assigned dynamically during upload
+      alt_text: '',
       status: 'pending'
     };
     setLinkRows(prev => [...prev, newRow]);
@@ -390,6 +390,11 @@ export const EnhancedPageManager = ({
     setUploadProgress(0);
 
     try {
+      // Get current pages to determine next available page numbers
+      const currentPages = await ComicService.getPages(selectedEpisodeId);
+      const existingPageNumbers = currentPages.map(p => p.page_number).sort((a, b) => a - b);
+      let nextPageNumber = existingPageNumbers.length > 0 ? Math.max(...existingPageNumbers) + 1 : 1;
+
       for (let i = 0; i < validRows.length; i++) {
         const linkRow = validRows[i];
         
@@ -398,18 +403,21 @@ export const EnhancedPageManager = ({
         ));
 
         try {
-          // Create page record directly with the image URL
+          // Use dynamically calculated page number
           await ComicService.createPage({
             episode_id: selectedEpisodeId,
-            page_number: linkRow.page_number,
+            page_number: nextPageNumber,
             image_url: linkRow.url,
-            alt_text: linkRow.alt_text,
+            alt_text: linkRow.alt_text || `Page ${nextPageNumber}`,
             is_active: true
           });
 
           setLinkRows(prev => prev.map(row => 
             row.id === linkRow.id ? { ...row, status: 'success' } : row
           ));
+
+          // Increment for next page
+          nextPageNumber++;
         } catch (error) {
           console.error('Error creating page from link:', error);
           setLinkRows(prev => prev.map(row => 
@@ -527,8 +535,8 @@ export const EnhancedPageManager = ({
               setLinkRows([{ 
                 id: `link-${Date.now()}`,
                 url: '',
-                page_number: (pages.length || 0) + 1,
-                alt_text: `Page ${(pages.length || 0) + 1}`,
+                page_number: 0, // Will be assigned dynamically during upload
+                alt_text: '',
                 status: 'pending'
               }]);
               setShowBulkUpload(true);
@@ -899,16 +907,12 @@ export const EnhancedPageManager = ({
                 {linkRows.map((row, index) => (
                   <Card key={row.id} className="p-4">
                     <div className="grid grid-cols-12 gap-4 items-center">
-                      <div className="col-span-1">
-                        <Label className="text-xs">Page #</Label>
-                        <Input
-                          type="number"
-                          value={row.page_number}
-                          onChange={(e) => updateLinkRow(row.id, 'page_number', parseInt(e.target.value) || 1)}
-                          min="1"
-                          className="h-8"
-                        />
-                      </div>
+                       <div className="col-span-1">
+                         <Label className="text-xs">Page #</Label>
+                         <div className="h-8 flex items-center justify-center bg-muted rounded-md text-xs text-muted-foreground">
+                           Auto
+                         </div>
+                       </div>
                       <div className="col-span-6">
                         <Label className="text-xs">Image URL</Label>
                         <Input
