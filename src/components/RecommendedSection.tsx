@@ -2,8 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import type { Book as BookType } from '@/services/database';
 import { useCart } from '@/hooks/useCart';
+import { useWishlist } from '@/hooks/useWishlist';
 import { useToast } from '@/hooks/use-toast';
-import { ShoppingCart, Eye, Heart } from 'lucide-react';
+import { ShoppingCart, Eye, Heart, Diamond } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { removeVolumeFromTitle } from '@/lib/utils';
 
@@ -12,6 +13,7 @@ const RecommendedSection = (props: any) => {
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredBook, setHoveredBook] = useState<string | null>(null);
   const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -100,6 +102,33 @@ const RecommendedSection = (props: any) => {
 
   const handleViewProduct = (book: BookType) => {
     navigate(`/product/${book.id}`);
+  };
+
+  const handleWishlistToggle = (book: BookType) => {
+    if (isInWishlist(book.id)) {
+      removeFromWishlist(book.id);
+      toast({
+        title: "Removed from Wishlist",
+        description: `${book.title} has been removed from your wishlist.`,
+      });
+    } else {
+      addToWishlist({
+        product_id: book.id,
+        title: book.title,
+        author: book.author || "Unknown Author",
+        price: Number(book.price),
+        originalPrice: book.original_price ? Number(book.original_price) : undefined,
+        imageUrl: book.image_url,
+        category: book.category,
+        product_type: (book.product_type as 'book' | 'merchandise') || 'book',
+        inStock: book.stock_quantity ? book.stock_quantity > 0 : true,
+        volume: book.volume_number,
+      });
+      toast({
+        title: "Added to Wishlist",
+        description: `${book.title} has been added to your wishlist.`,
+      });
+    }
   };
 
   const normalizeProductType = (t: any) =>
@@ -206,9 +235,29 @@ const RecommendedSection = (props: any) => {
                 </div>
                 
                 <div className="p-5 space-y-3 flex-1 flex flex-col">
-                  <h3 className="text-white font-semibold text-lg group-hover:text-red-300 transition-colors duration-300 line-clamp-2">
-                    {removeVolumeFromTitle(book.title)}
-                  </h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-white font-semibold text-lg group-hover:text-red-300 transition-colors duration-300 line-clamp-2 flex-1 mr-2">
+                      {removeVolumeFromTitle(book.title)}
+                    </h3>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleWishlistToggle(book);
+                      }}
+                      className={`transition-all duration-300 transform hover:scale-110 w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full ${
+                        isInWishlist(book.id)
+                          ? "text-red-500 hover:text-red-400 hover:bg-red-500/20"
+                          : "text-gray-400 hover:text-red-500 hover:bg-red-500/10"
+                      }`}
+                      title={isInWishlist(book.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                    >
+                      <Diamond className={`w-4 h-4 transition-transform duration-300 ${
+                        isInWishlist(book.id)
+                          ? "fill-current animate-pulse"
+                          : "group-hover:animate-pulse"
+                      }`} />
+                    </button>
+                  </div>
                   
                   {book.author && (
                     <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">

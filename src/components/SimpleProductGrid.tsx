@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useBooks } from '@/hooks/useBooks';
 import { useCart } from '@/hooks/useCart';
-import { Heart, ShoppingCart, Eye, BookOpen, ShoppingBag } from 'lucide-react';
+import { useWishlist } from '@/hooks/useWishlist';
+import { Heart, ShoppingCart, Eye, BookOpen, ShoppingBag, Diamond } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { removeVolumeFromTitle } from '@/lib/utils';
@@ -9,6 +10,7 @@ import { removeVolumeFromTitle } from '@/lib/utils';
 const SimpleProductGrid = () => {
   const { books, isLoading, error } = useBooks();
   const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<'books' | 'merchandise'>('books');
@@ -138,6 +140,33 @@ const SimpleProductGrid = () => {
 
   const handleViewProduct = (product: any) => {
     navigate(`/product/${product.id}`);
+  };
+
+  const handleWishlistToggle = (product: any) => {
+    if (isInWishlist(product.id)) {
+      removeFromWishlist(product.id);
+      toast({
+        title: "Removed from Wishlist",
+        description: `${product.title} has been removed from your wishlist.`,
+      });
+    } else {
+      addToWishlist({
+        product_id: product.id,
+        title: product.title,
+        author: product.author || "Unknown Author",
+        price: typeof product.price === 'string' ? parseFloat(product.price.replace('$', '')) : product.price,
+        originalPrice: product.original_price ? (typeof product.original_price === 'string' ? parseFloat(product.original_price.replace('$', '')) : product.original_price) : undefined,
+        imageUrl: product.image_url,
+        category: product.category,
+        product_type: (product.product_type as 'book' | 'merchandise') || 'book',
+        inStock: product.is_active !== false,
+        volume: product.volume_number,
+      });
+      toast({
+        title: "Added to Wishlist",
+        description: `${product.title} has been added to your wishlist.`,
+      });
+    }
   };
 
   return (
@@ -301,7 +330,27 @@ const SimpleProductGrid = () => {
                 </div>
                 
                 <div className="p-3 space-y-3 flex-1 flex flex-col">
-                  <h3 className="text-white font-semibold text-lg">{removeVolumeFromTitle(product.title)}</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-white font-semibold text-lg flex-1 mr-2">{removeVolumeFromTitle(product.title)}</h3>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleWishlistToggle(product);
+                      }}
+                      className={`transition-all duration-300 transform hover:scale-110 w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full ${
+                        isInWishlist(product.id)
+                          ? "text-red-500 hover:text-red-400 hover:bg-red-500/20"
+                          : "text-gray-400 hover:text-red-500 hover:bg-red-500/10"
+                      }`}
+                      title={isInWishlist(product.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                    >
+                      <Diamond className={`w-4 h-4 transition-transform duration-300 ${
+                        isInWishlist(product.id)
+                          ? "fill-current animate-pulse"
+                          : "group-hover:animate-pulse"
+                      }`} />
+                    </button>
+                  </div>
                   {activeTab === 'books' && product.author && (
                     <p className="text-gray-400 text-sm">{product.author}</p>
                   )}

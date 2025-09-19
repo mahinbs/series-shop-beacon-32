@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import type { Book } from '@/services/database';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
+import { useWishlist } from '@/hooks/useWishlist';
 import { useBooks } from '@/hooks/useBooks';
 import { toast } from 'sonner';
+import { Diamond } from 'lucide-react';
 import { removeVolumeFromTitle } from '@/lib/utils';
 
 interface ShopGridProps {
@@ -22,6 +24,7 @@ const ShopGrid: React.FC<ShopGridProps> = ({ category, sectionType, searchTerm, 
 
   const { books, isLoading, error } = useBooks();
   const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -104,6 +107,27 @@ const ShopGrid: React.FC<ShopGridProps> = ({ category, sectionType, searchTerm, 
 
   const normalizeProductType = (t: any) =>
     (['book', 'merchandise', 'digital', 'other'].includes(t) ? t : 'book') as 'book' | 'merchandise' | 'digital' | 'other';
+
+  const handleWishlistToggle = (product: Book) => {
+    if (isInWishlist(product.id)) {
+      removeFromWishlist(product.id);
+      toast.success(`${product.title} has been removed from your wishlist.`);
+    } else {
+      addToWishlist({
+        product_id: product.id,
+        title: product.title,
+        author: product.author || "Unknown Author",
+        price: Number(product.price),
+        originalPrice: product.original_price ? Number(product.original_price) : undefined,
+        imageUrl: product.image_url,
+        category: product.category,
+        product_type: (product.product_type as 'book' | 'merchandise') || 'book',
+        inStock: product.stock_quantity ? product.stock_quantity > 0 : true,
+        volume: product.volume_number,
+      });
+      toast.success(`${product.title} has been added to your wishlist.`);
+    }
+  };
 
   // Wherever addToCart is called, ensure product_type is normalized:
   // Example: addToCart({ ...product, product_type: normalizeProductType(product.product_type) })
@@ -190,9 +214,29 @@ const ShopGrid: React.FC<ShopGridProps> = ({ category, sectionType, searchTerm, 
                 <span className="text-red-400 text-xs font-semibold uppercase tracking-wide">{product.category || 'General'}</span>
               </div>
               
-              <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-300 transition-colors duration-300">
-                {removeVolumeFromTitle(product.title)}
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-300 transition-colors duration-300 flex-1 mr-2">
+                  {removeVolumeFromTitle(product.title)}
+                </h3>
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleWishlistToggle(product);
+                  }}
+                  className={`transition-all duration-300 transform hover:scale-110 w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full ${
+                    isInWishlist(product.id)
+                      ? "text-red-500 hover:text-red-400 hover:bg-red-500/20"
+                      : "text-gray-400 hover:text-red-500 hover:bg-red-500/10"
+                  }`}
+                  title={isInWishlist(product.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                >
+                  <Diamond className={`w-4 h-4 transition-transform duration-300 ${
+                    isInWishlist(product.id)
+                      ? "fill-current animate-pulse"
+                      : "group-hover:animate-pulse"
+                  }`} />
+                </button>
+              </div>
               
               {product.author && (
                 <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">

@@ -4,6 +4,8 @@ import { ShoppingCart, Diamond, Eye } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useToast } from '@/hooks/use-toast';
 import { removeVolumeFromTitle } from '@/lib/utils';
 
 interface ProductCardProps {
@@ -44,6 +46,8 @@ const ProductCard = ({
   const [isHovered, setIsHovered] = useState(false);
   const navigate = useNavigate();
   const { addToCart } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+  const { toast } = useToast();
 
   const handleAddToCart = () => {
     const cartItem = {
@@ -91,6 +95,36 @@ const ProductCard = ({
     console.log('🆔 ProductCard: Using ID:', productId);
     console.log('🆔 ProductCard: Provided ID:', id);
     navigate(`/product/${productId}`);
+  };
+
+  const handleWishlistToggle = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    const productId = id || `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`;
+    
+    if (isInWishlist(productId)) {
+      removeFromWishlist(productId);
+      toast({
+        title: "Removed from Wishlist",
+        description: `${title} has been removed from your wishlist.`,
+      });
+    } else {
+      addToWishlist({
+        product_id: productId,
+        title,
+        author: author || "Unknown Author",
+        price: parseFloat(price.replace('$', '')),
+        originalPrice: originalPrice ? parseFloat(originalPrice.replace('$', '')) : undefined,
+        imageUrl,
+        category: category || 'General',
+        product_type: 'book' as const,
+        inStock: true,
+        volume: volume,
+      });
+      toast({
+        title: "Added to Wishlist",
+        description: `${title} has been added to your wishlist.`,
+      });
+    }
   };
 
 
@@ -192,13 +226,18 @@ const ProductCard = ({
             <Button 
               variant="ghost" 
               size="icon" 
-              className="text-red-500 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 transform hover:scale-110 w-8 h-8 flex-shrink-0"
-              onClick={(e) => {
-                e.stopPropagation();
-                // Add to favorites functionality
-              }}
+              className={`transition-all duration-300 transform hover:scale-110 w-8 h-8 flex-shrink-0 ${
+                isInWishlist(id || `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`)
+                  ? "text-red-500 hover:text-red-400 hover:bg-red-500/20"
+                  : "text-gray-400 hover:text-red-500 hover:bg-red-500/10"
+              }`}
+              onClick={handleWishlistToggle}
             >
-              <Diamond className="w-4 h-4 transition-transform duration-300 group-hover:animate-pulse" />
+              <Diamond className={`w-4 h-4 transition-transform duration-300 ${
+                isInWishlist(id || `${title.replace(/\s+/g, '-').toLowerCase()}-${author.replace(/\s+/g, '-').toLowerCase()}`)
+                  ? "fill-current animate-pulse"
+                  : "group-hover:animate-pulse"
+              }`} />
             </Button>
           </div>
           <div className="flex items-center justify-between">
