@@ -390,10 +390,7 @@ export const EnhancedPageManager = ({
     setUploadProgress(0);
 
     try {
-      // Get current pages to determine next available page numbers
-      const currentPages = await ComicService.getPages(selectedEpisodeId);
-      const existingPageNumbers = currentPages.map(p => p.page_number).sort((a, b) => a - b);
-      let nextPageNumber = existingPageNumbers.length > 0 ? Math.max(...existingPageNumbers) + 1 : 1;
+      console.log('🚀 Starting link upload for', validRows.length, 'links');
 
       for (let i = 0; i < validRows.length; i++) {
         const linkRow = validRows[i];
@@ -403,23 +400,23 @@ export const EnhancedPageManager = ({
         ));
 
         try {
-          // Use dynamically calculated page number
-          await ComicService.createPage({
-            episode_id: selectedEpisodeId,
-            page_number: nextPageNumber,
+          console.log(`📄 Processing link ${i + 1}/${validRows.length}:`, linkRow.url);
+          
+          // Use the new retry method for automatic page number assignment
+          const createdPage = await ComicService.createPageWithRetry({
             image_url: linkRow.url,
-            alt_text: linkRow.alt_text || `Page ${nextPageNumber}`,
+            alt_text: linkRow.alt_text || `Page from ${linkRow.url}`,
             is_active: true
-          });
+          }, selectedEpisodeId);
+
+          console.log('✅ Page created successfully:', createdPage);
 
           setLinkRows(prev => prev.map(row => 
-            row.id === linkRow.id ? { ...row, status: 'success' } : row
+            row.id === linkRow.id ? { ...row, status: 'success', page_number: createdPage.page_number } : row
           ));
 
-          // Increment for next page
-          nextPageNumber++;
         } catch (error) {
-          console.error('Error creating page from link:', error);
+          console.error('❌ Error creating page from link:', error);
           setLinkRows(prev => prev.map(row => 
             row.id === linkRow.id ? { 
               ...row, 
