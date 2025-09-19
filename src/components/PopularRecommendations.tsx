@@ -104,6 +104,28 @@ const PopularRecommendations = () => {
     }
   };
 
+  const handleBuyNow = (book: BookType) => {
+    // Navigate directly to direct checkout with product details
+    const productId = book.id || `${book.title.replace(/\s+/g, '-').toLowerCase()}-${book.author?.replace(/\s+/g, '-').toLowerCase()}`;
+    navigate(`/direct-checkout/${productId}`, {
+      state: {
+        product: {
+          id: productId,
+          title: book.title,
+          author: book.author,
+          price: Number(book.price),
+          originalPrice: book.original_price,
+          imageUrl: book.image_url,
+          category: book.category || 'General',
+          product_type: 'book' as const,
+          inStock: true
+        },
+        quantity: 1,
+        totalPrice: Number(book.price)
+      }
+    });
+  };
+
   const handleViewProduct = (book: BookType) => {
     navigate(`/product/${book.id}`);
   };
@@ -204,17 +226,17 @@ const PopularRecommendations = () => {
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
-        <div className={`text-center mb-12 transition-all duration-1000 delay-200 transform ${
+        <div className={`text-left mb-12 transition-all duration-1000 delay-200 transform ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
         }`}>
-          <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="flex items-center justify-start gap-3 mb-4">
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setActiveTab('recommendations')}
                 className={`text-4xl font-bold transition-all duration-300 ${
                   activeTab === 'recommendations'
-                    ? 'text-orange-400 underline decoration-2 underline-offset-4'
-                    : 'text-gray-400 hover:text-orange-400'
+                    ? 'text-red-400 underline decoration-2 underline-offset-4'
+                    : 'text-gray-400 hover:text-red-400'
                 }`}
               >
                 Popular Recommendations
@@ -428,6 +450,13 @@ const PopularRecommendations = () => {
                           Add to Cart
                         </button>
                         
+                        <button 
+                          onClick={() => handleBuyNow(book)}
+                          className="w-full bg-white hover:bg-gray-100 text-black text-sm font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                        >
+                          Buy Now
+                        </button>
+                        
                         {book.can_unlock_with_coins && (
                           <button className="w-full text-gray-400 hover:text-white text-sm border border-gray-600 hover:border-gray-400 py-3 rounded-lg transition-all duration-300 hover:bg-gray-800">
                             Unlock with {book.coins || `${Math.round(book.price * 100)} coins`}
@@ -527,13 +556,22 @@ const PopularRecommendations = () => {
                           </span>
                         </div>
                         
-                        <button 
-                          onClick={() => handleAddToCart(book as any)}
-                          className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/30"
-                        >
-                          <ShoppingCart className="w-4 h-4 inline mr-2" />
-                          Add to Cart
-                        </button>
+                        <div className="flex flex-col space-y-2">
+                          <button 
+                            onClick={() => handleAddToCart(book as any)}
+                            className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/30"
+                          >
+                            <ShoppingCart className="w-4 h-4 inline mr-2" />
+                            Add to Cart
+                          </button>
+                          
+                          <button 
+                            onClick={() => handleBuyNow(book as any)}
+                            className="w-full bg-white hover:bg-gray-100 text-black text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg"
+                          >
+                            Buy Now
+                          </button>
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -100,6 +100,28 @@ const RecommendedSection = (props: any) => {
     }
   };
 
+  const handleBuyNow = (book: BookType) => {
+    // Navigate directly to direct checkout with product details
+    const productId = book.id || `${book.title.replace(/\s+/g, '-').toLowerCase()}-${book.author?.replace(/\s+/g, '-').toLowerCase()}`;
+    navigate(`/direct-checkout/${productId}`, {
+      state: {
+        product: {
+          id: productId,
+          title: book.title,
+          author: book.author,
+          price: Number(book.price),
+          originalPrice: book.original_price,
+          imageUrl: book.image_url,
+          category: book.category || 'General',
+          product_type: 'book' as const,
+          inStock: true
+        },
+        quantity: 1,
+        totalPrice: Number(book.price)
+      }
+    });
+  };
+
   const handleViewProduct = (book: BookType) => {
     navigate(`/product/${book.id}`);
   };
@@ -292,6 +314,12 @@ const RecommendedSection = (props: any) => {
                       Add to Cart
                     </button>
                     
+                    <button 
+                      onClick={() => handleBuyNow(book)}
+                      className="w-full bg-white hover:bg-gray-100 text-black text-sm font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                    >
+                      Buy Now
+                    </button>
                     
                     {book.can_unlock_with_coins && (
                       <button className="w-full text-gray-400 hover:text-white text-sm border border-gray-600 hover:border-gray-400 py-3 rounded-lg transition-all duration-300 hover:bg-gray-800">
