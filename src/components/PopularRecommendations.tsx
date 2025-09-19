@@ -230,32 +230,37 @@ const PopularRecommendations = () => {
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
         }`}>
           <div className="flex items-start justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <button
-                onClick={() => setActiveTab('recommendations')}
-                className={`text-4xl font-bold transition-all duration-300 ${
-                  activeTab === 'recommendations'
-                    ? 'text-red-400 underline decoration-2 underline-offset-4'
-                    : 'text-gray-400 hover:text-red-400'
-                }`}
-              >
-                Popular Recommendations
-              </button>
-              <span className="text-white text-4xl">|</span>
-              <button
-                onClick={() => setActiveTab('genres')}
-                className={`text-4xl font-bold transition-all duration-300 ${
-                  activeTab === 'genres'
-                    ? 'text-red-400 underline decoration-2 underline-offset-4'
-                    : 'text-gray-400 hover:text-red-400'
-                }`}
-              >
-                Genres
-              </button>
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setActiveTab('recommendations')}
+                  className={`text-4xl font-bold transition-all duration-300 ${
+                    activeTab === 'recommendations'
+                      ? 'text-red-400 underline decoration-2 underline-offset-4'
+                      : 'text-gray-400 hover:text-red-400'
+                  }`}
+                >
+                  Popular Recommendations
+                </button>
+                <span className="text-white text-4xl">|</span>
+                <button
+                  onClick={() => setActiveTab('genres')}
+                  className={`text-4xl font-bold transition-all duration-300 ${
+                    activeTab === 'genres'
+                      ? 'text-red-400 underline decoration-2 underline-offset-4'
+                      : 'text-gray-400 hover:text-red-400'
+                  }`}
+                >
+                  Genres
+                </button>
+              </div>
+              <p className="text-gray-400 text-lg">
+                {activeTab === 'recommendations' ? 'Discover trending books and series' : 'Discover your favorite genres'}
+              </p>
             </div>
             
             {/* Filter Buttons */}
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex flex-col items-end gap-12">
               <div className="flex gap-3 items-center">
                 <button
                   onClick={() => setSelectedFilter('digital')}
@@ -293,14 +298,16 @@ const PopularRecommendations = () => {
                   onClick={() => window.location.href = '/shop-all'}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg"
                 >
-                  View All
+                  View All ({books.filter(book => {
+                    if (selectedFilter === 'digital') return book.type === 'digital';
+                    if (selectedFilter === 'print') return book.type === 'print';
+                    if (selectedFilter === 'merchandise') return book.type === 'merchandise';
+                    return true;
+                  }).length})
                 </button>
               )}
             </div>
           </div>
-          <p className="text-gray-400 text-lg">
-            {activeTab === 'recommendations' ? 'Discover trending books and series' : 'Discover your favorite genres'}
-          </p>
         </div>
 
 
