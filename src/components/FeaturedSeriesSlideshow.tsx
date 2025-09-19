@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Play, RefreshCw } from 'lucide-react';
+import { BookOpen, RefreshCw } from 'lucide-react';
 import { ComicService, type ComicSeries } from '@/services/comicService';
 import { FeaturedSeriesService, type FeaturedSeriesConfig, type FeaturedSeriesBadge } from '@/services/featuredSeriesService';
 
@@ -85,9 +85,9 @@ const FeaturedSeriesSlideshow = () => {
   };
 
   if (isLoading) {
-  return (
-    <section id="featured-series" className="relative bg-gray-900 py-8 border-b border-gray-700/50">
-      <div className="container mx-auto px-4">
+    return (
+      <section id="featured-series" className="relative bg-gray-900 py-8 border-b border-gray-700/50">
+        <div className="container mx-auto px-4">
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-600 mx-auto mb-4"></div>
             <p className="text-white">Loading featured series...</p>
@@ -100,71 +100,21 @@ const FeaturedSeriesSlideshow = () => {
   // Get the active configuration
   const activeConfig = configs.find(config => config.is_active) || configs[0];
 
-  return (
-    <section 
-      id="featured-series" 
-      className="relative py-8 border-b border-gray-700/50"
-      style={{
-        backgroundImage: activeConfig?.background_image_url ? `url(${activeConfig.background_image_url})` : undefined,
-        backgroundColor: activeConfig?.background_image_url ? undefined : '#111827'
-      }}
-    >
+  try {
+    return (
+      <section 
+        id="featured-series" 
+        className="relative py-8 border-b border-gray-700/50"
+        style={{
+          backgroundImage: activeConfig?.background_image_url ? `url(${activeConfig.background_image_url})` : undefined,
+          backgroundColor: activeConfig?.background_image_url ? undefined : '#111827'
+        }}
+      >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-white">
-              {activeConfig?.title || 'Featured Series'}
-            </h2>
-            {activeConfig?.description && (
-              <p className="text-gray-300 mt-2 max-w-2xl">
-                {activeConfig.description}
-              </p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => {
-                console.log('🔍 FeaturedSeriesSlideshow Debug:');
-                console.log('📊 Configs:', configs);
-                console.log('🎯 Active Config:', activeConfig);
-                console.log('🏷️ Badges:', badges);
-                console.log('⭐ Featured Series:', featuredSeries);
-                console.log('💾 localStorage configs:', localStorage.getItem('featured_series_configs'));
-                console.log('💾 localStorage badges:', localStorage.getItem('featured_series_badges'));
-              }}
-              variant="outline"
-              size="sm"
-              className="border-white/30 text-white hover:bg-white/10"
-            >
-              Debug
-            </Button>
-            <Button
-              onClick={async () => {
-                console.log('🗑️ Force clearing all caches from website...');
-                FeaturedSeriesService.clearCache();
-                // Also clear any other related caches
-                localStorage.removeItem('comic_series');
-                localStorage.removeItem('featured_series_templates');
-                localStorage.removeItem('featured_series_template_history');
-                await loadFeaturedSeriesData();
-                console.log('✅ All caches cleared and data reloaded');
-              }}
-              variant="outline"
-              size="sm"
-              className="border-white/30 text-white hover:bg-white/10"
-            >
-              Force Refresh
-            </Button>
-            <Button
-              onClick={loadFeaturedSeriesData}
-              variant="outline"
-              size="sm"
-              className="border-white/30 text-white hover:bg-white/10"
-            >
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold text-white">
+            Featured Series
+          </h2>
         </div>
         
         {featuredSeries.length === 0 ? (
@@ -173,95 +123,60 @@ const FeaturedSeriesSlideshow = () => {
             <p className="text-gray-500 text-sm mt-2">Add some series and mark them as featured in the admin panel</p>
           </div>
         ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {featuredSeries.map((series, index) => {
               const badgeInfo = getBadgeForSeries(series, index);
               return (
             <div
               key={series.id}
-              className="bg-gray-800 rounded-lg overflow-hidden cursor-pointer hover:transform hover:scale-105 transition-transform duration-300 group"
-                  onClick={() => handleSeriesClick(series)}
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 border border-gray-700 hover:border-red-500/50 cursor-pointer group"
+                  onClick={() => navigate(`/readers/${series.slug}`)}
             >
-              {/* Image with Badge */}
               <div className="relative">
                 <img
                       src={series.cover_image_url || "/placeholder.svg"}
                   alt={series.title}
-                  className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-300"
                 />
                 
-                {/* Enhanced hover overlay with series details */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
-                  <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                    <h3 className="text-lg font-bold text-red-300">{series.title}</h3>
-                    <p className="text-xs text-gray-300 line-clamp-2">{series.description}</p>
-                    <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400 uppercase">{series.genre?.[0] || 'Action'}</span>
-                          <span className="text-xs text-gray-400">{series.total_episodes || 0} episodes</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400 uppercase">{series.status || 'Ongoing'}</span>
-                    </div>
-                  </div>
-                </div>
-                
-                    <div className={`absolute top-3 right-3 ${badgeInfo.color} text-white px-3 py-1 rounded-full text-sm font-medium`}>
-                      {badgeInfo.name}
+                {/* Status Badge */}
+                <div className={`absolute top-4 right-4 ${badgeInfo.color} text-white px-3 py-1 rounded-full text-sm font-medium`}>
+                  {badgeInfo.name}
                 </div>
               </div>
-
-              {/* Content */}
-              <div className="p-4">
-                {/* Title */}
-                <div className="mb-2">
-                  <h3 className="text-xl font-bold text-white">{series.title}</h3>
-                </div>
-
-                {/* Description */}
-                    <div className="mb-4">
-                      <p className="text-gray-300 text-sm line-clamp-3">{series.description}</p>
-                    </div>
-
-                {/* Genres */}
-                    <div className="mb-4">
-                      <div className="flex flex-wrap gap-2">
-                        {series.genre?.slice(0, 3).map((genre, genreIndex) => (
-                    <span
-                            key={genreIndex}
-                            className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded-full"
-                    >
-                      {genre}
+              
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-white mb-2">{series.title}</h3>
+                <p className="text-gray-400 text-sm mb-4 line-clamp-2">{series.description}</p>
+                
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {series.tags?.slice(0, 3).map((tag) => (
+                    <span key={tag} className="bg-gray-700 text-gray-300 px-2 py-1 rounded-md text-xs">
+                      {tag}
                     </span>
                   ))}
-                      </div>
                 </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex gap-2">
-                      <Button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleReadClick(series);
-                        }}
-                        className="flex-1 bg-red-600 hover:bg-red-700 text-white"
-                      >
-                        <BookOpen className="h-4 w-4 mr-2" />
-                        Start Reading
-                      </Button>
+                
+                {/* Meta Info */}
+                <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
+                  <span>{series.total_episodes} Episodes</span>
+                  <span className="capitalize">{series.status}</span>
+                </div>
+                
+                {/* Read Button */}
                 <Button 
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
                   onClick={(e) => {
                     e.stopPropagation();
-                          handleSeriesClick(series);
+                    navigate(`/readers/${series.slug}`);
                   }}
-                        variant="outline"
-                        className="flex-1 border-gray-600 text-gray-300 hover:bg-gray-700"
                 >
-                        <Play className="h-4 w-4 mr-2" />
-                        View Series
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Read Now
                 </Button>
               </div>
             </div>
-                </div>
               );
             })}
           </div>
@@ -291,7 +206,20 @@ const FeaturedSeriesSlideshow = () => {
         )}
       </div>
     </section>
-  );
+    );
+  } catch (error) {
+    console.error('Error in FeaturedSeriesSlideshow:', error);
+    return (
+      <section id="featured-series" className="relative bg-gray-900 py-8 border-b border-gray-700/50">
+        <div className="container mx-auto px-4">
+          <div className="text-center py-12">
+            <p className="text-white text-lg">Error loading featured series</p>
+            <p className="text-gray-400 text-sm mt-2">Please try refreshing the page</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 };
 
 export default FeaturedSeriesSlideshow;

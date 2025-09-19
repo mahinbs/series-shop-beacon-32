@@ -3,6 +3,10 @@ import { Button } from '@/components/ui/button';
 import { Users, BookOpen, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ComicService, type ComicSeries } from '@/services/comicService';
+import { useBooks } from '@/hooks/useBooks';
+import { type Book } from '@/services/database';
+import { useCart } from '@/hooks/useCart';
+import { useToast } from '@/hooks/use-toast';
 
 interface SeriesGridProps {
   appliedFilters?: string[];
@@ -16,7 +20,15 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
   const [activeTab, setActiveTab] = useState<'books' | 'merchandise'>('books');
   const [seriesData, setSeriesData] = useState<ComicSeries[]>([]);
   const [filteredSeries, setFilteredSeries] = useState<ComicSeries[]>([]);
+  const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Use the books hook
+  const { books, isLoading: booksLoading } = useBooks();
+  
+  // Use cart and toast hooks
+  const { addToCart } = useCart();
+  const { toast } = useToast();
 
   useEffect(() => {
     loadSeries();
@@ -25,6 +37,10 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
   useEffect(() => {
     applyFiltersAndSearch();
   }, [seriesData, appliedFilters, searchTerm, sortBy]);
+
+  useEffect(() => {
+    applyBooksFiltersAndSearch();
+  }, [books, appliedFilters, searchTerm, sortBy]);
 
   const applyFiltersAndSearch = () => {
     let filtered = [...seriesData];
@@ -97,6 +113,79 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
     setFilteredSeries(filtered);
     console.log('✅ Final filtered series:', filtered.length, 'out of', seriesData.length);
     console.log('📋 Final results:', filtered.map(s => s.title));
+  };
+
+  const applyBooksFiltersAndSearch = () => {
+    let filtered = [...books];
+    
+    console.log('📚 Starting books filter process:');
+    console.log('📊 Total books:', books.length);
+    console.log('🔍 Search term:', searchTerm);
+    console.log('🎯 Applied filters:', appliedFilters);
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(book => {
+        const titleMatch = book.title.toLowerCase().includes(searchLower);
+        const descMatch = book.description?.toLowerCase().includes(searchLower) || false;
+        const authorMatch = book.author?.toLowerCase().includes(searchLower) || false;
+        
+        const matches = titleMatch || descMatch || authorMatch;
+        console.log(`🔍 "${book.title}" search match:`, { titleMatch, descMatch, authorMatch, matches });
+        return matches;
+      });
+      console.log('🔍 After search filter:', filtered.length, 'books remain');
+    }
+
+    // Apply category/genre filters
+    if (appliedFilters.length > 0) {
+      filtered = filtered.filter(book => {
+        const hasMatchingCategory = book.category && 
+          appliedFilters.some(filter => 
+            book.category.toLowerCase().includes(filter.toLowerCase()) || 
+            filter.toLowerCase().includes(book.category.toLowerCase())
+          );
+        
+        const hasMatchingTag = book.tags?.some(tag => 
+          appliedFilters.some(filter => 
+            tag.toLowerCase().includes(filter.toLowerCase()) || 
+            filter.toLowerCase().includes(tag.toLowerCase())
+          )
+        ) || false;
+        
+        const matches = hasMatchingCategory || hasMatchingTag;
+        console.log(`🎯 "${book.title}" category match:`, { 
+          hasMatchingCategory, 
+          hasMatchingTag, 
+          matches 
+        });
+        return matches;
+      });
+      console.log('🎯 After category filter:', filtered.length, 'books remain');
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'A-Z':
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'Z-A':
+        filtered.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case 'Newest First':
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case 'Oldest First':
+        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      default:
+        break;
+    }
+
+    setFilteredBooks(filtered);
+    console.log('✅ Final filtered books:', filtered.length, 'out of', books.length);
+    console.log('📋 Final results:', filtered.map(b => b.title));
   };
 
   const loadSeries = async () => {
@@ -216,6 +305,55 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
     navigate(`/series/${seriesId}`);
   };
 
+  const handleBookClick = (bookId: string) => {
+    console.log('📚 Book clicked:', bookId);
+    // Navigate to the product detail page (books use the same route as merchandise)
+    navigate(`/product/${bookId}`);
+  };
+
+  const handleAddToCart = async (book: Book) => {
+    try {
+      console.log('🛒 Adding book to cart:', book.title);
+      
+      if (!book?.id) {
+        toast({
+          title: "Error",
+          description: "This book does not have a valid ID.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const normalizeProductType = (t: any) =>
+        (['book', 'merchandise', 'digital', 'other'].includes(t) ? t : 'book') as 'book' | 'merchandise' | 'digital' | 'other';
+
+      await addToCart({
+        id: book.id,
+        title: book.title,
+        author: book.author || undefined,
+        price: Number(book.price),
+        imageUrl: book.image_url,
+        category: book.category,
+        product_type: normalizeProductType(book.product_type),
+        inStock: true,
+        coins: book.coins || undefined,
+        canUnlockWithCoins: book.can_unlock_with_coins || undefined,
+      });
+      
+      toast({
+        title: "Added to Cart!",
+        description: `${book.title} added to cart!`,
+      });
+    } catch (error) {
+      console.error("Error adding to cart:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add to cart. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleMerchandiseClick = (merchandiseId: number) => {
     console.log('🛍️ SeriesGrid: Merchandise clicked:', merchandiseId);
     console.log('🚀 SeriesGrid: Navigating to product page:', `/product/${merchandiseId}`);
@@ -244,7 +382,7 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
             >
               <BookOpen className="w-4 h-4" />
               Books
-              <span className="text-xs opacity-75">({seriesData.length})</span>
+              <span className="text-xs opacity-75">({books.length})</span>
             </button>
             <button
               onClick={() => setActiveTab('merchandise')}
@@ -264,7 +402,7 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
         {/* Books Grid */}
         {activeTab === 'books' && (
           <>
-            {isLoading ? (
+            {booksLoading ? (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="bg-gray-800 rounded-xl overflow-hidden animate-pulse">
@@ -279,24 +417,24 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                   </div>
                 ))}
               </div>
-            ) : filteredSeries.length === 0 ? (
+            ) : filteredBooks.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-gray-400 text-lg">
-                  {appliedFilters.length > 0 || searchTerm ? 'No series found matching your criteria' : 'No series available'}
+                  {appliedFilters.length > 0 || searchTerm ? 'No books found matching your criteria' : 'No books available'}
                 </p>
                 <p className="text-gray-500 text-sm mt-2">
-                  {appliedFilters.length > 0 || searchTerm ? 'Try adjusting your filters or search term' : 'Add some series in the admin panel'}
+                  {appliedFilters.length > 0 || searchTerm ? 'Try adjusting your filters or search term' : 'Add some books in the admin panel'}
                 </p>
               </div>
             ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {filteredSeries.map((seriesItem, index) => (
+                {filteredBooks.map((bookItem, index) => (
               <div
-                key={seriesItem.id}
+                key={bookItem.id}
                 className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
                     onMouseEnter={() => setHoveredSeries(index)}
                 onMouseLeave={() => setHoveredSeries(null)}
-                onClick={() => handleSeriesClick(seriesItem.id)}
+                onClick={() => handleBookClick(bookItem.id)}
                 style={{ 
                   transitionDelay: `${index * 100}ms`,
                   opacity: 1,
@@ -305,26 +443,26 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
               >
                 <div className="relative overflow-hidden">
                   <img 
-                        src={seriesItem.cover_image_url || "/placeholder.svg"} 
-                    alt={seriesItem.title}
+                        src={bookItem.image_url || bookItem.cover_page_url || "/placeholder.svg"} 
+                    alt={bookItem.title}
                     className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
                   />
                   
                   {/* Status Badge */}
                   <div className="absolute top-3 left-3">
                     <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
-                          seriesItem.status === 'ongoing' 
-                        ? 'bg-gradient-to-r from-green-600 to-green-700 text-white animate-pulse' 
+                          bookItem.is_active 
+                        ? 'bg-gradient-to-r from-green-600 to-green-700 text-white' 
                         : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
                     }`}>
-                      {seriesItem.status}
+                      {bookItem.is_active ? 'Available' : 'Unavailable'}
                     </span>
                   </div>
 
-                      {/* Episodes Badge */}
+                      {/* Price Badge */}
                   <div className="absolute top-3 right-3">
                     <span className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                          {seriesItem.total_episodes} Episodes
+                          ${bookItem.price || '0.00'}
                     </span>
                   </div>
 
@@ -334,11 +472,11 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                       <div className="space-y-2">
                         <div className="flex items-center text-white text-sm">
                           <BookOpen className="w-4 h-4 mr-2" />
-                              {seriesItem.total_episodes} Episodes
+                              ${bookItem.price || '0.00'}
                         </div>
                         <div className="flex items-center text-white text-sm">
                           <Users className="w-4 h-4 mr-2" />
-                              {seriesItem.age_rating} Rating
+                              {bookItem.author || 'Unknown Author'}
                         </div>
                       </div>
                     </div>
@@ -347,29 +485,38 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                 
                 <div className="p-5 space-y-3">
                   <div className="flex items-center justify-between">
-                        <span className="text-red-400 text-xs font-semibold uppercase tracking-wide">{seriesItem.genre?.[0] || 'Action'}</span>
+                        <span className="text-red-400 text-xs font-semibold uppercase tracking-wide">{bookItem.category || 'Fiction'}</span>
                   </div>
                   
                   <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-300 transition-colors duration-300">
-                    {seriesItem.title}
+                    {bookItem.title}
                   </h3>
+                  
+                  {/* Author name below book title */}
+                  <p className="text-gray-400 text-sm font-medium">
+                    {bookItem.author || 'Unknown Author'}
+                  </p>
+                  
                   <p className="text-gray-500 text-xs line-clamp-2 group-hover:text-gray-400 transition-colors duration-300">
-                    {seriesItem.description}
+                    {bookItem.description}
                   </p>
                   
                   <div className="flex items-center justify-between pt-2">
+                    {/* Volume count on the left */}
                     <div className="text-gray-400 text-xs">
-                          {seriesItem.total_episodes} episodes
+                      {bookItem.is_volume ? `Vol. ${bookItem.volume_number || 1}` : '1 Volume'}
                     </div>
+                    
+                    {/* Add to Cart button on the right */}
                     <Button 
                       size="sm" 
                       className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleSeriesClick(seriesItem.id);
+                        handleAddToCart(bookItem);
                       }}
                     >
-                          Read Now
+                          Add to Cart
                     </Button>
                   </div>
                 </div>

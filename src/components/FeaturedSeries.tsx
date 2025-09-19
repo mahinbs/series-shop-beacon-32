@@ -160,31 +160,15 @@ const FeaturedSeries = () => {
       }}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between mb-12">
-          <div>
-            <h2 className="text-3xl font-bold text-white">
-              Featured Series
-            </h2>
-            {activeConfig?.description && (
-              <p className="text-gray-300 mt-2 max-w-2xl">
-                {activeConfig.description}
-              </p>
-            )}
-          </div>
-          <Button
-            onClick={() => {
-              console.log('🔍 FeaturedSeries Debug:');
-              console.log('📊 Configs:', configs);
-              console.log('🎯 Active Config:', activeConfig);
-              console.log('🏷️ Badges:', badges);
-              console.log('⭐ Featured Series:', featuredSeries);
-            }}
-            variant="outline"
-            size="sm"
-            className="border-white/30 text-white hover:bg-white/10"
-          >
-            Debug
-          </Button>
+        <div className="mb-12">
+          <h2 className="text-3xl font-bold text-white">
+            Featured Series
+          </h2>
+          {activeConfig?.description && (
+            <p className="text-gray-300 mt-2 max-w-2xl">
+              {activeConfig.description}
+            </p>
+          )}
         </div>
         
         {featuredSeries.length === 0 ? (
@@ -200,7 +184,7 @@ const FeaturedSeries = () => {
             <div
               key={series.id}
               className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 border border-gray-700 hover:border-red-500/50 cursor-pointer group"
-              onClick={() => navigate(`/series/${series.id}`)}
+              onClick={() => navigate(`/readers/${series.slug}`)}
             >
               <div className="relative">
                 <img

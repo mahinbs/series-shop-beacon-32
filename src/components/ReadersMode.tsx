@@ -225,8 +225,8 @@ const ReadersMode = () => {
         </div>
       </div>
 
-      {/* Episode Navigation */}
-      {episodes.length > 1 && (
+      {/* Episode Navigation - Hidden */}
+      {false && episodes.length > 1 && (
         <div className="bg-gray-800 border-b border-gray-700 px-4 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">

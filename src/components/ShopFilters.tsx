@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Filter, Search, ArrowUpDown, X, RefreshCw } from 'lucide-react';
+import { Filter, Search, ArrowUpDown, X } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ShopAllService, type ShopAllFilter, type ShopAllSort } from '@/services/shopAllService';
@@ -23,7 +23,6 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
   const [dynamicFilters, setDynamicFilters] = useState<ShopAllFilter[]>([]);
   const [dynamicSorts, setDynamicSorts] = useState<ShopAllSort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const categories = [
     'All', 'Action', 'Adventure', 'Romance', 'Fantasy', 'Sci-Fi', 
@@ -53,13 +52,9 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
     loadShopAllData();
   }, []);
 
-  const loadShopAllData = async (isRefresh = false) => {
+  const loadShopAllData = async () => {
     try {
-      if (isRefresh) {
-        setIsRefreshing(true);
-      } else {
-        setIsLoading(true);
-      }
+      setIsLoading(true);
       console.log('🛍️ Loading Shop All filters and sorts...');
       
       const [filtersData, sortsData] = await Promise.all([
@@ -97,7 +92,6 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
       }
     } finally {
       setIsLoading(false);
-      setIsRefreshing(false);
     }
   };
 
@@ -211,16 +205,6 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
 
           {/* Filter and Sort Buttons */}
           <div className="flex items-center gap-3">
-            <Button
-              onClick={() => loadShopAllData(true)}
-              variant="outline"
-              size="sm"
-              disabled={isRefreshing}
-              className="bg-blue-900/50 border-blue-700 text-white hover:bg-blue-800/60 px-4 py-2 rounded-lg disabled:opacity-50"
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Refreshing...' : 'Refresh'}
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button 
@@ -330,33 +314,6 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
           </div>
         </div>
 
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-4 mb-6">
-          <div className="flex bg-gray-800 rounded-lg p-1">
-            <Button
-              onClick={() => setViewMode('volume')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'volume'
-                  ? 'bg-red-600 text-white hover:bg-red-700'
-                  : 'bg-transparent text-gray-300 hover:text-white hover:bg-gray-700'
-              }`}
-              variant="ghost"
-            >
-              Books
-            </Button>
-            <Button
-              onClick={() => setViewMode('series')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                viewMode === 'series'
-                  ? 'bg-red-600 text-white hover:bg-red-700'
-                  : 'bg-transparent text-gray-300 hover:text-white hover:bg-gray-700'
-              }`}
-              variant="ghost"
-            >
-              Series
-            </Button>
-          </div>
-        </div>
 
         {/* Category Filter Buttons */}
         <div className="flex flex-wrap gap-2">
