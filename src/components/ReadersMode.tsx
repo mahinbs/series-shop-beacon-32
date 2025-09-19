@@ -36,7 +36,85 @@ const ReadersMode = () => {
         // Load series by slug
         const seriesData = await ComicService.getSeriesBySlug(seriesTitle);
         if (!seriesData) {
-          setError('Series not found');
+          // Fallback to mock data
+          const mockSeriesData = {
+            "demon-slayer": {
+              title: "Demon Slayer",
+              totalPages: 24,
+              pages: Array.from({ length: 24 }, (_, i) => `/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png`)
+            },
+            "jujutsu-kaisen": {
+              title: "Jujutsu Kaisen",
+              totalPages: 24,
+              pages: Array.from({ length: 24 }, (_, i) => `https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&h=600&fit=crop&crop=center`)
+            },
+            "one-piece": {
+              title: "One Piece",
+              totalPages: 1000,
+              pages: Array.from({ length: 1000 }, (_, i) => `https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400&h=600&fit=crop&crop=center`)
+            },
+            "shadow-hunter-chronicles": {
+              title: "Shadow Hunter Chronicles",
+              totalPages: 45,
+              pages: Array.from({ length: 45 }, (_, i) => `/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png`)
+            },
+            "romantic-coffee-shop": {
+              title: "Romantic Coffee Shop",
+              totalPages: 28,
+              pages: Array.from({ length: 28 }, (_, i) => `/lovable-uploads/6ce223e4-a7e8-4282-a3a6-0f55f5341a03.png`)
+            },
+            "cyberpunk-dreams": {
+              title: "Cyberpunk Dreams",
+              totalPages: 67,
+              pages: Array.from({ length: 67 }, (_, i) => `/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png`)
+            }
+          };
+
+          const mockSeries = mockSeriesData[seriesTitle as keyof typeof mockSeriesData] || {
+            title: seriesTitle?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown Series',
+            totalPages: 24,
+            pages: Array.from({ length: 24 }, (_, i) => `/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png`)
+          };
+
+          // Create mock series and episode data
+          const mockSeriesObj = {
+            id: seriesTitle || 'mock-series',
+            title: mockSeries.title,
+            slug: seriesTitle || 'mock-series',
+            description: `Read ${mockSeries.title} online`,
+            cover_image_url: mockSeries.pages[0],
+            status: 'ongoing',
+            is_featured: true,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          const mockEpisode = {
+            id: `${seriesTitle}-episode-1`,
+            series_id: seriesTitle || 'mock-series',
+            episode_number: 1,
+            title: `${mockSeries.title} - Episode 1`,
+            description: `First episode of ${mockSeries.title}`,
+            is_free: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+
+          const mockPages = mockSeries.pages.map((pageUrl, index) => ({
+            id: `${seriesTitle}-page-${index + 1}`,
+            episode_id: `${seriesTitle}-episode-1`,
+            page_number: index + 1,
+            image_url: pageUrl,
+            alt_text: `${mockSeries.title} - Page ${index + 1}`,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }));
+
+          setSeries(mockSeriesObj);
+          setEpisodes([mockEpisode]);
+          setCurrentEpisode(mockEpisode);
+          setPages(mockPages);
           setIsLoading(false);
           return;
         }
