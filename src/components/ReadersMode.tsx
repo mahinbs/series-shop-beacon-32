@@ -26,24 +26,29 @@ const ReadersMode = () => {
       title: "One Piece",
       totalPages: 1000,
       pages: Array.from({ length: 1000 }, (_, i) => `https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400&h=600&fit=crop&crop=center`)
+    },
+    "shadow-hunter-chronicles": {
+      title: "Shadow Hunter Chronicles",
+      totalPages: 45,
+      pages: Array.from({ length: 45 }, (_, i) => `/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png`)
+    },
+    "romantic-coffee-shop": {
+      title: "Romantic Coffee Shop",
+      totalPages: 28,
+      pages: Array.from({ length: 28 }, (_, i) => `/lovable-uploads/6ce223e4-a7e8-4282-a3a6-0f55f5341a03.png`)
+    },
+    "cyberpunk-dreams": {
+      title: "Cyberpunk Dreams",
+      totalPages: 67,
+      pages: Array.from({ length: 67 }, (_, i) => `/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png`)
     }
   };
 
-  const series = seriesData[seriesTitle as keyof typeof seriesData];
-
-  if (!series) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Series not found</h1>
-          <Button onClick={() => navigate('/our-series')}>
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Series
-          </Button>
-        </div>
-      </div>
-    );
-  }
+  const series = seriesData[seriesTitle as keyof typeof seriesData] || {
+    title: seriesTitle?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown Series',
+    totalPages: 24,
+    pages: Array.from({ length: 24 }, (_, i) => `/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png`)
+  };
 
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 25, 200));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 25, 50));
