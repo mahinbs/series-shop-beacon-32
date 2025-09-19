@@ -324,11 +324,12 @@ const PopularRecommendations = () => {
                 {books.map((book, index) => (
                   <div 
                     key={book.id} 
-                    className={`group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[580px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30 ${
+                    className={`group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[580px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30 cursor-pointer ${
                       isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
                     }`}
                     onMouseEnter={() => setHoveredBook(book.id)}
                     onMouseLeave={() => setHoveredBook(null)}
+                    onClick={() => handleViewProduct(book)}
                     style={{ 
                       transitionDelay: `${400 + index * 150}ms`,
                       opacity: 1,
@@ -367,14 +368,20 @@ const PopularRecommendations = () => {
                       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
                         <div className="flex space-x-2">
                           <button 
-                            onClick={() => handleViewProduct(book)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewProduct(book);
+                            }}
                             className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110"
                             title="View Details"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
                           <button 
-                            onClick={() => handleAddToCart(book)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAddToCart(book);
+                            }}
                             className="bg-orange-600 hover:bg-orange-700 text-white p-2 rounded-full transition-all duration-300 hover:scale-110"
                             title="Add to Cart"
                           >
@@ -461,7 +468,10 @@ const PopularRecommendations = () => {
                       
                       <div className="flex flex-col space-y-2 pt-2 mt-auto">
                         <button 
-                          onClick={() => handleAddToCart(book)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleAddToCart(book);
+                          }}
                           className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/30 transform hover:scale-105"
                         >
                           <ShoppingCart className="w-4 h-4 inline mr-2" />
@@ -469,7 +479,10 @@ const PopularRecommendations = () => {
                         </button>
                         
                         <button 
-                          onClick={() => handleBuyNow(book)}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleBuyNow(book);
+                          }}
                           className="w-full bg-white hover:bg-gray-100 text-black text-sm font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg transform hover:scale-105"
                         >
                           Buy Now
