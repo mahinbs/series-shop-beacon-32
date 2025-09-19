@@ -842,48 +842,64 @@ export class ComicService {
   }
 
   // New method to create page with automatic page number assignment and conflict resolution
-  static async createPageWithRetry(pageData: Omit<ComicPage, 'id' | 'created_at' | 'updated_at' | 'page_number' | 'episode_id'>, episodeId: string, maxRetries: number = 5): Promise<ComicPage> {
+  static async createPageWithRetry(
+    pageData: Omit<ComicPage, 'id' | 'created_at' | 'updated_at' | 'page_number' | 'episode_id'>,
+    episodeId: string,
+    maxRetries: number = 5
+  ): Promise<ComicPage> {
+    // Local storage mode: simple max+1 based on all stored pages
+    if (shouldUseLocalStorage()) {
+      const storedPages = localStorage.getItem('comic_pages');
+      const pages: ComicPage[] = storedPages ? JSON.parse(storedPages) : [];
+      const episodePages = pages.filter(p => p.episode_id === episodeId);
+      const maxPage = episodePages.reduce((max, p) => Math.max(max, p.page_number), 0);
+      const nextPageNumber = maxPage + 1;
+      return this.createPage({
+        ...pageData,
+        episode_id: episodeId,
+        page_number: nextPageNumber,
+      });
+    }
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
-        // Get fresh page data from database
-        const currentPages = await this.getPages(episodeId, true);
-        const existingPageNumbers = currentPages.map(p => p.page_number).sort((a, b) => a - b);
-        
-        // Find next available page number
-        let nextPageNumber = 1;
-        for (const pageNum of existingPageNumbers) {
-          if (pageNum === nextPageNumber) {
-            nextPageNumber++;
-          } else {
-            break;
-          }
-        }
-        
-        console.log(`📄 Attempt ${attempt}: Using page number ${nextPageNumber} (existing: [${existingPageNumbers.join(', ')}])`);
-        
+        // Always fetch ALL page numbers (active and inactive) to respect the unique constraint
+        const { data, error } = await supabase
+          .from('comic_pages')
+          .select('page_number')
+          .eq('episode_id', episodeId);
+        if (error) throw error;
+
+        const existing: number[] = (data || []).map((d: any) => d.page_number).sort((a, b) => a - b);
+        const maxPage = existing.length ? existing[existing.length - 1] : 0;
+        const nextPageNumber = maxPage + 1; // pick max+1 to avoid collisions with inactive rows
+
+        console.log(`📄 Attempt ${attempt}: assigning page_number=${nextPageNumber}; existing(all)=[${existing.join(', ')}]`);
+
         const page = {
           ...pageData,
           episode_id: episodeId,
-          page_number: nextPageNumber
+          page_number: nextPageNumber,
         };
-        
+
         return await this.createPage(page);
-        
       } catch (error: any) {
-        const isDuplicateKeyError = error?.code === '23505' || error?.message?.includes('duplicate key value violates unique constraint');
-        
-        if (isDuplicateKeyError && attempt < maxRetries) {
-          console.warn(`⚠️ Duplicate key error on attempt ${attempt}, retrying...`);
-          // Wait a bit before retrying to avoid race conditions
-          await new Promise(resolve => setTimeout(resolve, 100 * attempt));
+        const message = error?.message || '';
+        const code = error?.code;
+        const isDuplicateKey = code === '23505' || /duplicate key value/i.test(message);
+
+        if (isDuplicateKey && attempt < maxRetries) {
+          console.warn(`⚠️ Duplicate key on page insert (attempt ${attempt}). Retrying with fresh max+1...`);
+          // Exponential backoff to reduce race conditions
+          await new Promise((r) => setTimeout(r, 150 * attempt));
           continue;
         }
-        
-        console.error(`❌ Failed to create page after ${attempt} attempts:`, error);
+
+        console.error(`❌ Failed to create page after ${attempt} attempts`, error);
         throw error;
       }
     }
-    
+
     throw new Error(`Failed to create page after ${maxRetries} attempts`);
   }
 
