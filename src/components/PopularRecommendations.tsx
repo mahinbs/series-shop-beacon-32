@@ -229,8 +229,8 @@ const PopularRecommendations = () => {
         <div className={`text-left mb-12 transition-all duration-1000 delay-200 transform ${
           isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
         }`}>
-          <div className="flex items-center justify-start gap-3 mb-4">
-            <div className="flex items-center gap-2">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center gap-3">
               <button
                 onClick={() => setActiveTab('recommendations')}
                 className={`text-4xl font-bold transition-all duration-300 ${
@@ -253,45 +253,56 @@ const PopularRecommendations = () => {
                 Genres
               </button>
             </div>
+            
+            {/* Filter Buttons */}
+            <div className="flex flex-col items-end gap-2">
+              <div className="flex gap-3 items-center">
+                <button
+                  onClick={() => setSelectedFilter('digital')}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                    selectedFilter === 'digital'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Digital
+                </button>
+                <button
+                  onClick={() => setSelectedFilter('print')}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                    selectedFilter === 'print'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Print
+                </button>
+                <button
+                  onClick={() => setSelectedFilter('merchandise')}
+                  className={`px-4 py-2 rounded-lg font-semibold transition-all duration-300 ${
+                    selectedFilter === 'merchandise'
+                      ? 'bg-red-600 text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  Merchandise
+                </button>
+              </div>
+              {activeTab === 'recommendations' && (
+                <button 
+                  onClick={() => window.location.href = '/shop-all'}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg"
+                >
+                  View All
+                </button>
+              )}
+            </div>
           </div>
           <p className="text-gray-400 text-lg">
             {activeTab === 'recommendations' ? 'Discover trending books and series' : 'Discover your favorite genres'}
           </p>
         </div>
 
-        {/* Filter Buttons */}
-        <div className="flex justify-center gap-4 mb-8">
-          <button
-            onClick={() => setSelectedFilter('digital')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
-              selectedFilter === 'digital'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            Digital
-          </button>
-          <button
-            onClick={() => setSelectedFilter('print')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
-              selectedFilter === 'print'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            Print
-          </button>
-          <button
-            onClick={() => setSelectedFilter('merchandise')}
-            className={`px-6 py-2 rounded-lg font-semibold transition-all duration-300 ${
-              selectedFilter === 'merchandise'
-                ? 'bg-red-600 text-white'
-                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
-            }`}
-          >
-            Merchandise
-          </button>
-        </div>
 
         {isLoading ? (
           <div className="text-center py-12">
