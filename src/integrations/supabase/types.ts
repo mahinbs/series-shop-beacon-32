@@ -164,6 +164,7 @@ export type Database = {
       }
       books: {
         Row: {
+          age_rating: string | null
           author: string | null
           can_unlock_with_coins: boolean
           category: string
@@ -197,6 +198,7 @@ export type Database = {
           weight: number | null
         }
         Insert: {
+          age_rating?: string | null
           author?: string | null
           can_unlock_with_coins?: boolean
           category: string
@@ -230,6 +232,7 @@ export type Database = {
           weight?: number | null
         }
         Update: {
+          age_rating?: string | null
           author?: string | null
           can_unlock_with_coins?: boolean
           category?: string

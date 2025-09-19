@@ -27,11 +27,19 @@ interface BookForm {
   video_url?: string;
   can_unlock_with_coins: boolean;
   section_type: 'new-releases' | 'best-sellers' | 'leaving-soon' | 'featured' | 'trending';
+  age_rating?: string;
   label?: string;
   is_new: boolean;
   is_on_sale: boolean;
   display_order: number;
   is_active: boolean;
+  product_type: string;
+  description: string;
+  tags: string[];
+  sku?: string;
+  dimensions?: string;
+  weight?: number;
+  stock_quantity: number;
 }
 
 interface CharacterForm {
@@ -110,11 +118,19 @@ export const BooksManager = () => {
     video_url: '',
     can_unlock_with_coins: false,
     section_type: 'new-releases',
+    age_rating: 'all',
     label: '',
     is_new: false,
     is_on_sale: false,
     display_order: 0,
     is_active: true,
+    product_type: 'book',
+    description: '',
+    tags: [],
+    sku: '',
+    dimensions: '',
+    weight: undefined,
+    stock_quantity: 0
   });
 
   const resetForm = () => {
@@ -131,11 +147,19 @@ export const BooksManager = () => {
       video_url: '',
       can_unlock_with_coins: false,
       section_type: 'new-releases',
+      age_rating: 'all',
       label: '',
       is_new: false,
       is_on_sale: false,
       display_order: 0,
       is_active: true,
+      product_type: 'book',
+      description: '',
+      tags: [],
+      sku: '',
+      dimensions: '',
+      weight: undefined,
+      stock_quantity: 0
     });
     setEditingId(null);
     setShowAddForm(false);
@@ -404,6 +428,7 @@ export const BooksManager = () => {
         console.log('Creating new book');
         const createdBook = await createBook({
           ...formData,
+          age_rating: formData.age_rating || 'all',
           coins: formData.coins || '',
           label: formData.label || '',
           video_url: formData.video_url || null,
@@ -473,6 +498,20 @@ export const BooksManager = () => {
       video_url: book.video_url || '',
       can_unlock_with_coins: book.can_unlock_with_coins || false,
       section_type: book.section_type || 'new-releases',
+      age_rating: book.age_rating || 'all',
+      label: book.label || '',
+      is_new: book.is_new || false,
+      is_on_sale: book.is_on_sale || false,
+      display_order: book.display_order || 0,
+      is_active: book.is_active !== undefined ? book.is_active : true,
+      product_type: book.product_type || 'book',
+      description: book.description || '',
+      tags: book.tags || [],
+      sku: book.sku || '',
+      dimensions: book.dimensions || '',
+      weight: book.weight,
+      stock_quantity: book.stock_quantity || 0
+    });
       label: book.label || '',
       is_new: book.is_new || false,
       is_on_sale: book.is_on_sale || false,
@@ -484,7 +523,7 @@ export const BooksManager = () => {
     // Load existing characters for this book
     const bookCharacters = await BookCharacterService.getBookCharacters(book.id);
     setCharacters(bookCharacters);
-    setOriginalCharacters([...bookCharacters]); // Deep copy for comparison
+    setOriginalCharacters([...bookCharacters]);
     
     setShowAddForm(true);
   };
@@ -1083,6 +1122,27 @@ export const BooksManager = () => {
                   </Select>
                 </div>
                 
+                <div>
+                  <Label htmlFor="age_rating">Rated as</Label>
+                  <Select
+                    value={formData.age_rating || 'all'}
+                    onValueChange={(value: any) => setFormData({ ...formData, age_rating: value })}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Ages</SelectItem>
+                      <SelectItem value="teen">Teen (13+)</SelectItem>
+                      <SelectItem value="mature">Mature (17+)</SelectItem>
+                      <SelectItem value="18+">Adults Only (18+)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="display_order">Display Order</Label>
                   <Input
