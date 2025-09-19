@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -57,6 +57,7 @@ interface CreatorAssignment {
 
 export const ComicSeriesManager = () => {
   const { toast } = useToast();
+  const formRef = useRef<HTMLDivElement>(null);
   const [series, setSeries] = useState<ComicSeries[]>([]);
   const [creators, setCreators] = useState<Creator[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -212,6 +213,12 @@ export const ComicSeriesManager = () => {
     console.log('✏️ Editing series:', seriesItem);
     console.log('🆔 Series ID:', seriesItem.id);
     
+    // Show loading state
+    toast({
+      title: "Loading editor",
+      description: `Preparing to edit "${seriesItem.title}"...`,
+    });
+    
     setFormData({
       title: seriesItem.title,
       slug: seriesItem.slug,
@@ -235,6 +242,20 @@ export const ComicSeriesManager = () => {
     );
     setEditingId(seriesItem.id);
     setShowAddForm(true);
+    
+    // Auto-scroll to form and show success
+    setTimeout(() => {
+      formRef.current?.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+      });
+      
+      toast({
+        title: "Edit Mode Active",
+        description: `Now editing: "${seriesItem.title}"`,
+        variant: "default"
+      });
+    }, 100);
     
     console.log('✅ Form data set, editing ID:', seriesItem.id);
     console.log('📝 Form should be visible now');
@@ -509,9 +530,39 @@ export const ComicSeriesManager = () => {
           </div>
 
           {showAddForm && (
-            <Card>
-              <CardHeader>
-                <CardTitle>{editingId ? 'Edit Comic Series' : 'Add New Comic Series'}</CardTitle>
+            <Card ref={formRef} className={editingId ? 'border-primary bg-card shadow-lg' : ''}>
+              <CardHeader className={editingId ? 'bg-muted/30' : ''}>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      {editingId ? (
+                        <>
+                          <Edit className="h-5 w-5 text-primary" />
+                          Edit Comic Series
+                        </>
+                      ) : (
+                        <>
+                          <Plus className="h-5 w-5" />
+                          Add New Comic Series
+                        </>
+                      )}
+                    </CardTitle>
+                    {editingId && (
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Editing: <span className="font-medium">{formData.title}</span>
+                      </p>
+                    )}
+                  </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={resetForm}
+                    className="text-muted-foreground hover:text-foreground"
+                  >
+                    Cancel
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
