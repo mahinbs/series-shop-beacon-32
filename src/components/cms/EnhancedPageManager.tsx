@@ -22,7 +22,9 @@ import {
   ChevronUp,
   ChevronDown,
   FileImage,
-  Loader2
+  Loader2,
+  Link,
+  Trash
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { ComicService, type ComicEpisode, type ComicPage } from '@/services/comicService';
@@ -51,6 +53,15 @@ interface BulkUploadFile {
   error?: string;
 }
 
+interface LinkRow {
+  id: string;
+  url: string;
+  page_number: number;
+  alt_text: string;
+  status: 'pending' | 'uploading' | 'success' | 'error';
+  error?: string;
+}
+
 export const EnhancedPageManager = ({ 
   episodes, 
   selectedEpisodeId, 
@@ -68,6 +79,8 @@ export const EnhancedPageManager = ({
   const [bulkFiles, setBulkFiles] = useState<BulkUploadFile[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadMode, setUploadMode] = useState<'files' | 'links'>('files');
+  const [linkRows, setLinkRows] = useState<LinkRow[]>([]);
 
   const selectedEpisode = episodes.find(e => e.id === selectedEpisodeId);
 
@@ -220,12 +233,20 @@ export const EnhancedPageManager = ({
 
     try {
       // Get series information for storage folder structure
-      const series = await ComicService.getSeriesBySlug('shadow-hunter-chronicles');
-      const seriesSlug = series?.slug || 'unknown-series';
       const episode = episodes.find(e => e.id === selectedEpisodeId);
-      
       if (!episode) {
         throw new Error('Episode not found');
+      }
+
+      // Get series slug from episode's series or use a fallback
+      let seriesSlug = 'unknown-series';
+      if (episode.series?.slug) {
+        seriesSlug = episode.series.slug;
+      } else if (episode.series_id) {
+        // Try to get series by ID if slug not available
+        const allSeries = await ComicService.getSeries();
+        const series = allSeries.find(s => s.id === episode.series_id);
+        seriesSlug = series?.slug || 'unknown-series';
       }
 
       for (let i = 0; i < bulkFiles.length; i++) {
@@ -305,8 +326,10 @@ export const EnhancedPageManager = ({
       }
     });
     setBulkFiles([]);
+    setLinkRows([]);
     setShowBulkUpload(false);
     setUploadProgress(0);
+    setUploadMode('files');
   };
 
   // Clean up blob URLs on component unmount
@@ -319,6 +342,114 @@ export const EnhancedPageManager = ({
       });
     };
   }, []);
+
+  const addLinkRow = () => {
+    const newRow: LinkRow = {
+      id: `link-${Date.now()}`,
+      url: '',
+      page_number: (pages.length || 0) + linkRows.length + 1,
+      alt_text: `Page ${(pages.length || 0) + linkRows.length + 1}`,
+      status: 'pending'
+    };
+    setLinkRows(prev => [...prev, newRow]);
+  };
+
+  const removeLinkRow = (id: string) => {
+    setLinkRows(prev => prev.filter(row => row.id !== id));
+  };
+
+  const updateLinkRow = (id: string, field: keyof LinkRow, value: string | number) => {
+    setLinkRows(prev => prev.map(row => 
+      row.id === id ? { ...row, [field]: value } : row
+    ));
+  };
+
+  const validateUrl = (url: string): boolean => {
+    try {
+      new URL(url);
+      return url.match(/\.(jpg|jpeg|png|gif|webp)$/i) !== null;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleLinksUpload = async () => {
+    if (!selectedEpisodeId || linkRows.length === 0) return;
+
+    const validRows = linkRows.filter(row => row.url.trim() && validateUrl(row.url));
+    if (validRows.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please add valid image URLs",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      for (let i = 0; i < validRows.length; i++) {
+        const linkRow = validRows[i];
+        
+        setLinkRows(prev => prev.map(row => 
+          row.id === linkRow.id ? { ...row, status: 'uploading' } : row
+        ));
+
+        try {
+          // Create page record directly with the image URL
+          await ComicService.createPage({
+            episode_id: selectedEpisodeId,
+            page_number: linkRow.page_number,
+            image_url: linkRow.url,
+            alt_text: linkRow.alt_text,
+            is_active: true
+          });
+
+          setLinkRows(prev => prev.map(row => 
+            row.id === linkRow.id ? { ...row, status: 'success' } : row
+          ));
+        } catch (error) {
+          console.error('Error creating page from link:', error);
+          setLinkRows(prev => prev.map(row => 
+            row.id === linkRow.id ? { 
+              ...row, 
+              status: 'error', 
+              error: error instanceof Error ? error.message : 'Failed to create page' 
+            } : row
+          ));
+        }
+
+        setUploadProgress(((i + 1) / validRows.length) * 100);
+      }
+
+      const successCount = linkRows.filter(row => row.status === 'success').length;
+      const errorCount = linkRows.filter(row => row.status === 'error').length;
+
+      if (successCount > 0) {
+        toast({
+          title: "Upload Complete",
+          description: `${successCount} pages created successfully${errorCount > 0 ? `, ${errorCount} failed` : ''}`
+        });
+      }
+
+      if (errorCount === 0) {
+        setShowBulkUpload(false);
+        setLinkRows([]);
+      }
+
+      loadPages();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to create pages from links",
+        variant: "destructive"
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   if (!selectedEpisodeId) {
     return (
@@ -380,12 +511,33 @@ export const EnhancedPageManager = ({
             className="hidden"
           />
           <Button
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => {
+              setUploadMode('files');
+              fileInputRef.current?.click();
+            }}
             variant="outline"
             className="flex items-center gap-2"
           >
             <Upload className="h-4 w-4" />
-            Bulk Upload
+            From Files
+          </Button>
+          <Button
+            onClick={() => {
+              setUploadMode('links');
+              setLinkRows([{ 
+                id: `link-${Date.now()}`,
+                url: '',
+                page_number: (pages.length || 0) + 1,
+                alt_text: `Page ${(pages.length || 0) + 1}`,
+                status: 'pending'
+              }]);
+              setShowBulkUpload(true);
+            }}
+            variant="outline"
+            className="flex items-center gap-2"
+          >
+            <Link className="h-4 w-4" />
+            From Links
           </Button>
         </div>
       </div>
@@ -625,10 +777,13 @@ export const EnhancedPageManager = ({
       <Dialog open={showBulkUpload} onOpenChange={(open) => !open && resetBulkUpload()}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Bulk Upload Pages</DialogTitle>
+            <DialogTitle>
+              {uploadMode === 'files' ? 'Bulk Upload from Files' : 'Add Pages from URLs'}
+            </DialogTitle>
           </DialogHeader>
           
-          {bulkFiles.length > 0 && (
+          {/* File Upload Mode */}
+          {uploadMode === 'files' && bulkFiles.length > 0 && (
             <div className="space-y-4">
               {isUploading && (
                 <div className="space-y-2">
@@ -710,6 +865,122 @@ export const EnhancedPageManager = ({
                     <>
                       <Upload className="h-4 w-4 mr-2" />
                       Upload {bulkFiles.length} Pages
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Links Upload Mode */}
+          {uploadMode === 'links' && (
+            <div className="space-y-4">
+              {isUploading && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Creating pages...</span>
+                    <span>{Math.round(uploadProgress)}%</span>
+                  </div>
+                  <Progress value={uploadProgress} />
+                </div>
+              )}
+
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <p className="text-sm text-muted-foreground">
+                    Add image URLs to create pages. Make sure URLs end with image extensions (.jpg, .png, .gif, .webp)
+                  </p>
+                  <Button onClick={addLinkRow} variant="outline" size="sm">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Row
+                  </Button>
+                </div>
+
+                {linkRows.map((row, index) => (
+                  <Card key={row.id} className="p-4">
+                    <div className="grid grid-cols-12 gap-4 items-center">
+                      <div className="col-span-1">
+                        <Label className="text-xs">Page #</Label>
+                        <Input
+                          type="number"
+                          value={row.page_number}
+                          onChange={(e) => updateLinkRow(row.id, 'page_number', parseInt(e.target.value) || 1)}
+                          min="1"
+                          className="h-8"
+                        />
+                      </div>
+                      <div className="col-span-6">
+                        <Label className="text-xs">Image URL</Label>
+                        <Input
+                          type="url"
+                          value={row.url}
+                          onChange={(e) => updateLinkRow(row.id, 'url', e.target.value)}
+                          placeholder="https://example.com/image.jpg"
+                          className={`h-8 ${!validateUrl(row.url) && row.url ? 'border-red-500' : ''}`}
+                        />
+                        {!validateUrl(row.url) && row.url && (
+                          <p className="text-xs text-red-500 mt-1">Invalid image URL</p>
+                        )}
+                      </div>
+                      <div className="col-span-4">
+                        <Label className="text-xs">Description</Label>
+                        <Input
+                          value={row.alt_text}
+                          onChange={(e) => updateLinkRow(row.id, 'alt_text', e.target.value)}
+                          placeholder="Page description"
+                          className="h-8"
+                        />
+                      </div>
+                      <div className="col-span-1 flex justify-center items-end">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeLinkRow(row.id)}
+                          className="h-8 w-8 p-0"
+                          disabled={linkRows.length === 1}
+                        >
+                          <Trash className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    {row.status === 'uploading' && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span className="text-sm">Creating page...</span>
+                      </div>
+                    )}
+                    {row.status === 'success' && (
+                      <div className="mt-2">
+                        <Badge variant="default" className="bg-green-600">Success</Badge>
+                      </div>
+                    )}
+                    {row.status === 'error' && (
+                      <div className="mt-2">
+                        <Badge variant="destructive">Error: {row.error}</Badge>
+                      </div>
+                    )}
+                  </Card>
+                ))}
+              </div>
+              
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={resetBulkUpload} disabled={isUploading}>
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={handleLinksUpload} 
+                  disabled={isUploading || linkRows.every(row => !row.url.trim() || !validateUrl(row.url))}
+                >
+                  {isUploading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create {linkRows.filter(row => row.url.trim() && validateUrl(row.url)).length} Pages
                     </>
                   )}
                 </Button>

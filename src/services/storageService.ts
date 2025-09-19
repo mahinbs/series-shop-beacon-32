@@ -9,7 +9,7 @@ export interface UploadResult {
 export class StorageService {
   private static readonly BUCKET_NAME = 'product-images';
   private static readonly COMIC_BUCKET_NAME = 'comic-pages';
-  private static readonly MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  private static readonly MAX_FILE_SIZE = 20 * 1024 * 1024; // 20MB
   private static readonly ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'image/gif'];
 
   /**
