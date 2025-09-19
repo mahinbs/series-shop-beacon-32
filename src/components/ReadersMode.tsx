@@ -1,57 +1,146 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, ZoomIn, ZoomOut, Download, Share2, Bookmark, Book, FileText } from 'lucide-react';
+import { ArrowLeft, ZoomIn, ZoomOut, Download, Share2, Bookmark, Book, FileText, ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { useState, useEffect } from 'react';
+import { ComicService, type ComicSeries, type ComicEpisode, type ComicPage } from '@/services/comicService';
+import { useToast } from '@/hooks/use-toast';
 
 const ReadersMode = () => {
   const { seriesTitle } = useParams();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [viewMode, setViewMode] = useState<'pdf' | 'page'>('pdf');
+  const [series, setSeries] = useState<ComicSeries | null>(null);
+  const [episodes, setEpisodes] = useState<ComicEpisode[]>([]);
+  const [currentEpisode, setCurrentEpisode] = useState<ComicEpisode | null>(null);
+  const [pages, setPages] = useState<ComicPage[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Mock series data with pages
-  const seriesData = {
-    "demon-slayer": {
-      title: "Demon Slayer",
-      totalPages: 24,
-      pages: Array.from({ length: 24 }, (_, i) => `/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png`)
-    },
-    "jujutsu-kaisen": {
-      title: "Jujutsu Kaisen",
-      totalPages: 24,
-      pages: Array.from({ length: 24 }, (_, i) => `https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&h=600&fit=crop&crop=center`)
-    },
-    "one-piece": {
-      title: "One Piece",
-      totalPages: 1000,
-      pages: Array.from({ length: 1000 }, (_, i) => `https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400&h=600&fit=crop&crop=center`)
-    },
-    "shadow-hunter-chronicles": {
-      title: "Shadow Hunter Chronicles",
-      totalPages: 45,
-      pages: Array.from({ length: 45 }, (_, i) => `/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png`)
-    },
-    "romantic-coffee-shop": {
-      title: "Romantic Coffee Shop",
-      totalPages: 28,
-      pages: Array.from({ length: 28 }, (_, i) => `/lovable-uploads/6ce223e4-a7e8-4282-a3a6-0f55f5341a03.png`)
-    },
-    "cyberpunk-dreams": {
-      title: "Cyberpunk Dreams",
-      totalPages: 67,
-      pages: Array.from({ length: 67 }, (_, i) => `/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png`)
+  // Load series data from database
+  useEffect(() => {
+    const loadSeriesData = async () => {
+      if (!seriesTitle) {
+        setError('No series specified');
+        setIsLoading(false);
+        return;
+      }
+
+      try {
+        setIsLoading(true);
+        setError(null);
+
+        // Load series by slug
+        const seriesData = await ComicService.getSeriesBySlug(seriesTitle);
+        if (!seriesData) {
+          setError('Series not found');
+          setIsLoading(false);
+          return;
+        }
+
+        setSeries(seriesData);
+
+        // Load episodes for this series
+        const episodesData = await ComicService.getEpisodes(seriesData.id);
+        setEpisodes(episodesData);
+
+        // Set first episode as current if available
+        if (episodesData.length > 0) {
+          setCurrentEpisode(episodesData[0]);
+          // Load pages for first episode
+          const pagesData = await ComicService.getPages(episodesData[0].id);
+          setPages(pagesData);
+        }
+
+      } catch (err) {
+        console.error('Error loading series data:', err);
+        setError('Failed to load series data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadSeriesData();
+  }, [seriesTitle]);
+
+  // Load pages when episode changes
+  useEffect(() => {
+    const loadEpisodePages = async () => {
+      if (!currentEpisode) return;
+
+      try {
+        const pagesData = await ComicService.getPages(currentEpisode.id);
+        setPages(pagesData);
+        setCurrentPage(1); // Reset to first page
+      } catch (err) {
+        console.error('Error loading episode pages:', err);
+        toast({
+          title: "Error",
+          description: "Failed to load episode pages",
+          variant: "destructive"
+        });
+      }
+    };
+
+    loadEpisodePages();
+  }, [currentEpisode, toast]);
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= pages.length) {
+      setCurrentPage(page);
     }
   };
 
-  const series = seriesData[seriesTitle as keyof typeof seriesData] || {
-    title: seriesTitle?.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'Unknown Series',
-    totalPages: 24,
-    pages: Array.from({ length: 24 }, (_, i) => `/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png`)
+  const handleEpisodeChange = (episode: ComicEpisode) => {
+    setCurrentEpisode(episode);
   };
 
   const handleZoomIn = () => setZoomLevel(prev => Math.min(prev + 25, 200));
   const handleZoomOut = () => setZoomLevel(prev => Math.max(prev - 25, 50));
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading comic...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !series) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Series not found</h1>
+          <p className="text-gray-400 mb-4">{error || 'The requested series could not be found.'}</p>
+          <Button onClick={() => navigate('/our-series')} className="bg-primary hover:bg-primary/90">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Series
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentEpisode || pages.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">No episodes available</h1>
+          <p className="text-gray-400 mb-4">This series doesn't have any published episodes yet.</p>
+          <Button onClick={() => navigate('/our-series')} className="bg-primary hover:bg-primary/90">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back to Series
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 text-white">
@@ -70,7 +159,7 @@ const ReadersMode = () => {
           <div>
             <h1 className="font-semibold">{series.title}</h1>
             <p className="text-sm text-gray-400">
-              Page {currentPage} of {series.totalPages}
+              {currentEpisode.title} - Page {currentPage} of {pages.length}
             </p>
           </div>
         </div>
@@ -136,6 +225,73 @@ const ReadersMode = () => {
         </div>
       </div>
 
+      {/* Episode Navigation */}
+      {episodes.length > 1 && (
+        <div className="bg-gray-800 border-b border-gray-700 px-4 py-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-gray-300">Episodes:</span>
+              <div className="flex items-center gap-2 max-w-2xl overflow-x-auto">
+                {episodes.map((episode, index) => (
+                  <Button
+                    key={episode.id}
+                    variant={currentEpisode.id === episode.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleEpisodeChange(episode)}
+                    className={`whitespace-nowrap ${
+                      currentEpisode.id === episode.id 
+                        ? 'bg-primary text-white' 
+                        : 'text-gray-300 border-gray-600 hover:bg-gray-700'
+                    }`}
+                  >
+                    Ep. {episode.episode_number}
+                    {episode.is_free ? (
+                      <Badge variant="secondary" className="ml-2 text-xs bg-green-600 text-white">Free</Badge>
+                    ) : (
+                      <Badge variant="outline" className="ml-2 text-xs border-yellow-500 text-yellow-400">
+                        {episode.coin_price} coins
+                      </Badge>
+                    )}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const currentIndex = episodes.findIndex(ep => ep.id === currentEpisode.id);
+                  if (currentIndex > 0) {
+                    handleEpisodeChange(episodes[currentIndex - 1]);
+                  }
+                }}
+                disabled={episodes.findIndex(ep => ep.id === currentEpisode.id) === 0}
+                className="text-gray-300 hover:bg-gray-700"
+              >
+                <ChevronLeft className="w-4 h-4" />
+                Prev Episode
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  const currentIndex = episodes.findIndex(ep => ep.id === currentEpisode.id);
+                  if (currentIndex < episodes.length - 1) {
+                    handleEpisodeChange(episodes[currentIndex + 1]);
+                  }
+                }}
+                disabled={episodes.findIndex(ep => ep.id === currentEpisode.id) === episodes.length - 1}
+                className="text-gray-300 hover:bg-gray-700"
+              >
+                Next Episode
+                <ChevronRight className="w-4 h-4 ml-1" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       {viewMode === 'pdf' ? (
         <div className="flex">
@@ -143,22 +299,22 @@ const ReadersMode = () => {
           <div className="w-48 bg-gray-800 p-4 h-screen overflow-y-auto">
             <h3 className="text-sm font-semibold mb-4 text-gray-300">Pages</h3>
             <div className="space-y-2">
-              {series.pages.map((page, index) => (
+              {pages.map((page, index) => (
                 <div
-                  key={index}
+                  key={page.id}
                   className={`cursor-pointer border-2 rounded ${
-                    currentPage === index + 1 
+                    currentPage === page.page_number 
                       ? 'border-red-500' 
                       : 'border-gray-600 hover:border-gray-500'
                   }`}
-                  onClick={() => setCurrentPage(index + 1)}
+                  onClick={() => setCurrentPage(page.page_number)}
                 >
                   <img
-                    src={page}
-                    alt={`Page ${index + 1}`}
+                    src={page.image_url}
+                    alt={page.alt_text || `Page ${page.page_number}`}
                     className="w-full h-20 object-cover rounded"
                   />
-                  <p className="text-xs text-center py-1">{index + 1}</p>
+                  <p className="text-xs text-center py-1">{page.page_number}</p>
                 </div>
               ))}
             </div>
@@ -170,11 +326,13 @@ const ReadersMode = () => {
               className="bg-white rounded-lg shadow-2xl"
               style={{ transform: `scale(${zoomLevel / 100})` }}
             >
-              <img
-                src={series.pages[currentPage - 1]}
-                alt={`${series.title} - Page ${currentPage}`}
-                className="max-w-none w-[600px] h-auto rounded-lg"
-              />
+              {pages.find(p => p.page_number === currentPage) && (
+                <img
+                  src={pages.find(p => p.page_number === currentPage)?.image_url}
+                  alt={pages.find(p => p.page_number === currentPage)?.alt_text || `${series.title} - Page ${currentPage}`}
+                  className="max-w-none w-[600px] h-auto rounded-lg"
+                />
+              )}
             </div>
           </div>
         </div>
@@ -182,11 +340,13 @@ const ReadersMode = () => {
         /* Page Mode - Full screen single page */
         <div className="flex-1 flex justify-center items-center min-h-screen bg-gray-900 p-4">
           <div className="max-w-4xl w-full">
-            <img
-              src={series.pages[currentPage - 1]}
-              alt={`${series.title} - Page ${currentPage}`}
-              className="w-full h-auto rounded-lg shadow-2xl"
-            />
+            {pages.find(p => p.page_number === currentPage) && (
+              <img
+                src={pages.find(p => p.page_number === currentPage)?.image_url}
+                alt={pages.find(p => p.page_number === currentPage)?.alt_text || `${series.title} - Page ${currentPage}`}
+                className="w-full h-auto rounded-lg shadow-2xl"
+              />
+            )}
           </div>
         </div>
       )}
@@ -203,13 +363,13 @@ const ReadersMode = () => {
           Previous
         </Button>
         
-        <span className="text-sm">{currentPage} / {series.totalPages}</span>
+        <span className="text-sm">{currentPage} / {pages.length}</span>
         
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, series.totalPages))}
-          disabled={currentPage === series.totalPages}
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, pages.length))}
+          disabled={currentPage === pages.length}
           className="text-white hover:bg-gray-800 disabled:opacity-50"
         >
           Next
