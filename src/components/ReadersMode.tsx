@@ -115,6 +115,7 @@ const ReadersMode = () => {
           setEpisodes([mockEpisode]);
           setCurrentEpisode(mockEpisode);
           setPages(mockPages);
+          setCurrentPage(1); // Ensure we start at page 1
           setIsLoading(false);
           return;
         }
@@ -165,6 +166,13 @@ const ReadersMode = () => {
 
     loadEpisodePages();
   }, [currentEpisode, toast]);
+
+  // Ensure currentPage is set to 1 when pages are loaded
+  useEffect(() => {
+    if (pages.length > 0 && currentPage !== 1) {
+      setCurrentPage(1);
+    }
+  }, [pages, currentPage]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= pages.length) {
@@ -404,13 +412,23 @@ const ReadersMode = () => {
               className="bg-white rounded-lg shadow-2xl"
               style={{ transform: `scale(${zoomLevel / 100})` }}
             >
-              {pages.find(p => p.page_number === currentPage) && (
-                <img
-                  src={pages.find(p => p.page_number === currentPage)?.image_url}
-                  alt={pages.find(p => p.page_number === currentPage)?.alt_text || `${series.title} - Page ${currentPage}`}
-                  className="max-w-none w-[600px] h-auto rounded-lg"
-                />
-              )}
+              {(() => {
+                const currentPageData = pages.find(p => p.page_number === currentPage);
+                const firstPageData = pages.find(p => p.page_number === 1);
+                console.log('Current page:', currentPage);
+                console.log('Pages available:', pages.map(p => p.page_number));
+                console.log('Current page data:', currentPageData);
+                console.log('First page data:', firstPageData);
+                
+                const pageToShow = currentPageData || firstPageData;
+                return pageToShow && (
+                  <img
+                    src={pageToShow.image_url}
+                    alt={pageToShow.alt_text || `${series.title} - Page ${currentPage}`}
+                    className="max-w-none w-[600px] h-auto rounded-lg"
+                  />
+                );
+              })()}
             </div>
           </div>
         </div>
@@ -418,13 +436,23 @@ const ReadersMode = () => {
         /* Page Mode - Full screen single page */
         <div className="flex-1 flex justify-center items-center min-h-screen bg-gray-900 p-4">
           <div className="max-w-4xl w-full">
-            {pages.find(p => p.page_number === currentPage) && (
-              <img
-                src={pages.find(p => p.page_number === currentPage)?.image_url}
-                alt={pages.find(p => p.page_number === currentPage)?.alt_text || `${series.title} - Page ${currentPage}`}
-                className="w-full h-auto rounded-lg shadow-2xl"
-              />
-            )}
+            {(() => {
+              const currentPageData = pages.find(p => p.page_number === currentPage);
+              const firstPageData = pages.find(p => p.page_number === 1);
+              console.log('Page Mode - Current page:', currentPage);
+              console.log('Page Mode - Pages available:', pages.map(p => p.page_number));
+              console.log('Page Mode - Current page data:', currentPageData);
+              console.log('Page Mode - First page data:', firstPageData);
+              
+              const pageToShow = currentPageData || firstPageData;
+              return pageToShow && (
+                <img
+                  src={pageToShow.image_url}
+                  alt={pageToShow.alt_text || `${series.title} - Page ${currentPage}`}
+                  className="w-full h-auto rounded-lg shadow-2xl"
+                />
+              );
+            })()}
           </div>
         </div>
       )}
