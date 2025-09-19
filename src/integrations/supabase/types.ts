@@ -1512,6 +1512,10 @@ export type Database = {
         Args: { user_id: string }
         Returns: undefined
       }
+      move_comic_page: {
+        Args: { p_episode_id: string; p_new_number: number; p_page_id: string }
+        Returns: undefined
+      }
       setup_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: undefined

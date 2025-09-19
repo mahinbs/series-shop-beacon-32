@@ -939,6 +939,109 @@ export class ComicService {
     }
   }
 
+  // Move page to new position using the database RPC function
+  static async movePage(episodeId: string, pageId: string, newPageNumber: number): Promise<void> {
+    try {
+      if (shouldUseLocalStorage()) {
+        // For localStorage, implement simple move logic
+        const storedPages = localStorage.getItem('comic_pages');
+        const pages: ComicPage[] = storedPages ? JSON.parse(storedPages) : [];
+        const episodePages = pages.filter(p => p.episode_id === episodeId);
+        const page = episodePages.find(p => p.id === pageId);
+        
+        if (!page) throw new Error('Page not found');
+        
+        const currentNumber = page.page_number;
+        if (currentNumber === newPageNumber) return;
+        
+        // Simple renumbering for localStorage
+        episodePages.forEach(p => {
+          if (p.id === pageId) {
+            p.page_number = newPageNumber;
+          } else if (currentNumber < newPageNumber && p.page_number > currentNumber && p.page_number <= newPageNumber) {
+            p.page_number -= 1;
+          } else if (currentNumber > newPageNumber && p.page_number >= newPageNumber && p.page_number < currentNumber) {
+            p.page_number += 1;
+          }
+          p.updated_at = new Date().toISOString();
+        });
+        
+        localStorage.setItem('comic_pages', JSON.stringify(pages));
+        return;
+      }
+
+      const { error } = await supabase.rpc('move_comic_page', {
+        p_episode_id: episodeId,
+        p_page_id: pageId,
+        p_new_number: newPageNumber
+      });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error moving page:', error);
+      throw error;
+    }
+  }
+
+  // Smart update that handles page number changes safely
+  static async updatePageSmart(id: string, updates: Partial<ComicPage>): Promise<ComicPage> {
+    try {
+      // Get current page info
+      const storedPages = localStorage.getItem('comic_pages');
+      let currentPage: ComicPage | null = null;
+      
+      if (shouldUseLocalStorage()) {
+        const pages: ComicPage[] = storedPages ? JSON.parse(storedPages) : [];
+        currentPage = pages.find(p => p.id === id) || null;
+      } else {
+        const { data, error } = await supabase
+          .from('comic_pages')
+          .select('*')
+          .eq('id', id)
+          .single();
+        
+        if (error) throw error;
+        currentPage = data;
+      }
+      
+      if (!currentPage) throw new Error('Page not found');
+      
+      // If page number is being changed, use movePage first
+      if (updates.page_number && updates.page_number !== currentPage.page_number) {
+        await this.movePage(currentPage.episode_id, id, updates.page_number);
+        
+        // Remove page_number from updates since it's already been handled
+        const { page_number, ...otherUpdates } = updates;
+        
+        // Update other fields if any remain
+        if (Object.keys(otherUpdates).length > 0) {
+          return await this.updatePage(id, otherUpdates);
+        } else {
+          // Fetch and return the updated page
+          if (shouldUseLocalStorage()) {
+            const pages: ComicPage[] = JSON.parse(localStorage.getItem('comic_pages') || '[]');
+            return pages.find(p => p.id === id) || currentPage;
+          } else {
+            const { data, error } = await supabase
+              .from('comic_pages')
+              .select('*')
+              .eq('id', id)
+              .single();
+            
+            if (error) throw error;
+            return data;
+          }
+        }
+      } else {
+        // No page number change, use normal update
+        return await this.updatePage(id, updates);
+      }
+    } catch (error) {
+      console.error('Error in smart page update:', error);
+      throw error;
+    }
+  }
+
   static async deletePage(id: string): Promise<void> {
     try {
       if (shouldUseLocalStorage()) {

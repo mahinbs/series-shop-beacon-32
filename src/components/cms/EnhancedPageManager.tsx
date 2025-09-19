@@ -122,7 +122,7 @@ export const EnhancedPageManager = ({
     if (!editingPage) return;
 
     try {
-      await ComicService.updatePage(editingPage.id, {
+      await ComicService.updatePageSmart(editingPage.id, {
         page_number: editingPage.page_number,
         image_url: editingPage.image_url,
         alt_text: editingPage.alt_text
@@ -168,10 +168,7 @@ export const EnhancedPageManager = ({
     if (!prevPage) return;
 
     try {
-      await Promise.all([
-        ComicService.updatePage(page.id, { page_number: page.page_number - 1 }),
-        ComicService.updatePage(prevPage.id, { page_number: prevPage.page_number + 1 })
-      ]);
+      await ComicService.movePage(page.episode_id, page.id, page.page_number - 1);
       loadPages();
     } catch (error) {
       toast({
@@ -187,10 +184,7 @@ export const EnhancedPageManager = ({
     if (!nextPage) return;
 
     try {
-      await Promise.all([
-        ComicService.updatePage(page.id, { page_number: page.page_number + 1 }),
-        ComicService.updatePage(nextPage.id, { page_number: nextPage.page_number - 1 })
-      ]);
+      await ComicService.movePage(page.episode_id, page.id, page.page_number + 1);
       loadPages();
     } catch (error) {
       toast({
