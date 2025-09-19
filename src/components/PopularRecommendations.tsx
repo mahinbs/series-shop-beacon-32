@@ -304,8 +304,7 @@ const PopularRecommendations = () => {
                       
                       {/* Popular badge */}
                       <div className="absolute top-3 left-3 z-10">
-                        <span className="bg-gradient-to-r from-orange-600 to-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse flex items-center gap-1">
-                          <Star className="w-3 h-3" />
+                        <span className="bg-gradient-to-r from-orange-600 to-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
                           POPULAR
                         </span>
                       </div>
