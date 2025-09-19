@@ -163,7 +163,7 @@ const FeaturedSeries = () => {
         <div className="flex items-center justify-between mb-12">
           <div>
             <h2 className="text-3xl font-bold text-white">
-              {activeConfig?.title || 'Featured Series'}
+              Featured Series
             </h2>
             {activeConfig?.description && (
               <p className="text-gray-300 mt-2 max-w-2xl">
@@ -199,35 +199,66 @@ const FeaturedSeries = () => {
               return (
             <div
               key={series.id}
-              className="bg-gray-800 rounded-lg overflow-hidden cursor-pointer hover:transform hover:scale-105 transition-transform duration-300 group"
-                  onClick={() => navigate(`/series/${series.id}`)}
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 border border-gray-700 hover:border-red-500/50 cursor-pointer group"
+              onClick={() => navigate(`/series/${series.id}`)}
             >
-              {/* Image with Badge */}
               <div className="relative">
                 <img
-                      src={series.cover_image_url || "/placeholder.svg"}
+                  src={series.cover_image_url || "/placeholder.svg"}
                   alt={series.title}
-                  className="w-full h-64 object-cover group-hover:scale-105 transition-transform duration-300"
+                  className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-300"
                 />
                 
-                {/* Enhanced hover overlay with series details */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
-                  <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-                    <h3 className="text-lg font-bold text-red-300">{series.title}</h3>
-                    <p className="text-xs text-gray-300 line-clamp-2">{series.description}</p>
-                    <div className="flex items-center justify-between">
-                          <span className="text-xs text-gray-400 uppercase">{series.genre?.[0] || 'Action'}</span>
-                          <span className="text-xs text-gray-400">{series.total_episodes} episodes</span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-400 uppercase">{series.status}</span>
-                    </div>
-                  </div>
+                {/* Badge */}
+                <div className={`absolute top-4 right-4 ${badgeInfo.color} text-white px-3 py-1 rounded-full text-sm font-medium`}>
+                  {badgeInfo.text}
                 </div>
                 
-                    <div className={`absolute top-3 right-3 ${badgeInfo.color} text-white px-3 py-1 rounded-full text-sm font-medium`}>
-                      {badgeInfo.text}
+                {/* Hover Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-8">
+                  <Button 
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/readers/${series.slug}`);
+                    }}
+                  >
+                    <Play className="w-4 h-4 mr-2" />
+                    Watch Now
+                  </Button>
                 </div>
+              </div>
+              
+              <div className="p-6">
+                <h3 className="text-xl font-bold text-white mb-2">{series.title}</h3>
+                <p className="text-gray-400 text-sm mb-4 line-clamp-2">{series.description}</p>
+                
+                {/* Tags */}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {series.tags?.slice(0, 3).map((tag) => (
+                    <span key={tag} className="bg-gray-700 text-gray-300 px-2 py-1 rounded-md text-xs">
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+                
+                {/* Meta Info */}
+                <div className="flex items-center justify-between text-sm text-gray-400 mb-4">
+                  <span>{series.total_episodes} Episodes</span>
+                  <span className="capitalize">{series.status}</span>
+                </div>
+                
+                {/* Read Button */}
+                <Button 
+                  className="w-full bg-red-600 hover:bg-red-700 text-white"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    navigate(`/readers/${series.slug}`);
+                  }}
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Read Now
+                </Button>
               </div>
             </div>
               );
