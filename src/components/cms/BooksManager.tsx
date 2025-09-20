@@ -134,6 +134,7 @@ export const BooksManager = () => {
   });
 
   const resetForm = () => {
+    console.log('Resetting form and closing form');
     setFormData({
       title: '',
       author: '',
@@ -945,10 +946,11 @@ export const BooksManager = () => {
               <Database className="h-4 w-4" />
               {testing ? 'Testing...' : 'Test DB'}
             </Button>
-            <Button 
+            <Button
               onClick={() => {
-                console.log('Add Book button clicked');
+                console.log('Add Book button clicked, showAddForm before:', showAddForm);
                 setShowAddForm(true);
+                console.log('setShowAddForm(true) called');
               }}
               className="flex items-center gap-2"
               disabled={submitting}
@@ -1027,7 +1029,7 @@ export const BooksManager = () => {
         </CardContent>
       </Card>
 
-      {showAddForm && (
+      {(console.log('showAddForm value:', showAddForm), showAddForm) && (
         <Card className="border-2 border-blue-500">
           <CardHeader className="flex flex-row items-center justify-between">
             <div>
