@@ -1,4 +1,4 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ZoomIn, ZoomOut, Download, Share2, Bookmark, Book, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState } from 'react';
@@ -6,9 +6,18 @@ import { useState } from 'react';
 const ReadersMode = () => {
   const { seriesTitle } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
   const [currentPage, setCurrentPage] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [viewMode, setViewMode] = useState<'pdf' | 'page'>('pdf');
+
+  // Get the previous page from location state or default to home
+  const getBackPath = () => {
+    if (location.state?.from === 'popular-recommendations') {
+      return '/'; // Go back to home page where PopularRecommendations is
+    }
+    return '/our-series'; // Default fallback
+  };
 
   // Mock series data with pages
   const seriesData = {
@@ -56,7 +65,7 @@ const ReadersMode = () => {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => navigate('/our-series')}
+            onClick={() => navigate(getBackPath())}
             className="text-white hover:bg-gray-800"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />

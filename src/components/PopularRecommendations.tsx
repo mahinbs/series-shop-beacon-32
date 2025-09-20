@@ -618,7 +618,9 @@ const PopularRecommendations = () => {
                           <div className="flex gap-3">
                             <Button 
                               className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border border-red-500/30"
-                              onClick={() => navigate(`/readers/${series.title.toLowerCase().replace(/\s+/g, '-')}`)}
+                              onClick={() => navigate(`/readers/${series.title.toLowerCase().replace(/\s+/g, '-')}`, { 
+                                state: { from: 'popular-recommendations' } 
+                              })}
                             >
                               <BookOpen className="w-4 h-4 mr-2" />
                               Read Now
