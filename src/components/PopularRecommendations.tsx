@@ -581,33 +581,6 @@ const PopularRecommendations = () => {
                             className="w-full h-48 object-cover transition-all duration-700 group-hover:scale-110"
                           />
                           
-                          {/* Hover Overlay */}
-                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                            <div className="flex gap-2">
-                              <Button
-                                size="sm"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleAddToCart(book);
-                                }}
-                                className="bg-red-600 hover:bg-red-700 text-white"
-                              >
-                                <ShoppingCart className="w-4 h-4 mr-2" />
-                                Add to Cart
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleWishlistToggle(book);
-                                }}
-                                className="border-white/20 text-white hover:bg-white/10"
-                              >
-                                <Heart className={`w-4 h-4 ${isInWishlist(book.id) ? 'fill-red-500 text-red-500' : ''}`} />
-                              </Button>
-                            </div>
-                          </div>
                           
                           {/* Trending Badge */}
                           <div className="absolute top-3 right-3">
