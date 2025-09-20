@@ -13,14 +13,57 @@ const SimpleProductGrid = () => {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [activeTab] = useState<'books' | 'merchandise'>('books');
+  const [activeSection, setActiveSection] = useState('new-releases');
   const [hoveredBook, setHoveredBook] = useState<string | null>(null);
 
-  // Show all products (deduplicated)
+  // Filter products based on selected section and tab
   const getFilteredProducts = () => {
     if (!books || books.length === 0) return [];
     
-    // Show all products (deduplicated)
-    const deduplicatedProducts = books.reduce((acc: any[], product: any) => {
+    // Filter by product type first
+    let filteredProducts = books;
+    if (activeTab === 'books') {
+      filteredProducts = books.filter(book => (book.product_type || 'book') === 'book');
+    } else if (activeTab === 'merchandise') {
+      filteredProducts = books.filter(book => (book.product_type || 'book') === 'merchandise');
+    }
+    
+    // If "all" is selected, show all products of the selected type (deduplicated)
+    if (activeSection === 'all') {
+      const deduplicatedProducts = filteredProducts.reduce((acc: any[], product: any) => {
+        const baseTitle = removeVolumeFromTitle(product.title);
+        const existingProduct = acc.find(p => removeVolumeFromTitle(p.title) === baseTitle);
+        
+        if (!existingProduct) {
+          acc.push(product);
+        }
+        return acc;
+      }, []);
+      
+      return deduplicatedProducts;
+    }
+    
+    // Filter by section
+    const sectionProducts = filteredProducts.filter(product => product.section_type === activeSection);
+    
+    // If no products in current section, show all products of the selected type for debugging (deduplicated)
+    if (sectionProducts.length === 0 && filteredProducts.length > 0) {
+      const deduplicatedProducts = filteredProducts.reduce((acc: any[], product: any) => {
+        const baseTitle = removeVolumeFromTitle(product.title);
+        const existingProduct = acc.find(p => removeVolumeFromTitle(p.title) === baseTitle);
+        
+        if (!existingProduct) {
+          acc.push(product);
+        }
+        return acc;
+      }, []);
+      
+      return deduplicatedProducts;
+    }
+    
+    // Deduplicate products by removing volume information from titles
+    const deduplicatedProducts = sectionProducts.reduce((acc: any[], product: any) => {
       const baseTitle = removeVolumeFromTitle(product.title);
       const existingProduct = acc.find(p => removeVolumeFromTitle(p.title) === baseTitle);
       
@@ -130,6 +173,52 @@ const SimpleProductGrid = () => {
     <section className="relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 py-12 overflow-hidden">
       <div className="container mx-auto px-4 relative z-10">
 
+        {/* Section Navigation */}
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex space-x-6">
+            <button 
+              onClick={() => setActiveSection('new-releases')}
+              className={`font-semibold pb-2 transition-all duration-300 ${
+                activeSection === 'new-releases' ? 'text-red-500' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              New Releases
+            </button>
+            <button 
+              onClick={() => setActiveSection('best-sellers')}
+              className={`font-semibold pb-2 transition-all duration-300 ${
+                activeSection === 'best-sellers' ? 'text-red-500' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Best Sellers
+            </button>
+            <button 
+              onClick={() => setActiveSection('leaving-soon')}
+              className={`font-semibold pb-2 transition-all duration-300 ${
+                activeSection === 'leaving-soon' ? 'text-red-500' : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Leaving Soon
+            </button>
+            {books && books.length > 0 && filteredProducts.length === 0 && (
+              <button 
+                onClick={() => setActiveSection('all')}
+                className={`font-semibold pb-2 transition-all duration-300 ${
+                  activeSection === 'all' ? 'text-red-500' : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                All {activeTab === 'books' ? 'Books' : 'Merchandise'}
+              </button>
+            )}
+          </div>
+          <button 
+            onClick={() => window.location.href = '/shop-all'}
+            className="text-red-500 hover:text-red-400 text-sm font-medium transition-colors duration-200"
+          >
+            View All
+          </button>
+        </div>
+
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {filteredProducts.length > 0 ? (
@@ -231,7 +320,7 @@ const SimpleProductGrid = () => {
                       }`} />
                     </button>
                   </div>
-                  {product.author && (
+                  {activeTab === 'books' && product.author && (
                     <p className="text-gray-400 text-sm">{product.author}</p>
                   )}
                   <p className="text-gray-500 text-xs uppercase tracking-wide">{product.category}</p>
@@ -275,13 +364,28 @@ const SimpleProductGrid = () => {
             ))
           ) : (
             <div className="col-span-full text-center py-12">
-              <div className="text-white text-lg">No products available</div>
+              <div className="text-white text-lg">No {activeTab} in "{activeSection.replace('-', ' ')}" section</div>
               <div className="text-gray-400 text-sm mt-2">
-                Total products available: {books?.length || 0}
+                Total {activeTab} available: {books?.filter(book => (book.product_type || 'book') === (activeTab === 'books' ? 'book' : 'merchandise')).length || 0}
               </div>
+              {books && books.length > 0 && (
+                <div className="text-gray-400 text-sm mt-1">
+                  Available sections: {books.filter(book => (book.product_type || 'book') === (activeTab === 'books' ? 'book' : 'merchandise')).map(b => b.section_type).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
+                </div>
+              )}
               {books && books.length === 0 && (
                 <div className="text-gray-400 text-sm mt-1">
-                  No products found in database. Please add products through the admin panel.
+                  No {activeTab} found in database. Please add {activeTab} through the admin panel.
+                </div>
+              )}
+              {books && books.length > 0 && (
+                <div className="mt-4">
+                  <button 
+                    onClick={() => setActiveSection('all')}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
+                  >
+                    View All {activeTab === 'books' ? 'Books' : 'Merchandise'} ({books.filter(book => (book.product_type || 'book') === (activeTab === 'books' ? 'book' : 'merchandise')).length})
+                  </button>
                 </div>
               )}
             </div>
