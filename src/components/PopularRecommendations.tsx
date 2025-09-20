@@ -762,7 +762,16 @@ const PopularRecommendations = () => {
                 ) : (
                   /* Popular Recommendations from Database */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {books.map((book, index) => (
+                {books.filter(book => {
+                  if (selectedFilter === "digital") {
+                    return book.product_type === "digital";
+                  } else if (selectedFilter === "print") {
+                    return book.product_type === "print";
+                  } else if (selectedFilter === "merchandise") {
+                    return book.product_type === "merchandise";
+                  }
+                  return true; // Show all if no filter
+                }).map((book, index) => (
                   <div
                     key={book.id}
                     className={`group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 h-[520px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30 cursor-pointer ${
@@ -984,6 +993,23 @@ const PopularRecommendations = () => {
                   </div>
                 ))}
                   </div>
+                  
+                  {/* No books message for filtered results */}
+                  {books.filter(book => {
+                    if (selectedFilter === "digital") {
+                      return book.product_type === "digital";
+                    } else if (selectedFilter === "print") {
+                      return book.product_type === "print";
+                    } else if (selectedFilter === "merchandise") {
+                      return book.product_type === "merchandise";
+                    }
+                    return true;
+                  }).length === 0 && (
+                    <div className="col-span-full text-center py-12">
+                      <div className="text-white text-lg">No {selectedFilter} books available</div>
+                      <div className="text-gray-400 text-sm mt-2">Check back later for new releases!</div>
+                    </div>
+                  )}
                 )}
               </>
             ) : (
