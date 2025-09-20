@@ -633,13 +633,13 @@ const PopularRecommendations = () => {
                 ) : selectedFilter === "merchandise" ? (
                   /* Merchandise Grid */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {merchandise.map((item, index) => (
+                    {books.filter(book => book.product_type === 'merchandise').map((item, index) => (
                       <div
                         key={item.id}
                         className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
                         onMouseEnter={() => setHoveredSeries(item.id)}
                         onMouseLeave={() => setHoveredSeries(null)}
-                        onClick={() => handleMerchandiseClick(item.id)}
+                        onClick={() => handleViewProduct(item)}
                         style={{ 
                           transitionDelay: `${index * 100}ms`,
                           opacity: 1,
@@ -649,7 +649,7 @@ const PopularRecommendations = () => {
                         {/* Image Section with Badges */}
                         <div className="relative overflow-hidden">
                           <img 
-                            src={item.imageUrl} 
+                            src={item.image_url} 
                             alt={item.title}
                             className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
                           />
@@ -657,11 +657,11 @@ const PopularRecommendations = () => {
                           {/* Stock Status Badge */}
                           <div className="absolute top-3 left-3">
                             <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
-                              item.inStock 
+                              item.stock_quantity && item.stock_quantity > 0
                                 ? 'bg-gradient-to-r from-green-600 to-green-700 text-white' 
                                 : 'bg-gradient-to-r from-red-600 to-red-700 text-white animate-pulse'
                             }`}>
-                              {item.inStock ? 'In Stock' : 'Out of Stock'}
+                              {item.stock_quantity && item.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
                             </span>
                           </div>
 
@@ -678,11 +678,11 @@ const PopularRecommendations = () => {
                               <div className="space-y-2">
                                 <div className="flex items-center text-white text-sm">
                                   <Star className="w-4 h-4 mr-2 text-yellow-400" />
-                                  {item.rating}/5 Rating
+                                  4.5/5 Rating
                                 </div>
                                 <div className="flex items-center text-white text-sm">
                                   <Users className="w-4 h-4 mr-2" />
-                                  {item.reviews} Reviews
+                                  New Product
                                 </div>
                               </div>
                             </div>
@@ -699,7 +699,7 @@ const PopularRecommendations = () => {
                             {item.title}
                           </h3>
                           <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">
-                            {item.type}
+                            {item.category || 'Merchandise'}
                           </p>
                           <p className="text-gray-500 text-xs line-clamp-2 group-hover:text-gray-400 transition-colors duration-300">
                             {item.description}
@@ -707,24 +707,24 @@ const PopularRecommendations = () => {
                           
                           <div className="flex items-center justify-between pt-2">
                             <div className="text-gray-400 text-xs">
-                              {item.reviews} reviews
+                              New Product
                             </div>
                             <Button 
                               size="sm" 
-                              disabled={!item.inStock}
+                              disabled={!(item.stock_quantity && item.stock_quantity > 0)}
                               className={`${
-                                item.inStock 
+                                item.stock_quantity && item.stock_quantity > 0
                                   ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white' 
                                   : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                               } text-xs font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                if (item.inStock) {
-                                  handleMerchandiseClick(item.id);
+                                if (item.stock_quantity && item.stock_quantity > 0) {
+                                  handleAddToCart(item);
                                 }
                               }}
                             >
-                              {item.inStock ? 'Add to Cart' : 'Out of Stock'}
+                              {item.stock_quantity && item.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
                             </Button>
                           </div>
                         </div>

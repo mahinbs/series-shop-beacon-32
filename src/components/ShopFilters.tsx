@@ -67,29 +67,13 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
       console.log('✅ Loaded dynamic filters:', filtersData);
       console.log('✅ Loaded dynamic sorts:', sortsData);
       
-      // Reset UI state on refresh
-      if (isRefresh) {
-        setActiveCategory('All');
-        setSelectedFilters([]);
-        setSearchTerm('');
-        onSearchChange?.('');
-        onFiltersApply?.([]);
-        console.log('🔄 Reset UI state on refresh');
-        
-        toast({
-          title: "Refreshed",
-          description: "Shop filters and sorts have been refreshed successfully",
-        });
-      }
     } catch (error) {
       console.error('❌ Error loading Shop All data:', error);
-      if (isRefresh) {
-        toast({
-          title: "Refresh Failed",
-          description: "Failed to refresh shop data. Please try again.",
-          variant: "destructive",
-        });
-      }
+      toast({
+        title: "Failed to load data",
+        description: "Failed to load shop data. Please try again.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }
