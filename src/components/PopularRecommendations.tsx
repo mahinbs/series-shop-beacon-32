@@ -4,17 +4,15 @@ import type { Book as BookType } from "@/services/database";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, Eye, Heart, Diamond, Star, Users } from "lucide-react";
+import { ShoppingCart, Eye, Heart, Diamond } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { removeVolumeFromTitle } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 const PopularRecommendations = () => {
   const [books, setBooks] = useState<BookType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredBook, setHoveredBook] = useState<string | null>(null);
-  const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<
     "digital" | "print" | "merchandise"
   >("digital");
@@ -347,70 +345,6 @@ const PopularRecommendations = () => {
     },
   ];
 
-  // Merchandise data
-  const merchandise = [
-    {
-      id: "merch-1",
-      title: "Demon Slayer Tanjiro Figure",
-      type: "Action Figure",
-      category: "MERCHANDISE",
-      price: "$49.99",
-      imageUrl: "/lovable-uploads/6ce223e4-a7e8-4282-a3a6-0f55f5341a03.png",
-      description: "High-quality collectible figure of Tanjiro from Demon Slayer",
-      inStock: true,
-      rating: 4.8,
-      reviews: 124,
-    },
-    {
-      id: "merch-2", 
-      title: "Naruto Headband",
-      type: "Accessory",
-      category: "MERCHANDISE",
-      price: "$19.99",
-      imageUrl: "/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png",
-      description: "Authentic Konoha headband replica from Naruto series",
-      inStock: true,
-      rating: 4.6,
-      reviews: 89,
-    },
-    {
-      id: "merch-3",
-      title: "One Piece Mug",
-      type: "Drinkware", 
-      category: "MERCHANDISE",
-      price: "$24.99",
-      imageUrl: "/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png",
-      description: "Ceramic mug featuring Luffy and the Straw Hat Pirates",
-      inStock: false,
-      rating: 4.7,
-      reviews: 156,
-    },
-  ];
-
-  const handleMerchandiseClick = (merchandiseId: string) => {
-    // Find the merchandise item
-    const merchandiseItem = merchandise.find(item => item.id === merchandiseId);
-    if (merchandiseItem) {
-      navigate(`/merchandise/${merchandiseId}`, {
-        state: {
-          product: {
-            id: merchandiseItem.id,
-            title: merchandiseItem.title,
-            category: merchandiseItem.category,
-            type: merchandiseItem.type,
-            description: merchandiseItem.description,
-            imageUrl: merchandiseItem.imageUrl,
-            rating: merchandiseItem.rating,
-            reviews: merchandiseItem.reviews.toString(),
-            price: merchandiseItem.price,
-            priceValue: parseFloat(merchandiseItem.price.replace('$', '')),
-            inStock: merchandiseItem.inStock
-          }
-        }
-      });
-    }
-  };
-
   return (
     <section
       ref={elementRef}
@@ -534,111 +468,8 @@ const PopularRecommendations = () => {
         ) : (
           <>
             {activeTab === "recommendations" ? (
-              <>
-                {selectedFilter === "merchandise" ? (
-                  /* Merchandise Grid */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {merchandise.map((item, index) => (
-                      <div
-                        key={item.id}
-                        className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
-                        onMouseEnter={() => setHoveredSeries(item.id)}
-                        onMouseLeave={() => setHoveredSeries(null)}
-                        onClick={() => handleMerchandiseClick(item.id)}
-                        style={{ 
-                          transitionDelay: `${index * 100}ms`,
-                          opacity: 1,
-                          transform: 'translateY(0)'
-                        }}
-                      >
-                        {/* Image Section with Badges */}
-                        <div className="relative overflow-hidden">
-                          <img 
-                            src={item.imageUrl} 
-                            alt={item.title}
-                            className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
-                          />
-                          
-                          {/* Stock Status Badge */}
-                          <div className="absolute top-3 left-3">
-                            <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
-                              item.inStock 
-                                ? 'bg-gradient-to-r from-green-600 to-green-700 text-white' 
-                                : 'bg-gradient-to-r from-red-600 to-red-700 text-white animate-pulse'
-                            }`}>
-                              {item.inStock ? 'In Stock' : 'Out of Stock'}
-                            </span>
-                          </div>
-
-                          {/* Price Badge */}
-                          <div className="absolute top-3 right-3">
-                            <span className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                              {item.price}
-                            </span>
-                          </div>
-
-                          {/* Hover overlay with stats */}
-                          {hoveredSeries === item.id && (
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                              <div className="space-y-2">
-                                <div className="flex items-center text-white text-sm">
-                                  <Star className="w-4 h-4 mr-2 text-yellow-400" />
-                                  {item.rating}/5 Rating
-                                </div>
-                                <div className="flex items-center text-white text-sm">
-                                  <Users className="w-4 h-4 mr-2" />
-                                  {item.reviews} Reviews
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Content Section */}
-                        <div className="p-5 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <span className="text-red-400 text-xs font-semibold uppercase tracking-wide">{item.category}</span>
-                          </div>
-                          
-                          <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-300 transition-colors duration-300">
-                            {item.title}
-                          </h3>
-                          <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">
-                            {item.type}
-                          </p>
-                          <p className="text-gray-500 text-xs line-clamp-2 group-hover:text-gray-400 transition-colors duration-300">
-                            {item.description}
-                          </p>
-                          
-                          <div className="flex items-center justify-between pt-2">
-                            <div className="text-gray-400 text-xs">
-                              {item.reviews} reviews
-                            </div>
-                            <Button 
-                              size="sm" 
-                              disabled={!item.inStock}
-                              className={`${
-                                item.inStock 
-                                  ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white' 
-                                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                              } text-xs font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25`}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (item.inStock) {
-                                  handleMerchandiseClick(item.id);
-                                }
-                              }}
-                            >
-                              {item.inStock ? 'Add to Cart' : 'Out of Stock'}
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  /* Popular Recommendations from Database */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              /* Popular Recommendations from Database */
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {books.map((book, index) => (
                   <div
                     key={book.id}
@@ -845,9 +676,7 @@ const PopularRecommendations = () => {
                     </div>
                   </div>
                 ))}
-                  </div>
-                )}
-              </>
+              </div>
             ) : (
               /* Genre-based Content */
               <div className="space-y-12">

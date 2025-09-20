@@ -13,17 +13,21 @@ const SimpleProductGrid = () => {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
   const { toast } = useToast();
-  // Default to books since we removed the tab buttons
-  const activeTab = 'books';
+  const [activeTab, setActiveTab] = useState<'books' | 'merchandise'>('books');
   const [activeSection, setActiveSection] = useState('new-releases');
   const [hoveredBook, setHoveredBook] = useState<string | null>(null);
 
-  // Filter products based on selected section (only books now)
+  // Filter products based on selected section and tab
   const getFilteredProducts = () => {
     if (!books || books.length === 0) return [];
     
-    // Only show books since we removed the merchandise option
-    let filteredProducts = books.filter(book => (book.product_type || 'book') === 'book');
+    // Filter by product type first
+    let filteredProducts = books;
+    if (activeTab === 'books') {
+      filteredProducts = books.filter(book => (book.product_type || 'book') === 'book');
+    } else if (activeTab === 'merchandise') {
+      filteredProducts = books.filter(book => (book.product_type || 'book') === 'merchandise');
+    }
     
     // If "all" is selected, show all products of the selected type (deduplicated)
     if (activeSection === 'all') {
@@ -168,6 +172,37 @@ const SimpleProductGrid = () => {
   return (
     <section className="relative bg-gradient-to-b from-gray-900 via-gray-900 to-gray-800 py-12 overflow-hidden">
       <div className="container mx-auto px-4 relative z-10">
+        {/* Product Type Tabs */}
+        <div className="flex items-center justify-center mb-8">
+          <div className="flex space-x-4 bg-gray-800 p-1 rounded-lg">
+            <button 
+              onClick={() => {
+                setActiveTab('books');
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-300 ${
+                activeTab === 'books' 
+                  ? 'bg-red-600 text-white shadow-lg' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              <BookOpen className="h-4 w-4" />
+              Books
+            </button>
+            <button 
+              onClick={() => {
+                setActiveTab('merchandise');
+              }}
+              className={`flex items-center gap-2 px-4 py-2 rounded-md transition-all duration-300 ${
+                activeTab === 'merchandise' 
+                  ? 'bg-red-600 text-white shadow-lg' 
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              <ShoppingBag className="h-4 w-4" />
+              Merchandise
+            </button>
+          </div>
+        </div>
 
         {/* Section Navigation */}
         <div className="flex items-center justify-between mb-8">
@@ -380,7 +415,7 @@ const SimpleProductGrid = () => {
                     onClick={() => setActiveSection('all')}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
                   >
-                    View All Books ({books.filter(book => (book.product_type || 'book') === 'book').length})
+                    View All {activeTab === 'books' ? 'Books' : 'Merchandise'} ({books.filter(book => (book.product_type || 'book') === (activeTab === 'books' ? 'book' : 'merchandise')).length})
                   </button>
                 </div>
               )}
