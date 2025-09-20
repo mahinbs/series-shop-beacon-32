@@ -875,67 +875,71 @@ const PopularRecommendations = () => {
                       </div>
                     </div>
 
-                    <div className="p-4 space-y-3 flex-1 flex flex-col">
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-white font-semibold text-base group-hover:text-orange-300 transition-colors duration-300 line-clamp-2 flex-1 mr-2">
-                          {removeVolumeFromTitle(book.title)}
-                        </h3>
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleWishlistToggle(book);
-                          }}
-                          className={`transition-all duration-300 transform hover:scale-110 w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full ${
-                            isInWishlist(book.id)
-                              ? "text-red-500 hover:text-red-400 hover:bg-red-500/20"
-                              : "text-gray-400 hover:text-red-500 hover:bg-red-500/10"
-                          }`}
-                          title={
-                            isInWishlist(book.id)
-                              ? "Remove from Wishlist"
-                              : "Add to Wishlist"
-                          }
-                        >
-                          <Diamond
-                            className={`w-4 h-4 transition-transform duration-300 ${
+                    <div className="p-4 flex-1 flex flex-col">
+                      {/* Content Section */}
+                      <div className="space-y-3 flex-1">
+                        <div className="flex items-center justify-between">
+                          <h3 className="text-white font-semibold text-base group-hover:text-orange-300 transition-colors duration-300 line-clamp-2 flex-1 mr-2">
+                            {removeVolumeFromTitle(book.title)}
+                          </h3>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleWishlistToggle(book);
+                            }}
+                            className={`transition-all duration-300 transform hover:scale-110 w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full ${
                               isInWishlist(book.id)
-                                ? "fill-current animate-pulse"
-                                : "group-hover:animate-pulse"
+                                ? "text-red-500 hover:text-red-400 hover:bg-red-500/20"
+                                : "text-gray-400 hover:text-red-500 hover:bg-red-500/10"
                             }`}
-                          />
-                        </button>
-                      </div>
+                            title={
+                              isInWishlist(book.id)
+                                ? "Remove from Wishlist"
+                                : "Add to Wishlist"
+                            }
+                          >
+                            <Diamond
+                              className={`w-4 h-4 transition-transform duration-300 ${
+                                isInWishlist(book.id)
+                                  ? "fill-current animate-pulse"
+                                  : "group-hover:animate-pulse"
+                              }`}
+                            />
+                          </button>
+                        </div>
 
-                      {book.author && (
-                        <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">
-                          by {book.author}
+                        {book.author && (
+                          <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">
+                            by {book.author}
+                          </p>
+                        )}
+
+                        <p className="text-orange-400 text-xs font-semibold uppercase tracking-wide">
+                          {book.category || "General"}
                         </p>
-                      )}
 
-                      <p className="text-orange-400 text-xs font-semibold uppercase tracking-wide">
-                        {book.category || "General"}
-                      </p>
-
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-white font-bold text-xl">
-                            ${book.price}
-                          </span>
-                          {book.original_price && (
-                            <span className="text-gray-500 line-through text-sm">
-                              ${book.original_price}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-2">
+                            <span className="text-white font-bold text-xl">
+                              ${book.price}
+                            </span>
+                            {book.original_price && (
+                              <span className="text-gray-500 line-through text-sm">
+                                ${book.original_price}
+                              </span>
+                            )}
+                          </div>
+                          {book.can_unlock_with_coins && (
+                            <span className="text-gray-400 text-xs">
+                              {book.coins ||
+                                `${Math.round(book.price * 100)} coins`}
                             </span>
                           )}
                         </div>
-                        {book.can_unlock_with_coins && (
-                          <span className="text-gray-400 text-xs">
-                            {book.coins ||
-                              `${Math.round(book.price * 100)} coins`}
-                          </span>
-                        )}
                       </div>
 
-                      <div className="flex flex-col space-y-2 pt-1 mt-auto">
+                      {/* Button Section - Always at bottom */}
+                      <div className="flex flex-col space-y-2 pt-2 mt-auto">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
