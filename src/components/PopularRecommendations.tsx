@@ -37,8 +37,7 @@ const PopularRecommendations = () => {
           .from("books")
           .select("*")
           .eq("is_active", true)
-          .order("display_order", { ascending: true })
-          .limit(6);
+          .order("display_order", { ascending: true });
 
         if (error) {
           console.error("Error fetching popular books:", error);
