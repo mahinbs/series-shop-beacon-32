@@ -133,8 +133,8 @@ export const BooksManager = () => {
     stock_quantity: 0
   });
 
-  const resetForm = () => {
-    console.log('Resetting form and closing form');
+  const resetFormData = () => {
+    console.log('Resetting form data only');
     setFormData({
       title: '',
       author: '',
@@ -163,7 +163,6 @@ export const BooksManager = () => {
       stock_quantity: 0
     });
     setEditingId(null);
-    setShowAddForm(false);
     setCharacters([]);
     setOriginalCharacters([]);
     setShowCharacterForm(false);
@@ -463,7 +462,8 @@ export const BooksManager = () => {
           description: "Book created successfully",
         });
       }
-      resetForm();
+      resetFormData();
+      setShowAddForm(false);
       await loadBooks();
     } catch (error) {
       console.error('Error saving book:', error);
@@ -947,8 +947,11 @@ export const BooksManager = () => {
               {testing ? 'Testing...' : 'Test DB'}
             </Button>
             <Button
-              onClick={() => {
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
                 console.log('Add Book button clicked, showAddForm before:', showAddForm);
+                resetFormData(); // Reset form data first
                 setShowAddForm(true);
                 console.log('setShowAddForm(true) called');
               }}
@@ -1039,7 +1042,12 @@ export const BooksManager = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={resetForm}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                resetFormData();
+                setShowAddForm(false);
+              }}
               className="flex items-center gap-2"
             >
               <X className="h-4 w-4" />
@@ -1623,7 +1631,12 @@ export const BooksManager = () => {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={resetForm}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    resetFormData();
+                    setShowAddForm(false);
+                  }}
                   disabled={submitting}
                 >
                   Cancel
