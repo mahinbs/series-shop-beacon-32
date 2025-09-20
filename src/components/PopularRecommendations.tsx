@@ -576,9 +576,9 @@ const PopularRecommendations = () => {
                         {/* Image Section with Badges */}
                         <div className="relative overflow-hidden">
                           <img 
-                            src={book.image_url}
+                            src={book.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png'}
                             alt={book.title}
-                            className="w-full h-64 object-cover transition-all duration-700 group-hover:scale-110"
+                            className="w-full h-48 object-cover transition-all duration-700 group-hover:scale-110"
                           />
                           
                           {/* Hover Overlay */}
@@ -609,72 +609,70 @@ const PopularRecommendations = () => {
                             </div>
                           </div>
                           
-                          {/* Status Badges */}
-                          <div className="absolute top-3 left-3 flex flex-col gap-2">
-                            {book.is_new && (
-                              <Badge className="bg-green-500 hover:bg-green-600 text-white font-semibold">
-                                NEW
-                              </Badge>
-                            )}
-                            {book.is_on_sale && (
-                              <Badge className="bg-red-500 hover:bg-red-600 text-white font-semibold">
-                                SALE
-                              </Badge>
-                            )}
-                            <Badge className="bg-blue-500 hover:bg-blue-600 text-white font-semibold">
-                              PRINT
+                          {/* Trending Badge */}
+                          <div className="absolute top-3 right-3">
+                            <Badge className="bg-white text-black font-semibold px-3 py-1 rounded-full shadow-lg">
+                              Trending
                             </Badge>
                           </div>
                         </div>
                         
-                        {/* Content Section */}
-                        <div className="p-5">
-                          <div className="flex items-start justify-between mb-2">
-                            <h3 className="text-lg font-bold text-white group-hover:text-red-400 transition-colors duration-300 flex-1 leading-tight">
-                              {book.title}
-                            </h3>
+                        {/* Content Section - Shadow Hunter Chronicles Style */}
+                        <div className="p-6 bg-gradient-to-br from-gray-900/95 to-black/95">
+                          {/* Title */}
+                          <h3 className="text-xl font-bold text-white mb-3 group-hover:text-red-400 transition-colors duration-300">
+                            {book.title}
+                          </h3>
+                          
+                          {/* Description */}
+                          <p className="text-sm text-gray-300 mb-4 leading-relaxed">
+                            {book.description || `An epic adventure following the journey of ${book.author || 'the protagonist'}.`}
+                          </p>
+                          
+                          {/* Genre Tags */}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            <span className="px-3 py-1 bg-gray-700 text-gray-300 text-xs rounded-full">
+                              {book.category || 'Fantasy'}
+                            </span>
+                            <span className="px-3 py-1 bg-gray-700 text-gray-300 text-xs rounded-full">
+                              Adventure
+                            </span>
+                            <span className="px-3 py-1 bg-gray-700 text-gray-300 text-xs rounded-full">
+                              Print
+                            </span>
                           </div>
                           
-                          <p className="text-sm text-gray-400 mb-3">{book.author}</p>
-                          
-                          {book.description && (
-                            <p className="text-sm text-gray-300 mb-4 line-clamp-2 leading-relaxed">
-                              {book.description}
-                            </p>
-                          )}
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex flex-col">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xl font-bold text-red-400">
-                                  ${Number(book.price).toFixed(2)}
-                                </span>
-                                {book.original_price && Number(book.original_price) > Number(book.price) && (
-                                  <span className="text-sm text-gray-400 line-through">
-                                    ${Number(book.original_price).toFixed(2)}
-                                  </span>
-                                )}
-                              </div>
-                              {book.coins && (
-                                <div className="flex items-center gap-1 mt-1">
-                                  <Diamond className="w-3 h-3 text-blue-400" />
-                                  <span className="text-xs text-blue-400">{book.coins}</span>
-                                </div>
-                              )}
+                          {/* Series Details */}
+                          <div className="flex items-center justify-between mb-4">
+                            <div className="text-sm text-gray-400">
+                              {book.volume_number ? `${book.volume_number} Volumes` : '1 Volume'}
                             </div>
-                            
-                            <Button
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleViewProduct(book);
-                              }}
-                              className="bg-gray-700 hover:bg-gray-600 text-white"
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              View
-                            </Button>
+                            <div className="text-sm text-gray-400">
+                              {book.is_new ? 'New Release' : 'Available'}
+                            </div>
                           </div>
+                          
+                          {/* Price */}
+                          <div className="flex items-center justify-between mb-4">
+                            <span className="text-lg font-bold text-white">${book.price}</span>
+                            {book.original_price && (
+                              <span className="text-sm text-gray-400 line-through">${book.original_price}</span>
+                            )}
+                          </div>
+                          
+                          {/* Read Now Button */}
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              navigate(`/readers/${book.title.toLowerCase().replace(/\s+/g, '-')}`, { 
+                                state: { from: 'popular-recommendations' } 
+                              });
+                            }}
+                            className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/25"
+                          >
+                            <BookOpen className="w-4 h-4 mr-2" />
+                            Read Now
+                          </Button>
                         </div>
                       </div>
                     ))}
