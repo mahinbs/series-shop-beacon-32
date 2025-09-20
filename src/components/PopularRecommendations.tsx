@@ -4,7 +4,7 @@ import type { Book as BookType } from "@/services/database";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, Eye, Heart, Diamond, Star, BookOpen, Play, Clock } from "lucide-react";
+import { ShoppingCart, Eye, Heart, Diamond, Star, BookOpen, Play, Clock, Users } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { removeVolumeFromTitle } from "@/lib/utils";
@@ -15,6 +15,7 @@ const PopularRecommendations = () => {
   const [books, setBooks] = useState<BookType[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredBook, setHoveredBook] = useState<string | null>(null);
+  const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
   const [selectedFilter, setSelectedFilter] = useState<
     "digital" | "print" | "merchandise"
   >("digital");
@@ -384,6 +385,55 @@ const PopularRecommendations = () => {
     }
   ];
 
+  // Merchandise data
+  const merchandise = [
+    {
+      id: "merch-1",
+      title: "One Piece Figure Set",
+      category: "Figures",
+      type: "Collectibles",
+      description: "Premium quality figures featuring Luffy, Zoro, and Sanji from the Straw Hat Pirates.",
+      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
+      rating: 5,
+      price: "$89.99",
+      inStock: true,
+      reviews: "2.1K"
+    },
+    {
+      id: "merch-2", 
+      title: "Demon Slayer T-Shirt",
+      category: "Apparel",
+      type: "Clothing",
+      description: "Official Demon Slayer anime t-shirt with high-quality print and comfortable fit.",
+      imageUrl: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&h=600&fit=crop&crop=center",
+      rating: 4.8,
+      price: "$24.99",
+      inStock: true,
+      reviews: "1.5K"
+    },
+    {
+      id: "merch-3",
+      title: "Naruto Keychain Set",
+      category: "Accessories", 
+      type: "Collectibles",
+      description: "Exclusive Naruto character keychains with detailed designs and durable materials.",
+      imageUrl: "https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400&h=600&fit=crop&crop=center",
+      rating: 4.9,
+      price: "$12.99",
+      inStock: false,
+      reviews: "856"
+    }
+  ];
+
+  const handleMerchandiseClick = (merchandiseId: string) => {
+    const product = merchandise.find(item => item.id === merchandiseId);
+    if (product) {
+      navigate(`/merchandise/${merchandiseId}`, { 
+        state: { product } 
+      });
+    }
+  };
+
   return (
     <section
       ref={elementRef}
@@ -578,13 +628,114 @@ const PopularRecommendations = () => {
                       </div>
                     ))}
                   </div>
+                ) : selectedFilter === "merchandise" ? (
+                  /* Merchandise Grid */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {merchandise.map((item, index) => (
+                      <div
+                        key={item.id}
+                        className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
+                        onMouseEnter={() => setHoveredSeries(item.id)}
+                        onMouseLeave={() => setHoveredSeries(null)}
+                        onClick={() => handleMerchandiseClick(item.id)}
+                        style={{ 
+                          transitionDelay: `${index * 100}ms`,
+                          opacity: 1,
+                          transform: 'translateY(0)'
+                        }}
+                      >
+                        {/* Image Section with Badges */}
+                        <div className="relative overflow-hidden">
+                          <img 
+                            src={item.imageUrl} 
+                            alt={item.title}
+                            className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
+                          />
+                          
+                          {/* Stock Status Badge */}
+                          <div className="absolute top-3 left-3">
+                            <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
+                              item.inStock 
+                                ? 'bg-gradient-to-r from-green-600 to-green-700 text-white' 
+                                : 'bg-gradient-to-r from-red-600 to-red-700 text-white animate-pulse'
+                            }`}>
+                              {item.inStock ? 'In Stock' : 'Out of Stock'}
+                            </span>
+                          </div>
+
+                          {/* Price Badge */}
+                          <div className="absolute top-3 right-3">
+                            <span className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                              {item.price}
+                            </span>
+                          </div>
+
+                          {/* Hover overlay with stats */}
+                          {hoveredSeries === item.id && (
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                              <div className="space-y-2">
+                                <div className="flex items-center text-white text-sm">
+                                  <Star className="w-4 h-4 mr-2 text-yellow-400" />
+                                  {item.rating}/5 Rating
+                                </div>
+                                <div className="flex items-center text-white text-sm">
+                                  <Users className="w-4 h-4 mr-2" />
+                                  {item.reviews} Reviews
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {/* Content Section */}
+                        <div className="p-5 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-red-400 text-xs font-semibold uppercase tracking-wide">{item.category}</span>
+                          </div>
+                          
+                          <h3 className="text-white font-semibold text-lg truncate group-hover:text-red-300 transition-colors duration-300">
+                            {item.title}
+                          </h3>
+                          <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">
+                            {item.type}
+                          </p>
+                          <p className="text-gray-500 text-xs line-clamp-2 group-hover:text-gray-400 transition-colors duration-300">
+                            {item.description}
+                          </p>
+                          
+                          <div className="flex items-center justify-between pt-2">
+                            <div className="text-gray-400 text-xs">
+                              {item.reviews} reviews
+                            </div>
+                            <Button 
+                              size="sm" 
+                              disabled={!item.inStock}
+                              className={`${
+                                item.inStock 
+                                  ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white' 
+                                  : 'bg-gray-600 text-gray-400 cursor-not-allowed'
+                              } text-xs font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                if (item.inStock) {
+                                  handleMerchandiseClick(item.id);
+                                }
+                              }}
+                            >
+                              {item.inStock ? 'Add to Cart' : 'Out of Stock'}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
                 ) : (
                   /* Popular Recommendations from Database */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {books.map((book, index) => (
                   <div
                     key={book.id}
-                    className={`group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[580px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30 cursor-pointer ${
+                    className={`group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[420px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30 cursor-pointer ${
                       isVisible
                         ? "opacity-100 translate-y-0"
                         : "opacity-0 translate-y-12"
@@ -605,7 +756,7 @@ const PopularRecommendations = () => {
                           "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png"
                         }
                         alt={book.title}
-                        className="w-full h-96 object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:brightness-110"
+                        className="w-full h-64 object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:brightness-110"
                       />
 
                       {/* Popular badge */}
@@ -694,9 +845,9 @@ const PopularRecommendations = () => {
                       </div>
                     </div>
 
-                    <div className="p-6 space-y-4 flex-1 flex flex-col">
+                    <div className="p-4 space-y-3 flex-1 flex flex-col">
                       <div className="flex items-center justify-between">
-                        <h3 className="text-white font-semibold text-lg group-hover:text-orange-300 transition-colors duration-300 line-clamp-2 flex-1 mr-2">
+                        <h3 className="text-white font-semibold text-base group-hover:text-orange-300 transition-colors duration-300 line-clamp-2 flex-1 mr-2">
                           {removeVolumeFromTitle(book.title)}
                         </h3>
                         <button
@@ -754,13 +905,13 @@ const PopularRecommendations = () => {
                         )}
                       </div>
 
-                      <div className="flex flex-col space-y-2 pt-2 mt-auto">
+                      <div className="flex flex-col space-y-2 pt-1 mt-auto">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleAddToCart(book);
                           }}
-                          className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/30 transform hover:scale-105"
+                          className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/30 transform hover:scale-105"
                         >
                           <ShoppingCart className="w-4 h-4 inline mr-2" />
                           Add to Cart
@@ -771,13 +922,13 @@ const PopularRecommendations = () => {
                             e.stopPropagation();
                             handleBuyNow(book);
                           }}
-                          className="w-full bg-white hover:bg-gray-100 text-black text-sm font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg transform hover:scale-105"
+                          className="w-full bg-white hover:bg-gray-100 text-black text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg transform hover:scale-105"
                         >
                           Buy Now
                         </button>
 
                         {book.can_unlock_with_coins && (
-                          <button className="w-full text-gray-400 hover:text-white text-sm border border-gray-600 hover:border-gray-400 py-3 rounded-lg transition-all duration-300 hover:bg-gray-800">
+                          <button className="w-full text-gray-400 hover:text-white text-sm border border-gray-600 hover:border-gray-400 py-2 rounded-lg transition-all duration-300 hover:bg-gray-800">
                             Unlock with{" "}
                             {book.coins ||
                               `${Math.round(book.price * 100)} coins`}
