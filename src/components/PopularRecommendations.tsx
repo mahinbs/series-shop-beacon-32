@@ -558,76 +558,134 @@ const PopularRecommendations = () => {
             {activeTab === "recommendations" ? (
               <>
                 {selectedFilter === "print" ? (
-                  /* Print Series Grid */
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
-                    {printSeries.map((series, index) => (
-                      <div 
-                        key={index} 
-                        className={`group relative bg-gradient-to-br ${series.gradient} backdrop-blur-sm rounded-2xl overflow-hidden transform hover:scale-[1.02] transition-all duration-500 border border-gray-800/50 hover:border-red-500/30 shadow-2xl hover:shadow-red-500/10`}
+                  /* Print Books Grid */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    {books.filter(book => book.product_type === 'print').map((book, index) => (
+                      <div
+                        key={book.id}
+                        className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
+                        onMouseEnter={() => setHoveredBook(book.id)}
+                        onMouseLeave={() => setHoveredBook(null)}
+                        onClick={() => handleViewProduct(book)}
+                        style={{ 
+                          transitionDelay: `${index * 100}ms`,
+                          opacity: 1,
+                          transform: 'translateY(0)'
+                        }}
                       >
-                        {/* Image Container */}
+                        {/* Image Section with Badges */}
                         <div className="relative overflow-hidden">
-                          <div className="aspect-[4/3] relative">
-                            <img 
-                              src={series.image} 
-                              alt={series.title}
-                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                            />
-                            
-                            {/* Gradient Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
-                            
-                            
-                            
+                          <img 
+                            src={book.image_url}
+                            alt={book.title}
+                            className="w-full h-64 object-cover transition-all duration-700 group-hover:scale-110"
+                          />
+                          
+                          {/* Hover Overlay */}
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                            <div className="flex gap-2">
+                              <Button
+                                size="sm"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleAddToCart(book);
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white"
+                              >
+                                <ShoppingCart className="w-4 h-4 mr-2" />
+                                Add to Cart
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleWishlistToggle(book);
+                                }}
+                                className="border-white/20 text-white hover:bg-white/10"
+                              >
+                                <Heart className={`w-4 h-4 ${isInWishlist(book.id) ? 'fill-red-500 text-red-500' : ''}`} />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          {/* Status Badges */}
+                          <div className="absolute top-3 left-3 flex flex-col gap-2">
+                            {book.is_new && (
+                              <Badge className="bg-green-500 hover:bg-green-600 text-white font-semibold">
+                                NEW
+                              </Badge>
+                            )}
+                            {book.is_on_sale && (
+                              <Badge className="bg-red-500 hover:bg-red-600 text-white font-semibold">
+                                SALE
+                              </Badge>
+                            )}
+                            <Badge className="bg-blue-500 hover:bg-blue-600 text-white font-semibold">
+                              PRINT
+                            </Badge>
                           </div>
                         </div>
                         
-                        {/* Content Area */}
-                        <div className="p-6 bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-sm">
-                          {/* Title */}
-                          <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-red-400 transition-colors duration-300">
-                            {series.title}
-                          </h3>
-                          
-                          {/* Description */}
-                          <p className="text-gray-300 text-sm leading-relaxed mb-4 line-clamp-2">
-                            {series.description}
-                          </p>
-                          
-                          {/* Tags */}
-                          <div className="flex flex-wrap gap-2 mb-4">
-                            {series.tags.map((tag, tagIndex) => (
-                              <span 
-                                key={tag} 
-                                className={`
-                                  px-3 py-1 rounded-full text-xs font-medium transition-all duration-200
-                                  ${tagIndex === 0 ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 
-                                    tagIndex === 1 ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 
-                                    'bg-purple-600/20 text-purple-400 border border-purple-500/30'}
-                                  hover:scale-105 cursor-pointer
-                                `}
-                              >
-                                {tag}
-                              </span>
-                            ))}
+                        {/* Content Section */}
+                        <div className="p-5">
+                          <div className="flex items-start justify-between mb-2">
+                            <h3 className="text-lg font-bold text-white group-hover:text-red-400 transition-colors duration-300 flex-1 leading-tight">
+                              {book.title}
+                            </h3>
                           </div>
                           
+                          <p className="text-sm text-gray-400 mb-3">{book.author}</p>
                           
-                          {/* Action Buttons */}
-                          <div className="flex gap-3">
-                            <Button 
-                              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border border-red-500/30"
-                              onClick={() => navigate(`/readers/${series.title.toLowerCase().replace(/\s+/g, '-')}`, { 
-                                state: { from: 'popular-recommendations' } 
-                              })}
+                          {book.description && (
+                            <p className="text-sm text-gray-300 mb-4 line-clamp-2 leading-relaxed">
+                              {book.description}
+                            </p>
+                          )}
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xl font-bold text-red-400">
+                                  ${Number(book.price).toFixed(2)}
+                                </span>
+                                {book.original_price && Number(book.original_price) > Number(book.price) && (
+                                  <span className="text-sm text-gray-400 line-through">
+                                    ${Number(book.original_price).toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                              {book.coins && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <Diamond className="w-3 h-3 text-blue-400" />
+                                  <span className="text-xs text-blue-400">{book.coins}</span>
+                                </div>
+                              )}
+                            </div>
+                            
+                            <Button
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewProduct(book);
+                              }}
+                              className="bg-gray-700 hover:bg-gray-600 text-white"
                             >
-                              <BookOpen className="w-4 h-4 mr-2" />
-                              Read Now
+                              <Eye className="w-4 h-4 mr-2" />
+                              View
                             </Button>
                           </div>
                         </div>
                       </div>
                     ))}
+                    
+                    {books.filter(book => book.product_type === 'print').length === 0 && (
+                      <div className="col-span-full text-center py-12">
+                        <BookOpen className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+                        <p className="text-gray-400 text-lg">No print books available yet.</p>
+                        <p className="text-gray-500 text-sm">Check back later for new releases!</p>
+                      </div>
+                    )}
                   </div>
                 ) : selectedFilter === "merchandise" ? (
                   /* Merchandise Grid */

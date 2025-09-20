@@ -433,9 +433,9 @@ export const BooksManager = () => {
           label: formData.label || '',
           video_url: formData.video_url || null,
           original_price: formData.original_price || null,
-          description: '',
-          dimensions: '',
-          product_type: 'book',
+          description: formData.description || '',
+          dimensions: formData.dimensions || '',
+          product_type: formData.product_type,
           sku: null,
           stock_quantity: 0,
           weight: null,
@@ -1131,6 +1131,25 @@ export const BooksManager = () => {
                       <SelectItem value="teen">Teen (13+)</SelectItem>
                       <SelectItem value="mature">Mature (17+)</SelectItem>
                       <SelectItem value="18+">Adults Only (18+)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div>
+                  <Label htmlFor="product_type">Product Type</Label>
+                  <Select
+                    value={formData.product_type}
+                    onValueChange={(value: any) => setFormData({ ...formData, product_type: value })}
+                    disabled={submitting}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="book">Book</SelectItem>
+                      <SelectItem value="print">Print</SelectItem>
+                      <SelectItem value="merchandise">Merchandise</SelectItem>
+                      <SelectItem value="digital">Digital</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
