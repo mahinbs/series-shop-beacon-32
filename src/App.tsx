@@ -74,6 +74,7 @@ const App = () => (
               <Route path="/pre-order/:productId" element={<PreOrder />} />
               <Route path="/series/:seriesId" element={<SeriesPage />} />
               <Route path="/product/:productId" element={<MerchandiseDetail />} />
+              <Route path="/merchandise/:productId" element={<MerchandiseDetail />} />
               <Route path="/checkout/:productId" element={<Checkout />} />
               <Route path="/direct-checkout/:productId" element={<DirectCheckout />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
