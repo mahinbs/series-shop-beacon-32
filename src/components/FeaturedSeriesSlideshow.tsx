@@ -183,7 +183,7 @@ const FeaturedSeriesSlideshow = () => {
         )}
 
         {/* Configuration Buttons */}
-        {activeConfig && (activeConfig.primary_button_text || activeConfig.secondary_button_text) && (
+        {/* {activeConfig && (activeConfig.primary_button_text || activeConfig.secondary_button_text) && (
           <div className="flex justify-center gap-4 mt-8">
             {activeConfig.primary_button_text && (
               <Button
@@ -203,7 +203,7 @@ const FeaturedSeriesSlideshow = () => {
               </Button>
             )}
         </div>
-        )}
+        )} */}
       </div>
     </section>
     );

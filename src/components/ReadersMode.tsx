@@ -10,7 +10,7 @@ const ReadersMode = () => {
   const { seriesTitle } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [currentPage, setCurrentPage] = useState(1);
+  const [currentPage, setCurrentPage] = useState<number | null>(null);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [viewMode, setViewMode] = useState<'pdf' | 'page'>('pdf');
   const [series, setSeries] = useState<ComicSeries | null>(null);
@@ -53,6 +53,12 @@ const ReadersMode = () => {
           // Load pages for first episode
           const pagesData = await ComicService.getPages(episodesData[0].id);
           setPages(pagesData);
+          
+          // Set current page to the actual first page number
+          if (pagesData.length > 0) {
+            const firstPageNumber = Math.min(...pagesData.map(p => p.page_number));
+            setCurrentPage(firstPageNumber);
+          }
         }
 
       } catch (err) {
@@ -74,7 +80,14 @@ const ReadersMode = () => {
       try {
         const pagesData = await ComicService.getPages(currentEpisode.id);
         setPages(pagesData);
-        setCurrentPage(1); // Reset to first page
+        
+        // Set current page to the actual first page number
+        if (pagesData.length > 0) {
+          const firstPageNumber = Math.min(...pagesData.map(p => p.page_number));
+          setCurrentPage(firstPageNumber);
+        } else {
+          setCurrentPage(null);
+        }
       } catch (err) {
         console.error('Error loading episode pages:', err);
         toast({
@@ -89,7 +102,13 @@ const ReadersMode = () => {
   }, [currentEpisode, toast]);
 
   const handlePageChange = (page: number) => {
-    if (page >= 1 && page <= pages.length) {
+    if (pages.length === 0) return;
+    
+    const pageNumbers = pages.map(p => p.page_number).sort((a, b) => a - b);
+    const minPage = Math.min(...pageNumbers);
+    const maxPage = Math.max(...pageNumbers);
+    
+    if (page >= minPage && page <= maxPage) {
       setCurrentPage(page);
     }
   };
@@ -127,13 +146,13 @@ const ReadersMode = () => {
     );
   }
 
-  if (!currentEpisode || pages.length === 0) {
+  if (!currentEpisode || pages.length === 0 || currentPage === null) {
     return (
       <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">No episodes available</h1>
           <p className="text-gray-400 mb-4">This series doesn't have any published episodes yet.</p>
-          <Button onClick={() => navigate('/our-series')} className="bg-primary hover:bg-primary/90">
+          <Button onClick={() => navigate('/our-series')} className="bg-secondary hover:bg-secondary/90">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Back to Series
           </Button>
@@ -159,7 +178,7 @@ const ReadersMode = () => {
           <div>
             <h1 className="font-semibold">{series.title}</h1>
             <p className="text-sm text-gray-400">
-              {currentEpisode.title} - Page {currentPage} of {pages.length}
+              {currentEpisode.title} - Page {currentPage || '...'} of {pages.length > 0 ? Math.max(...pages.map(p => p.page_number)) : 0}
             </p>
           </div>
         </div>
@@ -356,20 +375,44 @@ const ReadersMode = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-          disabled={currentPage === 1}
+          onClick={() => {
+            if (pages.length === 0 || currentPage === null) return;
+            const pageNumbers = pages.map(p => p.page_number).sort((a, b) => a - b);
+            const currentIndex = pageNumbers.indexOf(currentPage);
+            if (currentIndex > 0) {
+              setCurrentPage(pageNumbers[currentIndex - 1]);
+            }
+          }}
+          disabled={pages.length === 0 || currentPage === null || (() => {
+            if (pages.length === 0 || currentPage === null) return true;
+            const pageNumbers = pages.map(p => p.page_number).sort((a, b) => a - b);
+            return pageNumbers.indexOf(currentPage) === 0;
+          })()}
           className="text-white hover:bg-gray-800 disabled:opacity-50"
         >
           Previous
         </Button>
         
-        <span className="text-sm">{currentPage} / {pages.length}</span>
+        <span className="text-sm">
+          {currentPage || '...'} / {pages.length > 0 ? Math.max(...pages.map(p => p.page_number)) : 0}
+        </span>
         
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, pages.length))}
-          disabled={currentPage === pages.length}
+          onClick={() => {
+            if (pages.length === 0 || currentPage === null) return;
+            const pageNumbers = pages.map(p => p.page_number).sort((a, b) => a - b);
+            const currentIndex = pageNumbers.indexOf(currentPage);
+            if (currentIndex < pageNumbers.length - 1) {
+              setCurrentPage(pageNumbers[currentIndex + 1]);
+            }
+          }}
+          disabled={pages.length === 0 || currentPage === null || (() => {
+            if (pages.length === 0 || currentPage === null) return true;
+            const pageNumbers = pages.map(p => p.page_number).sort((a, b) => a - b);
+            return pageNumbers.indexOf(currentPage) === pageNumbers.length - 1;
+          })()}
           className="text-white hover:bg-gray-800 disabled:opacity-50"
         >
           Next
