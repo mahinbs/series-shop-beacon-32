@@ -231,7 +231,7 @@ const SimpleProductGrid = () => {
                       }`} />
                     </button>
                   </div>
-                  {activeTab === 'books' && product.author && (
+                  {product.author && (
                     <p className="text-gray-400 text-sm">{product.author}</p>
                   )}
                   <p className="text-gray-500 text-xs uppercase tracking-wide">{product.category}</p>
