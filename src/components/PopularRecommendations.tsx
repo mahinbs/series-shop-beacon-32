@@ -765,7 +765,7 @@ const PopularRecommendations = () => {
                 {books.map((book, index) => (
                   <div
                     key={book.id}
-                    className={`group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[420px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30 cursor-pointer ${
+                    className={`group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 h-[520px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30 cursor-pointer ${
                       isVisible
                         ? "opacity-100 translate-y-0"
                         : "opacity-0 translate-y-12"
@@ -961,13 +961,24 @@ const PopularRecommendations = () => {
                           Buy Now
                         </button>
 
-                        {book.can_unlock_with_coins && (
-                          <button className="w-full text-gray-400 hover:text-white text-sm border border-gray-600 hover:border-gray-400 py-2 rounded-lg transition-all duration-300 hover:bg-gray-800">
-                            Unlock with{" "}
-                            {book.coins ||
-                              `${Math.round(book.price * 100)} coins`}
-                          </button>
-                        )}
+                        {/* Always render unlock button for consistent height, hide if no coins */}
+                        <button 
+                          className={`w-full text-sm py-2 rounded-lg transition-all duration-300 ${
+                            book.can_unlock_with_coins 
+                              ? 'text-gray-400 hover:text-white border border-gray-600 hover:border-gray-400 hover:bg-gray-800' 
+                              : 'invisible'
+                          }`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (book.can_unlock_with_coins) {
+                              // Handle unlock action
+                            }
+                          }}
+                        >
+                          Unlock with{" "}
+                          {book.coins ||
+                            `${Math.round(book.price * 100)} coins`}
+                        </button>
                       </div>
                     </div>
                   </div>
