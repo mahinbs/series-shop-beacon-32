@@ -4,10 +4,12 @@ import type { Book as BookType } from "@/services/database";
 import { useCart } from "@/hooks/useCart";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useToast } from "@/hooks/use-toast";
-import { ShoppingCart, Eye, Heart, Diamond } from "lucide-react";
+import { ShoppingCart, Eye, Heart, Diamond, Star, BookOpen, Play, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { removeVolumeFromTitle } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const PopularRecommendations = () => {
   const [books, setBooks] = useState<BookType[]>([]);
@@ -345,6 +347,43 @@ const PopularRecommendations = () => {
     },
   ];
 
+  // Print series data
+  const printSeries = [
+    {
+      title: "Demon Slayer",
+      description: "Follow Tanjiro's quest to cure his sister and battle demons",
+      rating: 4.9,
+      status: "Ongoing",
+      image: "/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png",
+      tags: ["Action", "Supernatural", "Drama"],
+      episodes: "44 Episodes",
+      views: "2.3M",
+      gradient: "from-red-900/20 to-orange-900/20"
+    },
+    {
+      title: "Jujutsu Kaisen",
+      description: "Enter a world where curses can be fought and exercised",
+      rating: 4.8,
+      status: "Ongoing", 
+      image: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&h=600&fit=crop&crop=center",
+      tags: ["Action", "Fantasy", "Horror"],
+      episodes: "24 Episodes",
+      views: "1.8M",
+      gradient: "from-purple-900/20 to-blue-900/20"
+    },
+    {
+      title: "One Piece",
+      description: "Join Luffy and his pirate crew on their grand adventure",
+      rating: 4.9,
+      status: "Ongoing",
+      image: "https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400&h=600&fit=crop&crop=center",
+      tags: ["Adventure", "Action", "Comedy"],
+      episodes: "1000+ Episodes",
+      views: "5.1M",
+      gradient: "from-blue-900/20 to-teal-900/20"
+    }
+  ];
+
   return (
     <section
       ref={elementRef}
@@ -468,8 +507,80 @@ const PopularRecommendations = () => {
         ) : (
           <>
             {activeTab === "recommendations" ? (
-              /* Popular Recommendations from Database */
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <>
+                {selectedFilter === "print" ? (
+                  /* Print Series Grid */
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 lg:gap-10">
+                    {printSeries.map((series, index) => (
+                      <div 
+                        key={index} 
+                        className={`group relative bg-gradient-to-br ${series.gradient} backdrop-blur-sm rounded-2xl overflow-hidden transform hover:scale-[1.02] transition-all duration-500 border border-gray-800/50 hover:border-red-500/30 shadow-2xl hover:shadow-red-500/10`}
+                      >
+                        {/* Image Container */}
+                        <div className="relative overflow-hidden">
+                          <div className="aspect-[4/3] relative">
+                            <img 
+                              src={series.image} 
+                              alt={series.title}
+                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                            />
+                            
+                            {/* Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-60 group-hover:opacity-80 transition-opacity duration-300" />
+                            
+                            
+                            
+                          </div>
+                        </div>
+                        
+                        {/* Content Area */}
+                        <div className="p-6 bg-gradient-to-br from-gray-900/95 to-black/95 backdrop-blur-sm">
+                          {/* Title */}
+                          <h3 className="text-2xl font-bold text-white mb-3 group-hover:text-red-400 transition-colors duration-300">
+                            {series.title}
+                          </h3>
+                          
+                          {/* Description */}
+                          <p className="text-gray-300 text-sm leading-relaxed mb-4 line-clamp-2">
+                            {series.description}
+                          </p>
+                          
+                          {/* Tags */}
+                          <div className="flex flex-wrap gap-2 mb-4">
+                            {series.tags.map((tag, tagIndex) => (
+                              <span 
+                                key={tag} 
+                                className={`
+                                  px-3 py-1 rounded-full text-xs font-medium transition-all duration-200
+                                  ${tagIndex === 0 ? 'bg-red-600/20 text-red-400 border border-red-500/30' : 
+                                    tagIndex === 1 ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30' : 
+                                    'bg-purple-600/20 text-purple-400 border border-purple-500/30'}
+                                  hover:scale-105 cursor-pointer
+                                `}
+                              >
+                                {tag}
+                              </span>
+                            ))}
+                          </div>
+                          
+                          
+                          {/* Action Buttons */}
+                          <div className="flex gap-3">
+                            <Button 
+                              className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 border border-red-500/30"
+                              onClick={() => navigate(`/readers/${series.title.toLowerCase().replace(/\s+/g, '-')}`)}
+                            >
+                              <BookOpen className="w-4 h-4 mr-2" />
+                              Read Now
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* Popular Recommendations from Database */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
                 {books.map((book, index) => (
                   <div
                     key={book.id}
@@ -676,7 +787,9 @@ const PopularRecommendations = () => {
                     </div>
                   </div>
                 ))}
-              </div>
+                  </div>
+                )}
+              </>
             ) : (
               /* Genre-based Content */
               <div className="space-y-12">
