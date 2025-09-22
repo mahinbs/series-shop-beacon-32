@@ -1,15 +1,29 @@
-import { useState, useRef } from 'react';
-import { useBooks } from '@/hooks/useBooks';
-import { testDatabaseConnection } from '@/services/database';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Trash2, Plus, Save, Edit, Upload, ShoppingBag, Database } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useRef } from "react";
+import { useBooks } from "@/hooks/useBooks";
+import { testDatabaseConnection } from "@/services/database";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Trash2,
+  Plus,
+  Save,
+  Edit,
+  Upload,
+  ShoppingBag,
+  Database,
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 interface MerchandiseForm {
   title: string;
@@ -21,7 +35,12 @@ interface MerchandiseForm {
   hover_image_url: string;
   description: string;
   can_unlock_with_coins: boolean;
-  section_type: 'new-releases' | 'best-sellers' | 'leaving-soon' | 'featured' | 'trending';
+  section_type:
+    | "new-releases"
+    | "best-sellers"
+    | "leaving-soon"
+    | "featured"
+    | "trending";
   label?: string;
   is_new: boolean;
   is_on_sale: boolean;
@@ -35,19 +54,35 @@ interface MerchandiseForm {
 }
 
 const MERCHANDISE_CATEGORIES = [
-  'Figure', 'Poster', 'T-Shirt', 'Hoodie', 'Accessory', 'Collectible', 'Plush', 'Keychain', 'Sticker', 'Art Print', 'Mug', 'Bag', 'Hat', 'Socks', 'Jewelry', 'Other'
+  "Figure",
+  "Poster",
+  "T-Shirt",
+  "Hoodie",
+  "Accessory",
+  "Collectible",
+  "Plush",
+  "Keychain",
+  "Sticker",
+  "Art Print",
+  "Mug",
+  "Bag",
+  "Hat",
+  "Socks",
+  "Jewelry",
+  "Other",
 ];
 
 const SECTION_TYPES = [
-  { value: 'new-releases', label: 'New Releases' },
-  { value: 'best-sellers', label: 'Best Sellers' },
-  { value: 'leaving-soon', label: 'Leaving Soon' },
-  { value: 'featured', label: 'Featured' },
-  { value: 'trending', label: 'Trending' },
+  { value: "new-releases", label: "New Releases" },
+  { value: "best-sellers", label: "Best Sellers" },
+  { value: "leaving-soon", label: "Leaving Soon" },
+  { value: "featured", label: "Featured" },
+  { value: "trending", label: "Trending" },
 ];
 
 export const MerchandiseManager = () => {
-  const { books, isLoading, createBook, updateBook, deleteBook, loadBooks } = useBooks();
+  const { books, isLoading, createBook, updateBook, deleteBook, loadBooks } =
+    useBooks();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hoverFileInputRef = useRef<HTMLInputElement>(null);
@@ -57,52 +92,54 @@ export const MerchandiseManager = () => {
   const [submitting, setSubmitting] = useState(false);
   const [testing, setTesting] = useState(false);
   const [formData, setFormData] = useState<MerchandiseForm>({
-    title: '',
-    category: '',
+    title: "",
+    category: "",
     price: 0,
     original_price: undefined,
-    coins: '',
-    image_url: '',
-    hover_image_url: '',
-    description: '',
+    coins: "",
+    image_url: "",
+    hover_image_url: "",
+    description: "",
     can_unlock_with_coins: false,
-    section_type: 'new-releases',
-    label: '',
+    section_type: "new-releases",
+    label: "",
     is_new: false,
     is_on_sale: false,
     display_order: 0,
     is_active: true,
     stock_quantity: 0,
-    sku: '',
+    sku: "",
     weight: 0,
-    dimensions: '',
+    dimensions: "",
     tags: [],
   });
 
   // Filter only merchandise products
-  const merchandiseProducts = books.filter(book => book.product_type === 'merchandise');
+  const merchandiseProducts = books.filter(
+    (book) => book.product_type === "merchandise"
+  );
 
   const resetForm = () => {
     setFormData({
-      title: '',
-      category: '',
+      title: "",
+      category: "",
       price: 0,
       original_price: undefined,
-      coins: '',
-      image_url: '',
-      hover_image_url: '',
-      description: '',
+      coins: "",
+      image_url: "",
+      hover_image_url: "",
+      description: "",
       can_unlock_with_coins: false,
-      section_type: 'new-releases',
-      label: '',
+      section_type: "new-releases",
+      label: "",
       is_new: false,
       is_on_sale: false,
       display_order: 0,
       is_active: true,
       stock_quantity: 0,
-      sku: '',
+      sku: "",
       weight: 0,
-      dimensions: '',
+      dimensions: "",
       tags: [],
     });
     setEditingId(null);
@@ -139,39 +176,39 @@ export const MerchandiseManager = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitting(true);
-    console.log('Submitting merchandise data:', formData);
-    
+    console.log("Submitting merchandise data:", formData);
+
     try {
       // Validate required fields
       if (!formData.title.trim()) {
-        throw new Error('Title is required');
+        throw new Error("Title is required");
       }
       if (!formData.category.trim()) {
-        throw new Error('Category is required');
+        throw new Error("Category is required");
       }
       if (formData.price <= 0) {
-        throw new Error('Price must be greater than 0');
+        throw new Error("Price must be greater than 0");
       }
       if (!formData.image_url.trim()) {
-        throw new Error('Image URL is required');
+        throw new Error("Image URL is required");
       }
 
       // Prepare merchandise data
       const merchandiseData = {
         ...formData,
-        product_type: 'merchandise' as const,
-        author: '', // Merchandise doesn't have authors
+        product_type: "merchandise" as const,
+        author: "", // Merchandise doesn't have authors
       };
 
       if (editingId) {
-        console.log('Updating merchandise with ID:', editingId);
+        console.log("Updating merchandise with ID:", editingId);
         await updateBook(editingId, merchandiseData as any);
         toast({
           title: "Success",
           description: "Merchandise updated successfully",
         });
       } else {
-        console.log('Creating new merchandise');
+        console.log("Creating new merchandise");
         await createBook(merchandiseData as any);
         toast({
           title: "Success",
@@ -181,15 +218,15 @@ export const MerchandiseManager = () => {
       resetForm();
       await loadBooks();
     } catch (error) {
-      console.error('Error saving merchandise:', error);
-      let errorMessage = 'Failed to save merchandise';
-      
+      console.error("Error saving merchandise:", error);
+      let errorMessage = "Failed to save merchandise";
+
       if (error instanceof Error) {
         errorMessage = error.message;
-      } else if (typeof error === 'string') {
+      } else if (typeof error === "string") {
         errorMessage = error;
       }
-      
+
       toast({
         title: "Error",
         description: errorMessage,
@@ -202,25 +239,26 @@ export const MerchandiseManager = () => {
 
   const handleEdit = (merchandise: any) => {
     setFormData({
-      title: merchandise.title || '',
-      category: merchandise.category || '',
+      title: merchandise.title || "",
+      category: merchandise.category || "",
       price: merchandise.price || 0,
       original_price: merchandise.original_price,
-      coins: merchandise.coins || '',
-      image_url: merchandise.image_url || '',
-      hover_image_url: merchandise.hover_image_url || '',
-      description: merchandise.description || '',
+      coins: merchandise.coins || "",
+      image_url: merchandise.image_url || "",
+      hover_image_url: merchandise.hover_image_url || "",
+      description: merchandise.description || "",
       can_unlock_with_coins: merchandise.can_unlock_with_coins || false,
-      section_type: merchandise.section_type || 'new-releases',
-      label: merchandise.label || '',
+      section_type: merchandise.section_type || "new-releases",
+      label: merchandise.label || "",
       is_new: merchandise.is_new || false,
       is_on_sale: merchandise.is_on_sale || false,
       display_order: merchandise.display_order || 0,
-      is_active: merchandise.is_active !== undefined ? merchandise.is_active : true,
+      is_active:
+        merchandise.is_active !== undefined ? merchandise.is_active : true,
       stock_quantity: merchandise.stock_quantity || 0,
-      sku: merchandise.sku || '',
+      sku: merchandise.sku || "",
       weight: merchandise.weight || 0,
-      dimensions: merchandise.dimensions || '',
+      dimensions: merchandise.dimensions || "",
       tags: merchandise.tags || [],
     });
     setEditingId(merchandise.id);
@@ -228,7 +266,7 @@ export const MerchandiseManager = () => {
   };
 
   const handleDelete = async (id: string) => {
-    if (confirm('Are you sure you want to delete this merchandise?')) {
+    if (confirm("Are you sure you want to delete this merchandise?")) {
       try {
         await deleteBook(id);
         toast({
@@ -237,15 +275,15 @@ export const MerchandiseManager = () => {
         });
         await loadBooks();
       } catch (error) {
-        console.error('Error deleting merchandise:', error);
-        let errorMessage = 'Failed to delete merchandise';
-        
+        console.error("Error deleting merchandise:", error);
+        let errorMessage = "Failed to delete merchandise";
+
         if (error instanceof Error) {
           errorMessage = error.message;
-        } else if (typeof error === 'string') {
+        } else if (typeof error === "string") {
           errorMessage = error;
         }
-        
+
         toast({
           title: "Error",
           description: errorMessage,
@@ -260,11 +298,11 @@ export const MerchandiseManager = () => {
     try {
       const tempUrl = URL.createObjectURL(file);
       if (isHoverImage) {
-        setFormData(prev => ({ ...prev, hover_image_url: tempUrl }));
+        setFormData((prev) => ({ ...prev, hover_image_url: tempUrl }));
       } else {
-        setFormData(prev => ({ ...prev, image_url: tempUrl }));
+        setFormData((prev) => ({ ...prev, image_url: tempUrl }));
       }
-      
+
       toast({
         title: "Image uploaded",
         description: "Image has been uploaded successfully",
@@ -280,10 +318,13 @@ export const MerchandiseManager = () => {
     }
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>, isHoverImage = false) => {
+  const handleFileSelect = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    isHoverImage = false
+  ) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith("image/")) {
         handleImageUpload(file, isHoverImage);
       } else {
         toast({
@@ -310,17 +351,8 @@ export const MerchandiseManager = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <ShoppingBag className="h-5 w-5" />
-              Merchandise Management
-            </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
-              Manage merchandise products including figures, posters, clothing, and accessories
-            </p>
-          </div>
           <div className="flex items-center gap-2">
-            <Button 
+            <Button
               onClick={testDatabase}
               variant="outline"
               size="sm"
@@ -328,9 +360,9 @@ export const MerchandiseManager = () => {
               className="flex items-center gap-2"
             >
               <Database className="h-4 w-4" />
-              {testing ? 'Testing...' : 'Test DB'}
+              {testing ? "Testing..." : "Test DB"}
             </Button>
-            <Button 
+            <Button
               onClick={() => setShowAddForm(true)}
               className="flex items-center gap-2"
               disabled={submitting}
@@ -344,10 +376,12 @@ export const MerchandiseManager = () => {
           {merchandiseProducts.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">
-                No merchandise created yet. Start by adding your first merchandise item to display in the product sections.
+                No merchandise created yet. Start by adding your first
+                merchandise item to display in the product sections.
               </p>
               <p className="text-sm text-muted-foreground">
-                Merchandise will be organized into sections: New Releases, Best Sellers, and Leaving Soon.
+                Merchandise will be organized into sections: New Releases, Best
+                Sellers, and Leaving Soon.
               </p>
             </div>
           ) : (
@@ -369,11 +403,13 @@ export const MerchandiseManager = () => {
                           {merchandise.category} • ${merchandise.price}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          Section: {merchandise.section_type} • Order: {merchandise.display_order}
+                          Section: {merchandise.section_type} • Order:{" "}
+                          {merchandise.display_order}
                         </p>
                         {merchandise.stock_quantity !== undefined && (
                           <p className="text-xs text-muted-foreground">
-                            Stock: {merchandise.stock_quantity} • SKU: {merchandise.sku || 'N/A'}
+                            Stock: {merchandise.stock_quantity} • SKU:{" "}
+                            {merchandise.sku || "N/A"}
                           </p>
                         )}
                       </div>
@@ -407,7 +443,9 @@ export const MerchandiseManager = () => {
       {showAddForm && (
         <Card>
           <CardHeader>
-            <CardTitle>{editingId ? 'Edit Merchandise' : 'Add New Merchandise'}</CardTitle>
+            <CardTitle>
+              {editingId ? "Edit Merchandise" : "Add New Merchandise"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -417,15 +455,22 @@ export const MerchandiseManager = () => {
                   <Input
                     id="title"
                     value={formData.title}
-                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, title: e.target.value })
+                    }
                     required
                     placeholder="Enter merchandise title"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="category">Rated as *</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData({ ...formData, category: value })}>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, category: value })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select rating" />
                     </SelectTrigger>
@@ -448,30 +493,42 @@ export const MerchandiseManager = () => {
                     type="number"
                     step="0.01"
                     value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        price: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     required
                     placeholder="0.00"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="original_price">Original Price</Label>
                   <Input
                     id="original_price"
                     type="number"
                     step="0.01"
-                    value={formData.original_price || ''}
-                    onChange={(e) => setFormData({ ...formData, original_price: parseFloat(e.target.value) || undefined })}
+                    value={formData.original_price || ""}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        original_price: parseFloat(e.target.value) || undefined,
+                      })
+                    }
                     placeholder="0.00"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="coins">Coins</Label>
                   <Input
                     id="coins"
                     value={formData.coins}
-                    onChange={(e) => setFormData({ ...formData, coins: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, coins: e.target.value })
+                    }
                     placeholder="e.g., 1000 coins"
                   />
                 </div>
@@ -480,7 +537,12 @@ export const MerchandiseManager = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="section_type">Section *</Label>
-                  <Select value={formData.section_type} onValueChange={(value: any) => setFormData({ ...formData, section_type: value })}>
+                  <Select
+                    value={formData.section_type}
+                    onValueChange={(value: any) =>
+                      setFormData({ ...formData, section_type: value })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -493,14 +555,19 @@ export const MerchandiseManager = () => {
                     </SelectContent>
                   </Select>
                 </div>
-                
+
                 <div>
                   <Label htmlFor="display_order">Display Order</Label>
                   <Input
                     id="display_order"
                     type="number"
                     value={formData.display_order}
-                    onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        display_order: parseInt(e.target.value) || 0,
+                      })
+                    }
                     placeholder="0"
                   />
                 </div>
@@ -513,17 +580,24 @@ export const MerchandiseManager = () => {
                     id="stock_quantity"
                     type="number"
                     value={formData.stock_quantity}
-                    onChange={(e) => setFormData({ ...formData, stock_quantity: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        stock_quantity: parseInt(e.target.value) || 0,
+                      })
+                    }
                     placeholder="0"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="sku">SKU</Label>
                   <Input
                     id="sku"
                     value={formData.sku}
-                    onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, sku: e.target.value })
+                    }
                     placeholder="Stock keeping unit"
                   />
                 </div>
@@ -537,17 +611,24 @@ export const MerchandiseManager = () => {
                     type="number"
                     step="0.01"
                     value={formData.weight}
-                    onChange={(e) => setFormData({ ...formData, weight: parseFloat(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        weight: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     placeholder="0.00"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="dimensions">Dimensions</Label>
                   <Input
                     id="dimensions"
                     value={formData.dimensions}
-                    onChange={(e) => setFormData({ ...formData, dimensions: e.target.value })}
+                    onChange={(e) =>
+                      setFormData({ ...formData, dimensions: e.target.value })
+                    }
                     placeholder="e.g., 10x5x2 cm"
                   />
                 </div>
@@ -558,7 +639,9 @@ export const MerchandiseManager = () => {
                 <Textarea
                   id="description"
                   value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
                   placeholder="Enter merchandise description"
                   rows={3}
                 />
@@ -571,7 +654,9 @@ export const MerchandiseManager = () => {
                     <Input
                       id="image_url"
                       value={formData.image_url}
-                      onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({ ...formData, image_url: e.target.value })
+                      }
                       required
                       placeholder="Enter image URL"
                     />
@@ -592,14 +677,19 @@ export const MerchandiseManager = () => {
                     className="hidden"
                   />
                 </div>
-                
+
                 <div>
                   <Label htmlFor="hover_image_url">Hover Image URL</Label>
                   <div className="flex gap-2">
                     <Input
                       id="hover_image_url"
                       value={formData.hover_image_url}
-                      onChange={(e) => setFormData({ ...formData, hover_image_url: e.target.value })}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          hover_image_url: e.target.value,
+                        })
+                      }
                       placeholder="Enter hover image URL"
                     />
                     <Button
@@ -626,16 +716,20 @@ export const MerchandiseManager = () => {
                   <Switch
                     id="is_new"
                     checked={formData.is_new}
-                    onCheckedChange={(checked) => setFormData({ ...formData, is_new: checked })}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, is_new: checked })
+                    }
                   />
                   <Label htmlFor="is_new">New Item</Label>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <Switch
                     id="is_on_sale"
                     checked={formData.is_on_sale}
-                    onCheckedChange={(checked) => setFormData({ ...formData, is_on_sale: checked })}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, is_on_sale: checked })
+                    }
                   />
                   <Label htmlFor="is_on_sale">On Sale</Label>
                 </div>
@@ -645,24 +739,38 @@ export const MerchandiseManager = () => {
                 <Switch
                   id="can_unlock_with_coins"
                   checked={formData.can_unlock_with_coins}
-                  onCheckedChange={(checked) => setFormData({ ...formData, can_unlock_with_coins: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, can_unlock_with_coins: checked })
+                  }
                 />
-                <Label htmlFor="can_unlock_with_coins">Can Unlock with Coins</Label>
+                <Label htmlFor="can_unlock_with_coins">
+                  Can Unlock with Coins
+                </Label>
               </div>
 
               <div className="flex items-center space-x-2">
                 <Switch
                   id="is_active"
                   checked={formData.is_active}
-                  onCheckedChange={(checked) => setFormData({ ...formData, is_active: checked })}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, is_active: checked })
+                  }
                 />
                 <Label htmlFor="is_active">Active</Label>
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit" disabled={submitting} className="flex items-center gap-2">
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="flex items-center gap-2"
+                >
                   <Save className="h-4 w-4" />
-                  {submitting ? 'Saving...' : (editingId ? 'Update Merchandise' : 'Add Merchandise')}
+                  {submitting
+                    ? "Saving..."
+                    : editingId
+                    ? "Update Merchandise"
+                    : "Add Merchandise"}
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancel

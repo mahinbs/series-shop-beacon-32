@@ -32,12 +32,26 @@ const PopularRecommendations = () => {
     const fetchPopularBooks = async () => {
       setIsLoading(true);
       try {
-        // Fetch popular books - you can modify this query based on your popularity criteria
-        const { data, error } = await supabase
+        // Fetch products based on selected filter
+        let query = supabase
           .from("books")
           .select("*")
-          .eq("is_active", true)
-          .order("display_order", { ascending: true });
+          .eq("is_active", true);
+
+        // Add product type filter based on selectedFilter
+        if (selectedFilter === "digital") {
+          // Show all products except merchandise (books, digital, print)
+          query = query.neq("product_type", "merchandise");
+        } else if (selectedFilter === "print") {
+          query = query.eq("product_type", "print");
+        } else if (selectedFilter === "merchandise") {
+          query = query.eq("product_type", "merchandise");
+        } else {
+          // Default to showing all except merchandise
+          query = query.neq("product_type", "merchandise");
+        }
+
+        const { data, error } = await query.order("display_order", { ascending: true });
 
         if (error) {
           console.error("Error fetching popular books:", error);
@@ -70,7 +84,7 @@ const PopularRecommendations = () => {
     };
 
     fetchPopularBooks();
-  }, []);
+  }, [selectedFilter]); // Add selectedFilter as dependency
 
   const handleAddToCart = async (book: BookType) => {
     try {
@@ -527,19 +541,7 @@ const PopularRecommendations = () => {
                   onClick={() => (window.location.href = "/shop-all")}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg"
                 >
-                  View All (
-                  {
-                    books.filter((book) => {
-                      if (selectedFilter === "digital")
-                        return book.product_type === "digital";
-                      if (selectedFilter === "print")
-                        return book.product_type === "print";
-                      if (selectedFilter === "merchandise")
-                        return book.product_type === "merchandise";
-                      return true;
-                    }).length
-                  }
-                  )
+                  View All ({books.length})
                 </button>
               )}
             </div>
@@ -560,7 +562,7 @@ const PopularRecommendations = () => {
                 {selectedFilter === "print" ? (
                   /* Print Books Grid */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {books.filter(book => book.product_type === 'print').map((book, index) => (
+                    {books.map((book, index) => (
                       <div
                         key={book.id}
                         className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
@@ -650,10 +652,10 @@ const PopularRecommendations = () => {
                       </div>
                     ))}
                     
-                    {books.filter(book => book.product_type === 'print').length === 0 && (
+                    {books.length === 0 && (
                       <div className="col-span-full text-center py-12">
                         <BookOpen className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                        <p className="text-gray-400 text-lg">No print books available yet.</p>
+                        <p className="text-gray-400 text-lg">No {selectedFilter} products available yet.</p>
                         <p className="text-gray-500 text-sm">Check back later for new releases!</p>
                       </div>
                     )}
@@ -661,7 +663,7 @@ const PopularRecommendations = () => {
                 ) : selectedFilter === "merchandise" ? (
                   /* Merchandise Grid */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {books.filter(book => book.product_type === 'merchandise').map((item, index) => (
+                    {books.map((item, index) => (
                       <div
                         key={item.id}
                         className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
