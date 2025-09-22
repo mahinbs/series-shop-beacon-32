@@ -397,12 +397,12 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
 
   const handleMerchandiseClick = (merchandiseId: string) => {
     console.log('🛍️ SeriesGrid: Merchandise clicked:', merchandiseId);
-    console.log('🚀 SeriesGrid: Navigating to product page:', `/product/${merchandiseId}`);
+    console.log('🚀 SeriesGrid: Navigating to merchandise page:', `/merchandise/${merchandiseId}`);
     console.log('📦 SeriesGrid: Available merchandise:', merchandise.map(item => ({ id: item.id, title: item.title })));
     
     const product = merchandise.find(item => item.id === merchandiseId);
     console.log('🔍 SeriesGrid: Found product:', product);
-    navigate(`/product/${merchandiseId}`, {
+    navigate(`/merchandise/${merchandiseId}`, {
       state: { product }
     });
   };
