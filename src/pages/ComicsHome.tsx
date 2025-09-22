@@ -89,7 +89,7 @@ const ComicsHome = () => {
 
   const filters = [
     { id: 'all', label: 'All Comics', icon: Grid, count: comics.length },
-    { id: 'new', label: 'New Releases', icon: Clock, count: comics.filter(c => c.isNew).length },
+    { id: 'new', label: 'New', icon: Clock, count: comics.filter(c => c.isNew).length },
     { id: 'trending', label: 'Trending', icon: TrendingUp, count: comics.filter(c => c.isTrending).length },
     { id: 'completed', label: 'Completed', icon: Users, count: comics.filter(c => c.status === 'Completed').length },
     { id: 'ongoing', label: 'Ongoing', icon: Eye, count: comics.filter(c => c.status === 'Ongoing').length }
@@ -186,28 +186,13 @@ const ComicsHome = () => {
                 <span className="text-white text-xs font-medium">{comic.rating}</span>
               </div>
               
-              {/* Quick Actions - appear on hover */}
-              <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                <div className="flex gap-3">
-                  <Button size="sm" className="bg-red-600 hover:bg-red-700 text-white">
-                    <Eye className="w-4 h-4 mr-1" />
-                    Read
-                  </Button>
-                  <Button size="sm" variant="outline" className="border-white/50 text-white hover:bg-white/20">
-                    <Bookmark className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
             </div>
             
             <div className="p-4">
               <h3 className="text-white font-bold text-lg mb-1 group-hover:text-red-400 transition-colors line-clamp-1">
                 {comic.title}
               </h3>
-              <p className="text-gray-400 text-sm mb-2">by {comic.author}</p>
-              <p className="text-gray-300 text-xs mb-3 line-clamp-2 leading-relaxed">
-                {comic.description}
-              </p>
+              <p className="text-gray-400 text-sm mb-3">by {comic.author}</p>
               
               {/* Genre Tags */}
               <div className="flex flex-wrap gap-1 mb-3">
@@ -222,22 +207,10 @@ const ComicsHome = () => {
                 ))}
               </div>
               
-              {/* Stats */}
-              <div className="flex justify-between items-center text-xs text-gray-400">
-                <div className="flex items-center gap-3">
-                  <span className="flex items-center gap-1">
-                    <Eye className="w-3 h-3" />
-                    {comic.views}
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <Heart className="w-3 h-3" />
-                    {comic.likes}
-                  </span>
-                </div>
+              {/* Bottom Stats */}
+              <div className="flex justify-between items-center text-xs text-gray-400 mt-1">
                 <span>{comic.episodes} episodes</span>
-              </div>
-              <div className="text-xs text-gray-500 mt-1">
-                Updated {comic.lastUpdate}
+                <span className="text-gray-500">{comic.lastUpdate}</span>
               </div>
             </div>
           </CardContent>

@@ -18,11 +18,13 @@ import {
   BookOpen,
   Heart,
   Award,
-  CheckCircle
+  CheckCircle,
+  X
 } from 'lucide-react';
 
 const AffiliationPrograms = () => {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false);
+  const [selectedProgram, setSelectedProgram] = useState(null);
   const { elementRef: heroRef, isVisible: heroVisible } = useScrollAnimation(0.1);
   const { elementRef: benefitsRef, isVisible: benefitsVisible } = useScrollAnimation(0.1);
   const { elementRef: programsRef, isVisible: programsVisible } = useScrollAnimation(0.1);
@@ -40,43 +42,49 @@ const AffiliationPrograms = () => {
 
   const programTypes = [
     {
-      title: "Content Creator Program",
+      title: "JOIN THE CROSSED HEART NETWORK",
       icon: BookOpen,
-      description: "Perfect for YouTubers, streamers, bloggers, and social media influencers",
+      description: "Step into the Collector's Circle, an exclusive membership designed for readers and collectors who love being first in line for something truly special. Think of it as your all-access pass to the world of Crossed Hearts — where stories, surprises, and community meet.",
       features: [
-        "10-15% commission on book sales",
-        "5-8% commission on merchandise",
-        "Custom discount codes for your audience",
-        "Early access to new releases",
-        "Promotional materials and assets"
+        "Early Access & Exclusive Goodies – Enjoy a 48-hour head start on every new release",
+        "Pre-Order with Confidence – Secure your editions without the fear of missing out",
+        "Members-Only Collectibles – Unlock limited pre-order bonuses available only on our website",
+        "Get sneak peeks of upcoming volumes in our private Discord",
+        "Take part in virtual Q&As with authors and the Crossed Hearts team",
+        "Beta-read upcoming chapters and help shape future stories and licenses",
+        "Stay ahead with our members-only newsletter, featuring the latest licensing, pre-order, and release updates",
+        "Receive chances to win limited signed copies of your favourite series",
+        "Join in on exclusive giveaways and seasonal surprises",
+        "20% off all pre-orders (discounts apply only during the pre-order period)",
+        "Birthday month perks (up to 10% off on all orders) and priority customer support"
       ],
-      requirements: "1K+ followers/subscribers"
+      requirements: "Join the Circle - and always be one step ahead in the story"
     },
     {
-      title: "Retail Partner Program",
+      title: "AMBASSADOR'S PROGRAM FOR CONTENT CREATORS",
       icon: Heart,
-      description: "Ideal for bookstores, comic shops, and online retailers",
+      description: "Share Your Love for Stories. Earn Rewards. At Crossed Hearts, we believe that every great story deserves to be shared - and we want to celebrate the creators who help us bring books closer to readers around the world.",
       features: [
-        "Wholesale pricing on popular titles",
-        "Co-marketing opportunities",
-        "Exclusive retailer-only releases",
-        "Marketing support and POS materials",
-        "Priority customer support"
+        "Our Ambassador Program is open to book bloggers, reviewers, and content creators of all kinds",
+        "As an ambassador, you'll earn commissions by promoting our titles to your audience",
+        "Enjoy early access to new releases",
+        "Exclusive PR kits",
+        "Invitations to launch events",
+        "Special opportunities to collaborate"
       ],
-      requirements: "Established retail business"
+      requirements: "Interested? Reach out to us at hello@thecrossedhearts.com to learn more and join our circle of storytellers"
     },
     {
-      title: "Community Ambassador",
+      title: "RETAILER PARTNERSHIPS",
       icon: Star,
-      description: "For passionate fans who want to share their love for manga and novels",
+      description: "Our Retailer Program is designed to give bookstores, comic shops, and retailers direct access to exclusive inventory and premium support from Crossed Hearts.",
       features: [
-        "5-10% commission on referrals",
-        "Free monthly book selection",
-        "Community recognition",
-        "Beta access to new features",
-        "Ambassador-exclusive events"
+        "Direct Supply – Inventory shipped directly from us to your store",
+        "Exclusive Editions & Pre-Order Bonuses – Early access to limited print editions, standees, promotional freebies, and special pre-order incentives",
+        "Marketing Partnership – Co-branded campaigns, priority promotional materials, and support tailored to boost visibility and sales",
+        "In-Store Experiences – Opportunities to host Crossed Hearts author signing events and other promotional activities at your premises"
       ],
-      requirements: "Active community participation"
+      requirements: "Interested in partnering with us? Join the Crossed Hearts Retailer Program by contacting us at sales@thecrossedhearts.com"
     }
   ];
 
@@ -182,33 +190,41 @@ const AffiliationPrograms = () => {
             {programTypes.map((program, index) => (
               <Card 
                 key={index}
-                className={`bg-gray-800 border-gray-700 h-full transition-all duration-1000 delay-${index * 200} transform ${
+                className={`bg-gray-800 border-gray-700 aspect-square flex flex-col transition-all duration-1000 delay-${index * 200} transform ${
                   programsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
                 }`}
               >
-                <CardHeader>
+                <CardHeader className="flex-shrink-0 pb-4">
                   <program.icon className="w-12 h-12 text-red-500 mb-4" />
-                  <CardTitle className="text-white text-xl">{program.title}</CardTitle>
-                  <CardDescription className="text-gray-300">
+                  <CardTitle className="text-white text-xl mb-2">{program.title}</CardTitle>
+                  <CardDescription className="text-gray-300 text-sm line-clamp-3">
                     {program.description}
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h4 className="text-white font-semibold mb-2">Features:</h4>
+                <CardContent className="flex-1 flex flex-col p-6 pt-0">
+                  <div className="flex-1">
+                    <h4 className="text-white font-semibold mb-3">Key Features:</h4>
                     <ul className="space-y-2">
-                      {program.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start text-gray-300 text-sm">
-                          <CheckCircle className="w-4 h-4 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                          {feature}
+                      {program.features.slice(0, 3).map((feature, idx) => (
+                        <li key={idx} className="flex items-start text-gray-300 text-xs">
+                          <CheckCircle className="w-3 h-3 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span className="line-clamp-1">{feature}</span>
                         </li>
                       ))}
+                      {program.features.length > 3 && (
+                        <li className="text-gray-400 text-xs">
+                          +{program.features.length - 3} more features
+                        </li>
+                      )}
                     </ul>
                   </div>
-                  <div className="pt-4 border-t border-gray-700">
-                    <Badge variant="secondary" className="bg-red-600 text-white">
-                      {program.requirements}
-                    </Badge>
+                  <div className="mt-auto pt-4 border-t border-gray-700">
+                    <Button 
+                      onClick={() => setSelectedProgram(program)}
+                      className="w-full bg-red-600 hover:bg-red-700 text-white text-sm font-medium h-10"
+                    >
+                      Read More
+                    </Button>
                   </div>
                 </CardContent>
               </Card>
@@ -328,6 +344,56 @@ const AffiliationPrograms = () => {
         title="Partnership Inquiry"
         subtitle="Tell us about your interest in joining our affiliate program"
       />
+
+      {/* Program Details Popup */}
+      {selectedProgram && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-gray-800 rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-4">
+                  <selectedProgram.icon className="w-12 h-12 text-red-500" />
+                  <h2 className="text-2xl font-bold text-white">{selectedProgram.title}</h2>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSelectedProgram(null)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  <X className="w-6 h-6" />
+                </Button>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <p className="text-gray-300 text-lg leading-relaxed">
+                    {selectedProgram.description}
+                  </p>
+                </div>
+                
+                <div>
+                  <h3 className="text-white text-xl font-semibold mb-4">Features:</h3>
+                  <ul className="space-y-3">
+                    {selectedProgram.features.map((feature, idx) => (
+                      <li key={idx} className="flex items-start text-gray-300">
+                        <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                
+                <div className="pt-6 border-t border-gray-700">
+                  <div className="bg-red-600 text-white p-4 rounded-lg text-center">
+                    <p className="font-medium">{selectedProgram.requirements}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
