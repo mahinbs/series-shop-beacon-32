@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Search, Filter, Grid, List, Star, Clock, Users, TrendingUp, Eye, Heart, Bookmark, ChevronDown, ArrowRight } from 'lucide-react';
+import { Search, Filter, Grid, List, Star, Clock, Users, TrendingUp, Eye, Heart, Bookmark, ArrowRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,6 @@ import { Link } from 'react-router-dom';
 const ComicsHome = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [activeFilter, setActiveFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
@@ -116,13 +115,8 @@ const ComicsHome = () => {
   });
 
   const sortedComics = [...filteredComics].sort((a, b) => {
-    switch (sortBy) {
-      case 'newest': return b.id - a.id;
-      case 'oldest': return a.id - b.id;
-      case 'popular': return b.rating - a.rating;
-      case 'updated': return new Date(b.lastUpdate).getTime() - new Date(a.lastUpdate).getTime();
-      default: return 0;
-    }
+    // Default sorting by newest (highest ID first)
+    return b.id - a.id;
   });
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -348,24 +342,6 @@ const ComicsHome = () => {
               })}
             </div>
             
-            {/* Sort Dropdown */}
-            <div className="flex gap-3 items-center">
-              <div className="relative">
-                <select
-                  value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none bg-gray-800/50 border-gray-700/50 text-white rounded-lg px-4 py-2 pr-8 text-sm backdrop-blur-sm focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
-                  aria-label="Sort comics by"
-                  title="Sort comics by"
-                >
-                  <option value="newest">Newest First</option>
-                  <option value="oldest">Oldest First</option>
-                  <option value="popular">Most Popular</option>
-                  <option value="updated">Recently Updated</option>
-                </select>
-                <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
           </div>
         </div>
 
