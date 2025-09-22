@@ -1,7 +1,8 @@
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft, ZoomIn, ZoomOut, Download, Share2, Bookmark, Book, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { ComicService, ComicSeries, ComicEpisode, ComicPage } from '@/services/comicService';
 
 const ReadersMode = () => {
   const { seriesTitle } = useParams();
@@ -10,6 +11,11 @@ const ReadersMode = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [zoomLevel, setZoomLevel] = useState(100);
   const [viewMode, setViewMode] = useState<'pdf' | 'page'>('pdf');
+  const [series, setSeries] = useState<ComicSeries | null>(null);
+  const [episodes, setEpisodes] = useState<ComicEpisode[]>([]);
+  const [pages, setPages] = useState<ComicPage[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   // Get the previous page from location state or default to home
   const getBackPath = () => {
@@ -19,35 +25,102 @@ const ReadersMode = () => {
     return '/our-series'; // Default fallback
   };
 
-  // Mock series data with pages
-  const seriesData = {
-    "demon-slayer": {
-      title: "Demon Slayer",
-      totalPages: 24,
-      pages: Array.from({ length: 24 }, (_, i) => `/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png`)
-    },
-    "jujutsu-kaisen": {
-      title: "Jujutsu Kaisen",
-      totalPages: 20,
-      pages: Array.from({ length: 20 }, (_, i) => `https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&h=600&fit=crop&crop=center`)
-    },
-    "one-piece": {
-      title: "One Piece",
-      totalPages: 30,
-      pages: Array.from({ length: 30 }, (_, i) => `https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400&h=600&fit=crop&crop=center`)
-    }
-  };
+  // Fetch series data and pages
+  useEffect(() => {
+    const fetchSeriesData = async () => {
+      if (!seriesTitle) return;
+      
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('🔍 Fetching series data for:', seriesTitle);
+        
+        // Get series by slug
+        const seriesData = await ComicService.getSeriesBySlug(seriesTitle);
+        if (!seriesData) {
+          setError('Series not found');
+          return;
+        }
+        
+        setSeries(seriesData);
+        console.log('✅ Series found:', seriesData);
+        
+        // Get episodes for this series
+        const seriesEpisodes = await ComicService.getEpisodes(seriesData.id);
+        setEpisodes(seriesEpisodes);
+        console.log('📚 Episodes found:', seriesEpisodes);
+        
+        // Get pages from all episodes
+        const allPages: ComicPage[] = [];
+        for (const episode of seriesEpisodes) {
+          const episodePages = await ComicService.getPages(episode.id);
+          allPages.push(...episodePages);
+        }
+        
+        // Sort pages by episode number and page number
+        allPages.sort((a, b) => {
+          const episodeA = seriesEpisodes.find(e => e.id === a.episode_id);
+          const episodeB = seriesEpisodes.find(e => e.id === b.episode_id);
+          if (episodeA && episodeB) {
+            if (episodeA.episode_number !== episodeB.episode_number) {
+              return episodeA.episode_number - episodeB.episode_number;
+            }
+          }
+          return a.page_number - b.page_number;
+        });
+        
+        setPages(allPages);
+        console.log('📄 Pages found:', allPages.length);
+        
+      } catch (err) {
+        console.error('❌ Error fetching series data:', err);
+        setError('Failed to load series data');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const series = seriesData[seriesTitle as keyof typeof seriesData];
+    fetchSeriesData();
+  }, [seriesTitle]);
 
-  if (!series) {
+  // Loading state
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Series not found</h1>
-          <Button onClick={() => navigate('/our-series')}>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <h1 className="text-xl font-semibold">Loading series...</h1>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !series) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4 text-red-400">{error || 'Series not found'}</h1>
+          <Button onClick={() => navigate(getBackPath())} className="bg-red-600 hover:bg-red-700">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Series
+            Back
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // No pages available
+  if (pages.length === 0) {
+    return (
+      <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4 text-yellow-400">No pages available</h1>
+          <p className="text-gray-400 mb-4">This series doesn't have any pages yet.</p>
+          <Button onClick={() => navigate(getBackPath())} className="bg-red-600 hover:bg-red-700">
+            <ArrowLeft className="w-4 h-4 mr-2" />
+            Back
           </Button>
         </div>
       </div>
@@ -74,7 +147,7 @@ const ReadersMode = () => {
           <div>
             <h1 className="font-semibold">{series.title}</h1>
             <p className="text-sm text-gray-400">
-              Page {currentPage} of {series.totalPages}
+              Page {currentPage} of {pages.length}
             </p>
           </div>
         </div>
@@ -147,9 +220,9 @@ const ReadersMode = () => {
           <div className="w-48 bg-gray-800 p-4 h-screen overflow-y-auto">
             <h3 className="text-sm font-semibold mb-4 text-gray-300">Pages</h3>
             <div className="space-y-2">
-              {series.pages.map((page, index) => (
+              {pages.map((page, index) => (
                 <div
-                  key={index}
+                  key={page.id}
                   className={`cursor-pointer border-2 rounded ${
                     currentPage === index + 1 
                       ? 'border-red-500' 
@@ -158,8 +231,8 @@ const ReadersMode = () => {
                   onClick={() => setCurrentPage(index + 1)}
                 >
                   <img
-                    src={page}
-                    alt={`Page ${index + 1}`}
+                    src={page.image_url}
+                    alt={page.alt_text || `Page ${index + 1}`}
                     className="w-full h-20 object-cover rounded"
                   />
                   <p className="text-xs text-center py-1">{index + 1}</p>
@@ -175,8 +248,8 @@ const ReadersMode = () => {
               style={{ transform: `scale(${zoomLevel / 100})` }}
             >
               <img
-                src={series.pages[currentPage - 1]}
-                alt={`${series.title} - Page ${currentPage}`}
+                src={pages[currentPage - 1]?.image_url}
+                alt={pages[currentPage - 1]?.alt_text || `${series.title} - Page ${currentPage}`}
                 className="max-w-none w-[600px] h-auto rounded-lg"
               />
             </div>
@@ -187,8 +260,8 @@ const ReadersMode = () => {
         <div className="flex-1 flex justify-center items-center min-h-screen bg-gray-900 p-4">
           <div className="max-w-4xl w-full">
             <img
-              src={series.pages[currentPage - 1]}
-              alt={`${series.title} - Page ${currentPage}`}
+              src={pages[currentPage - 1]?.image_url}
+              alt={pages[currentPage - 1]?.alt_text || `${series.title} - Page ${currentPage}`}
               className="w-full h-auto rounded-lg shadow-2xl"
             />
           </div>
@@ -207,13 +280,13 @@ const ReadersMode = () => {
           Previous
         </Button>
         
-        <span className="text-sm">{currentPage} / {series.totalPages}</span>
+        <span className="text-sm">{currentPage} / {pages.length}</span>
         
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, series.totalPages))}
-          disabled={currentPage === series.totalPages}
+          onClick={() => setCurrentPage(prev => Math.min(prev + 1, pages.length))}
+          disabled={currentPage === pages.length}
           className="text-white hover:bg-gray-800 disabled:opacity-50"
         >
           Next
