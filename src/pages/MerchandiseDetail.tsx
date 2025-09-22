@@ -7,11 +7,6 @@ import { ArrowLeft, Star, Heart, ShoppingCart, Package, Truck, Shield, RotateCcw
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
-import { booksService } from '@/services/database';
-import { useCart } from '@/hooks/useCart';
-import { useWishlist } from '@/hooks/useWishlist';
-import { useToast } from '@/hooks/use-toast';
-import type { Book as BookType } from '@/services/database';
 
 const MerchandiseDetail = () => {
   const { productId } = useParams();
@@ -20,145 +15,93 @@ const MerchandiseDetail = () => {
   const [quantity, setQuantity] = useState(1);
   const [selectedSize, setSelectedSize] = useState('M');
   const [isWishlisted, setIsWishlisted] = useState(false);
-  const [product, setProduct] = useState<BookType | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [fetchedProduct, setFetchedProduct] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const { addToCart } = useCart();
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  const { toast } = useToast();
+  // Get product data from location state
+  const productData = location.state?.product;
+  
+  // Debug logging
+  console.log('🔍 MerchandiseDetail - Product Data:', productData);
+  console.log('🔍 MerchandiseDetail - Product ID:', productId);
+  console.log('🔍 MerchandiseDetail - Location State:', location.state);
 
-  // Fetch product data from database
+  // Fetch product data if not available in location state
   useEffect(() => {
     const fetchProduct = async () => {
-      if (!productId) return;
-
-      try {
+      if (!productData && productId) {
         setIsLoading(true);
-        setError(null);
-
-        // Try to get product from location state first (for faster navigation)
-        if (location.state?.product) {
-          setProduct(location.state.product);
-          setIsLoading(false);
-          return;
-        }
-
-        // Fetch from database using booksService
-        let productData;
         try {
-          productData = await booksService.getById(productId);
-          
-          // Verify this is a merchandise product
-          if (productData && productData.product_type !== 'merchandise') {
-            setError('Product not found');
-            return;
-          }
-        } catch (bookError) {
-          console.error('Error fetching merchandise product:', bookError);
-          setError('Product not found');
-          return;
-        }
+          const { data, error } = await supabase
+            .from('books')
+            .select('*')
+            .eq('id', productId)
+            .eq('product_type', 'merchandise')
+            .single();
 
-        if (productData) {
-          setProduct(productData);
-        } else {
-          setError('Product not found');
+          if (error) {
+            console.error('Error fetching product:', error);
+          } else {
+            console.log('🔍 Fetched product data:', data);
+            setFetchedProduct(data);
+          }
+        } catch (err) {
+          console.error('Error in fetchProduct:', err);
+        } finally {
+          setIsLoading(false);
         }
-      } catch (err) {
-        console.error('Error:', err);
-        setError('Failed to load product');
-      } finally {
-        setIsLoading(false);
       }
     };
 
     fetchProduct();
-  }, [productId, location.state]);
-
-  // Check if product is in wishlist
-  useEffect(() => {
-    if (product) {
-      setIsWishlisted(isInWishlist(product.id));
-    }
-  }, [product, isInWishlist]);
+  }, [productData, productId]);
+  
+  // Use productData from location state or fetchedProduct
+  const actualProductData = productData || fetchedProduct;
+  
+  // Transform database product data to match component expectations
+  const product = actualProductData ? {
+    id: actualProductData.id,
+    title: actualProductData.title,
+    category: actualProductData.category || "Merchandise",
+    type: actualProductData.product_type || "Collectibles",
+    description: actualProductData.description || "Premium quality merchandise item.",
+    imageUrl: actualProductData.image_url || actualProductData.hover_image_url || "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
+    rating: 5, // Default rating since it's not in database
+    popularity: 95, // Default popularity
+    price: `$${actualProductData.price || '0.00'}`,
+    priceValue: Number(actualProductData.price) || 0,
+    inStock: actualProductData.stock_quantity ? actualProductData.stock_quantity > 0 : true,
+    reviews: "2.1K", // Default reviews
+    originalPrice: actualProductData.original_price,
+    stockQuantity: actualProductData.stock_quantity,
+    isNew: actualProductData.is_new,
+    canUnlockWithCoins: actualProductData.can_unlock_with_coins,
+    coins: actualProductData.coins
+  } : {
+    id: parseInt(productId || '1'),
+    title: "One Piece Figure Set",
+    category: "Figures",
+    type: "Collectibles",
+    description: "Premium quality figures featuring Luffy, Zoro, and Sanji from the Straw Hat Pirates.",
+    imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
+    rating: 5,
+    popularity: 95,
+    price: "$89.99",
+    priceValue: 89.99,
+    inStock: true,
+    reviews: "2.1K"
+  };
 
   const sizes = ['S', 'M', 'L', 'XL'];
-  
-  // Generate multiple images (using the same image for now, but can be extended)
-  const images = product ? [
-    product.image_url,
-    product.hover_image_url || product.image_url,
-    product.image_url,
-    product.image_url
-  ].filter(Boolean) : [];
-
-  const handleAddToCart = async () => {
-    if (!product) return;
-
-    try {
-      await addToCart({
-        id: product.id,
-        title: product.title,
-        author: product.author || undefined,
-        price: Number(product.price),
-        imageUrl: product.image_url,
-        category: product.category,
-        product_type: 'merchandise',
-        inStock: product.stock_quantity ? product.stock_quantity > 0 : true,
-        coins: product.coins || undefined,
-        canUnlockWithCoins: product.can_unlock_with_coins || undefined,
-      });
-
-      toast({
-        title: "Added to Cart!",
-        description: `${product.title} added to cart!`,
-      });
-    } catch (error) {
-      console.error('Error adding to cart:', error);
-      toast({
-        title: "Error",
-        description: "Failed to add to cart. Please try again.",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const handleWishlistToggle = () => {
-    if (!product) return;
-
-    if (isWishlisted) {
-      removeFromWishlist(product.id);
-      setIsWishlisted(false);
-      toast({
-        title: "Removed from Wishlist",
-        description: `${product.title} has been removed from your wishlist.`,
-      });
-    } else {
-      addToWishlist({
-        product_id: product.id,
-        title: product.title,
-        author: product.author || "Unknown Author",
-        price: Number(product.price),
-        originalPrice: product.original_price ? Number(product.original_price) : undefined,
-        imageUrl: product.image_url,
-        category: product.category,
-        product_type: 'merchandise',
-        inStock: product.stock_quantity ? product.stock_quantity > 0 : true,
-        volume: product.volume_number,
-      });
-      setIsWishlisted(true);
-      toast({
-        title: "Added to Wishlist",
-        description: `${product.title} has been added to your wishlist.`,
-      });
-    }
-  };
+  const images = [
+    product.imageUrl,
+    actualProductData?.hover_image_url || product.imageUrl,
+    product.imageUrl,
+    product.imageUrl
+  ].filter(Boolean);
 
   const handleCheckout = () => {
-    if (!product) return;
-
     console.log('🛍️ Proceeding to checkout for merchandise');
     console.log('📦 Product:', product);
     console.log('📊 Quantity:', quantity);
@@ -167,50 +110,26 @@ const MerchandiseDetail = () => {
       state: {
         product: {
           ...product,
-          price: Number(product.price)
+          price: product.priceValue || parseFloat(typeof product.price === 'string' ? product.price.replace('$', '') : product.price)
         },
         quantity,
-        totalPrice: Number(product.price) * quantity
+        totalPrice: (product.priceValue || parseFloat(typeof product.price === 'string' ? product.price.replace('$', '') : product.price)) * quantity
       }
     });
   };
 
+  const totalPrice = (product.priceValue || parseFloat(typeof product.price === 'string' ? product.price.replace('$', '') : product.price)) * quantity;
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="text-muted-foreground">Loading merchandise details...</div>
         </div>
-        <Footer />
       </div>
     );
   }
-
-  if (error || !product) {
-    return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="container mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold text-foreground mb-4">Product Not Found</h1>
-            <p className="text-muted-foreground mb-6">{error || 'The product you are looking for does not exist.'}</p>
-            <Button onClick={() => navigate('/shop-all')}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Shop
-            </Button>
-          </div>
-        </div>
-        <Footer />
-      </div>
-    );
-  }
-
-  const totalPrice = Number(product.price) * quantity;
-  const isInStock = product.stock_quantity ? product.stock_quantity > 0 : true;
 
   return (
     <div className="min-h-screen bg-background">
@@ -241,27 +160,26 @@ const MerchandiseDetail = () => {
                 <div className="absolute -inset-1 bg-gradient-to-r from-heart via-diamond to-spade rounded-lg blur opacity-25 group-hover:opacity-40 transition duration-1000"></div>
                 <div className="relative aspect-square bg-card border border-border rounded-lg overflow-hidden shadow-2xl">
                   <img
-                    src={images[selectedImageIndex]}
+                    src={product.imageUrl}
                     alt={product.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   {/* Overlay Badges */}
                   <div className="absolute top-4 left-4 space-y-2">
-                    {isInStock && (
+                    {product.inStock && (
                       <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white shadow-lg">
                         <Zap className="w-3 h-3 mr-1" />
                         In Stock
                       </Badge>
                     )}
-                    {!isInStock && (
-                      <Badge className="bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg">
-                        Out of Stock
+                    {product.isNew && (
+                      <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg">
+                        NEW
                       </Badge>
                     )}
-                    {product.is_new && (
-                      <Badge className="bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg">
-                        <Award className="w-3 h-3 mr-1" />
-                        New
+                    {product.stockQuantity && (
+                      <Badge className="bg-gradient-to-r from-purple-500 to-purple-600 text-white shadow-lg">
+                        {product.stockQuantity} left
                       </Badge>
                     )}
                   </div>
@@ -269,27 +187,20 @@ const MerchandiseDetail = () => {
               </div>
 
               {/* Thumbnail Gallery */}
-              {images.length > 1 && (
-                <div className="grid grid-cols-4 gap-3">
-                  {images.map((image, index) => (
-                    <div 
-                      key={index}
-                      onClick={() => setSelectedImageIndex(index)}
-                      className={`aspect-square bg-card border rounded-lg overflow-hidden cursor-pointer transition-all duration-300 hover:scale-105 hover:shadow-lg ${
-                        selectedImageIndex === index
-                          ? 'border-primary opacity-100 shadow-lg shadow-primary/20'
-                          : 'border-border opacity-70 hover:opacity-100'
-                      }`}
-                    >
-                      <img
-                        src={image}
-                        alt={`${product.title} ${index + 1}`}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="grid grid-cols-4 gap-3">
+                {images.map((image, index) => (
+                  <div 
+                    key={index} 
+                    className="aspect-square bg-card border border-border rounded-lg overflow-hidden cursor-pointer opacity-70 hover:opacity-100 transition-all duration-300 hover:scale-105 hover:shadow-lg"
+                  >
+                    <img
+                      src={image}
+                      alt={`${product.title} ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* Product Details */}
@@ -302,7 +213,7 @@ const MerchandiseDetail = () => {
                     {product.category}
                   </Badge>
                   <Badge variant="outline" className="border-muted-foreground/30 text-muted-foreground hover:border-foreground hover:text-foreground transition-colors duration-300">
-                    Merchandise
+                    {product.type}
                   </Badge>
                 </div>
                 
@@ -310,37 +221,39 @@ const MerchandiseDetail = () => {
                   {product.title}
                 </h1>
                 
-                {product.author && (
-                  <p className="text-lg text-muted-foreground">by {product.author}</p>
-                )}
+                <div className="flex items-center gap-6 mb-6">
+                  <div className="flex items-center">
+                    {[...Array(5)].map((_, i) => (
+                      <Star
+                        key={i}
+                        className={`w-5 h-5 transition-colors duration-300 ${
+                          i < product.rating 
+                            ? 'text-yellow-400 fill-current drop-shadow-sm' 
+                            : 'text-muted-foreground/40'
+                        }`}
+                      />
+                    ))}
+                    <span className="text-muted-foreground ml-3 font-medium">({product.reviews} reviews)</span>
+                  </div>
+                </div>
                 
                 <div className="flex items-baseline gap-4 mb-6">
                   <p className="text-4xl font-bold bg-gradient-to-r from-heart to-diamond bg-clip-text text-transparent">
-                    ${product.price}
+                    {product.price}
                   </p>
-                  {product.original_price && (
+                  {product.originalPrice && (
                     <>
                       <p className="text-lg text-muted-foreground line-through">
-                        ${product.original_price}
+                        ${Number(product.originalPrice).toFixed(2)}
                       </p>
                       <Badge className="bg-gradient-to-r from-green-500 to-green-600 text-white">
-                        {Math.round(((Number(product.original_price) - Number(product.price)) / Number(product.original_price)) * 100)}% OFF
+                        {Math.round(((Number(product.originalPrice) - Number(product.priceValue)) / Number(product.originalPrice)) * 100)}% OFF
                       </Badge>
                     </>
                   )}
                 </div>
                 
-                <p className="text-muted-foreground leading-relaxed text-lg">
-                  {product.description || 'Premium quality merchandise for anime and manga fans.'}
-                </p>
-
-                {/* Stock Information */}
-                <div className="flex items-center gap-2 text-sm">
-                  <span className="text-muted-foreground">Stock:</span>
-                  <span className={`font-medium ${isInStock ? 'text-green-600' : 'text-red-600'}`}>
-                    {product.stock_quantity || 0} available
-                  </span>
-                </div>
+                <p className="text-muted-foreground leading-relaxed text-lg">{product.description}</p>
               </div>
 
               {/* Size Selection (Enhanced) */}
@@ -384,31 +297,27 @@ const MerchandiseDetail = () => {
                     variant="outline"
                     size="icon"
                     onClick={() => setQuantity(quantity + 1)}
-                    disabled={!isInStock || (product.stock_quantity && quantity >= product.stock_quantity)}
                     className="w-12 h-12 border-border hover:border-foreground hover:bg-accent transition-colors duration-300"
                   >
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
-                {product.stock_quantity && quantity >= product.stock_quantity && (
-                  <p className="text-sm text-muted-foreground">Maximum quantity reached</p>
-                )}
               </div>
 
               {/* Action Buttons (Enhanced) */}
               <div className="space-y-4">
                 <Button
-                  onClick={handleAddToCart}
-                  disabled={!isInStock}
+                  onClick={handleCheckout}
+                  disabled={!product.inStock}
                   className="w-full h-14 bg-gradient-to-r from-heart to-heart/90 hover:from-heart/90 hover:to-heart text-white text-lg font-semibold shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-[1.02]"
                 >
                   <ShoppingCart className="w-5 h-5 mr-3" />
-                  {isInStock ? `Add to Cart - $${totalPrice.toFixed(2)}` : 'Out of Stock'}
+                  {product.inStock ? `Add to Cart - $${totalPrice.toFixed(2)}` : 'Out of Stock'}
                 </Button>
                 
                 <Button
                   variant="outline"
-                  onClick={handleWishlistToggle}
+                  onClick={() => setIsWishlisted(!isWishlisted)}
                   className="w-full h-12 border-border text-muted-foreground hover:border-heart hover:text-heart hover:bg-heart/5 transition-all duration-300"
                 >
                   <Heart className={`w-5 h-5 mr-3 transition-all duration-300 ${

@@ -25,8 +25,6 @@ import AffiliationPrograms from "./pages/AffiliationPrograms";
 import DigitalReader from "./pages/DigitalReader";
 import DigitalReaderSpecs from "./pages/DigitalReaderSpecs";
 import ComicSeries from "./pages/ComicSeries";
-import MerchandiseDetail from "./pages/MerchandiseDetail";
-import ProductDetail from "./pages/ProductDetail";
 import Coins from "./pages/Coins";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
@@ -49,6 +47,8 @@ import ReadersMode from "./pages/ReadersMode";
 import { AuthProvider as SupabaseAuthProvider } from "./hooks/useSupabaseAuth";
 import { CartProvider } from "./hooks/useCart";
 import AuthPage from "./pages/AuthPage";
+import ProductDetails from "./pages/ProductDetails";
+import MerchandiseDetail from "./pages/MerchandiseDetail";
 
 const queryClient = new QueryClient();
 
@@ -74,7 +74,7 @@ const App = () => (
               <Route path="/announcement/:id" element={<AnnouncementDetail />} />
               <Route path="/pre-order/:productId" element={<PreOrder />} />
               <Route path="/series/:seriesId" element={<SeriesPage />} />
-              <Route path="/product/:productId" element={<ProductDetail />} />
+              <Route path="/product/:productId" element={<ProductDetails />} />
               <Route path="/merchandise/:productId" element={<MerchandiseDetail />} />
               <Route path="/checkout/:productId" element={<Checkout />} />
               <Route path="/direct-checkout/:productId" element={<DirectCheckout />} />

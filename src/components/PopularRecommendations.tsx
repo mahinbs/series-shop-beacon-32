@@ -152,7 +152,15 @@ const PopularRecommendations = () => {
   };
 
   const handleViewProduct = (book: BookType) => {
-    navigate(`/product/${book.id}`);
+    // Navigate to merchandise detail page for merchandise products
+    if (book.product_type === 'merchandise') {
+      navigate(`/merchandise/${book.id}`, {
+        state: { product: book }
+      });
+    } else {
+      // For other products, use the regular product page
+      navigate(`/product/${book.id}`);
+    }
   };
 
   const handleGenreClick = (genreName: string) => {
@@ -630,7 +638,7 @@ const PopularRecommendations = () => {
                         className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
                         onMouseEnter={() => setHoveredSeries(item.id)}
                         onMouseLeave={() => setHoveredSeries(null)}
-                        onClick={() => navigate(`/merchandise/${item.id}`, { state: { product: item } })}
+                        onClick={() => handleViewProduct(item)}
                         style={{ 
                           transitionDelay: `${index * 100}ms`,
                           opacity: 1,

@@ -1,9 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Calendar, ExternalLink, Heart, Diamond, Club, Spade } from 'lucide-react';
+import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
 
 const AnnouncementsSection = () => {
+  const { elementRef, isVisible } = useScrollAnimation(0.1);
   const { announcements, isLoading, error } = useAnnouncements();
 
   // Debug logging
@@ -47,7 +49,12 @@ const AnnouncementsSection = () => {
   }
 
   return (
-    <section className="relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 py-16 overflow-hidden">
+    <section 
+      ref={elementRef}
+      className={`relative bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 py-16 overflow-hidden transition-all duration-1000 transform ${
+        isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+      }`}
+    >
       {/* Background decoration */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-1/4 left-10 w-96 h-96 bg-gradient-to-r from-red-500 to-orange-500 rounded-full blur-3xl animate-pulse"></div>
@@ -55,7 +62,9 @@ const AnnouncementsSection = () => {
       </div>
 
       <div className="container mx-auto px-4 relative z-10">
-        <div className="text-center mb-12">
+        <div className={`text-center mb-12 transition-all duration-1000 delay-200 transform ${
+          isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'
+        }`}>
           <h2 className="text-4xl font-bold text-white mb-4">
             <span className="bg-gradient-to-r from-red-600 via-red-500 to-red-400 bg-clip-text text-transparent">
               Latest Announcements
@@ -68,7 +77,10 @@ const AnnouncementsSection = () => {
           {announcements.map((announcement, index) => (
             <div 
               key={index}
-              className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-700 transform hover:scale-105 hover:-translate-y-4 hover:shadow-2xl hover:shadow-orange-500/20 border border-gray-700/50 hover:border-orange-500/30"
+              className={`group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-700 transform hover:scale-105 hover:-translate-y-4 hover:shadow-2xl hover:shadow-orange-500/20 border border-gray-700/50 hover:border-orange-500/30 ${
+                isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-12'
+              }`}
+              style={{ transitionDelay: `${400 + index * 200}ms` }}
             >
               <div className="relative overflow-hidden">
                 <div className="aspect-[4/3] overflow-hidden">
