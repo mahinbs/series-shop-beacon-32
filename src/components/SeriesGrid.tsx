@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Users, BookOpen, Package } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ComicService, type ComicSeries } from '@/services/comicService';
-import { useBooks } from '@/hooks/useBooks';
+import { useBooksOnly, useMerchandiseOnly } from '@/hooks/useBooks';
 import { type Book } from '@/services/database';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
@@ -16,15 +16,17 @@ interface SeriesGridProps {
 
 const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest First' }: SeriesGridProps) => {
   const navigate = useNavigate();
-  const [hoveredSeries, setHoveredSeries] = useState<number | null>(null);
+  const [hoveredSeries, setHoveredSeries] = useState<string | number | null>(null);
   const [activeTab, setActiveTab] = useState<'books' | 'merchandise'>('books');
   const [seriesData, setSeriesData] = useState<ComicSeries[]>([]);
   const [filteredSeries, setFilteredSeries] = useState<ComicSeries[]>([]);
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
+  const [filteredMerchandise, setFilteredMerchandise] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // Use the books hook
-  const { books, isLoading: booksLoading } = useBooks();
+  // Use the specialized hooks for books and merchandise
+  const { books, isLoading: booksLoading } = useBooksOnly();
+  const { books: merchandise, isLoading: merchandiseLoading } = useMerchandiseOnly();
   
   // Use cart and toast hooks
   const { addToCart } = useCart();
@@ -41,6 +43,10 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
   useEffect(() => {
     applyBooksFiltersAndSearch();
   }, [books, appliedFilters, searchTerm, sortBy]);
+
+  useEffect(() => {
+    applyMerchandiseFiltersAndSearch();
+  }, [merchandise, appliedFilters, searchTerm, sortBy]);
 
   const applyFiltersAndSearch = () => {
     let filtered = [...seriesData];
@@ -188,6 +194,79 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
     console.log('📋 Final results:', filtered.map(b => b.title));
   };
 
+  const applyMerchandiseFiltersAndSearch = () => {
+    let filtered = [...merchandise];
+    
+    console.log('🛍️ Starting merchandise filter process:');
+    console.log('📊 Total merchandise:', merchandise.length);
+    console.log('🔍 Search term:', searchTerm);
+    console.log('🎯 Applied filters:', appliedFilters);
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(item => {
+        const titleMatch = item.title.toLowerCase().includes(searchLower);
+        const descMatch = item.description?.toLowerCase().includes(searchLower) || false;
+        const categoryMatch = item.category?.toLowerCase().includes(searchLower) || false;
+        
+        const matches = titleMatch || descMatch || categoryMatch;
+        console.log(`🔍 "${item.title}" search match:`, { titleMatch, descMatch, categoryMatch, matches });
+        return matches;
+      });
+      console.log('🔍 After search filter:', filtered.length, 'merchandise remain');
+    }
+
+    // Apply category/genre filters
+    if (appliedFilters.length > 0) {
+      filtered = filtered.filter(item => {
+        const hasMatchingCategory = item.category && 
+          appliedFilters.some(filter => 
+            item.category.toLowerCase().includes(filter.toLowerCase()) || 
+            filter.toLowerCase().includes(item.category.toLowerCase())
+          );
+        
+        const hasMatchingTag = item.tags?.some(tag => 
+          appliedFilters.some(filter => 
+            tag.toLowerCase().includes(filter.toLowerCase()) || 
+            filter.toLowerCase().includes(tag.toLowerCase())
+          )
+        ) || false;
+        
+        const matches = hasMatchingCategory || hasMatchingTag;
+        console.log(`🎯 "${item.title}" category match:`, { 
+          hasMatchingCategory, 
+          hasMatchingTag, 
+          matches 
+        });
+        return matches;
+      });
+      console.log('🎯 After category filter:', filtered.length, 'merchandise remain');
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'A-Z':
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'Z-A':
+        filtered.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case 'Newest First':
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case 'Oldest First':
+        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      default:
+        break;
+    }
+
+    setFilteredMerchandise(filtered);
+    console.log('✅ Final filtered merchandise:', filtered.length, 'out of', merchandise.length);
+    console.log('📋 Final results:', filtered.map(m => m.title));
+  };
+
   const loadSeries = async () => {
     try {
       const series = await ComicService.getSeries();
@@ -260,44 +339,6 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
     }
   };
 
-  const merchandise = [
-    {
-      id: 1,
-      title: "One Piece Figure Set",
-      category: "Figures",
-      type: "Collectibles",
-      description: "Premium quality figures featuring Luffy, Zoro, and Sanji from the Straw Hat Pirates.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 95,
-      price: "$89.99",
-      inStock: true,
-      reviews: "2.1K"
-    },
-    {
-      id: 2,
-      title: "Attack on Titan Hoodie",
-      category: "Apparel",
-      type: "Clothing",
-      description: "Official Survey Corps hoodie with embroidered wings of freedom logo.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 88,
-      price: "$49.99",
-      inStock: true,
-      reviews: "1.5K"
-    },
-    {
-      id: 3,
-      title: "Demon Slayer Sword Replica",
-      category: "Weapons",
-      type: "Replica",
-      description: "High-quality replica of Tanjiro's Nichirin sword with display stand.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      popularity: 92,
-      price: "$129.99",
-      inStock: false,
-      reviews: "890"
-    }
-  ];
 
   const handleSeriesClick = (seriesId: string) => {
     console.log('🔍 Series clicked:', seriesId);
@@ -354,14 +395,14 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
     }
   };
 
-  const handleMerchandiseClick = (merchandiseId: number) => {
+  const handleMerchandiseClick = (merchandiseId: string) => {
     console.log('🛍️ SeriesGrid: Merchandise clicked:', merchandiseId);
-    console.log('🚀 SeriesGrid: Navigating to product page:', `/product/${merchandiseId}`);
+    console.log('🚀 SeriesGrid: Navigating to merchandise page:', `/merchandise/${merchandiseId}`);
     console.log('📦 SeriesGrid: Available merchandise:', merchandise.map(item => ({ id: item.id, title: item.title })));
     
     const product = merchandise.find(item => item.id === merchandiseId);
     console.log('🔍 SeriesGrid: Found product:', product);
-    navigate(`/product/${merchandiseId}`, {
+    navigate(`/merchandise/${merchandiseId}`, {
       state: { product }
     });
   };
@@ -529,8 +570,34 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
 
         {/* Merchandise Grid */}
         {activeTab === 'merchandise' && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {merchandise.map((item, index) => (
+          <>
+            {merchandiseLoading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="bg-gray-800 rounded-xl overflow-hidden animate-pulse">
+                    <div className="w-full h-80 bg-gray-700"></div>
+                    <div className="p-5 space-y-3">
+                      <div className="h-4 bg-gray-700 rounded w-1/4"></div>
+                      <div className="h-6 bg-gray-700 rounded"></div>
+                      <div className="h-4 bg-gray-700 rounded w-3/4"></div>
+                      <div className="h-3 bg-gray-700 rounded w-full"></div>
+                      <div className="h-3 bg-gray-700 rounded w-2/3"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : filteredMerchandise.length === 0 ? (
+              <div className="text-center py-12">
+                <p className="text-gray-400 text-lg">
+                  {appliedFilters.length > 0 || searchTerm ? 'No merchandise found matching your criteria' : 'No merchandise available'}
+                </p>
+                <p className="text-gray-500 text-sm mt-2">
+                  {appliedFilters.length > 0 || searchTerm ? 'Try adjusting your filters or search term' : 'Add some merchandise in the admin panel'}
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                {filteredMerchandise.map((item, index) => (
               <div
                 key={item.id}
                 className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
@@ -545,7 +612,7 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
               >
                 <div className="relative overflow-hidden">
                   <img 
-                    src={item.imageUrl} 
+                    src={item.image_url || item.hover_image_url || "/placeholder.svg"} 
                     alt={item.title}
                     className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
                   />
@@ -553,18 +620,18 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                   {/* Stock Status Badge */}
                   <div className="absolute top-3 left-3">
                     <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
-                      item.inStock 
+                      item.stock_quantity > 0 
                         ? 'bg-gradient-to-r from-green-600 to-green-700 text-white' 
                         : 'bg-gradient-to-r from-red-600 to-red-700 text-white animate-pulse'
                     }`}>
-                      {item.inStock ? 'In Stock' : 'Out of Stock'}
+                      {item.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
                     </span>
                   </div>
 
                   {/* Price Badge */}
                   <div className="absolute top-3 right-3">
                     <span className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                      {item.price}
+                      ${item.price || '0.00'}
                     </span>
                   </div>
 
@@ -573,8 +640,12 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <div className="space-y-2">
                         <div className="flex items-center text-white text-sm">
+                          <Package className="w-4 h-4 mr-2" />
+                          ${item.price || '0.00'}
+                        </div>
+                        <div className="flex items-center text-white text-sm">
                           <Users className="w-4 h-4 mr-2" />
-                          {item.reviews} Reviews
+                          Stock: {item.stock_quantity || 0}
                         </div>
                       </div>
                     </div>
@@ -590,7 +661,7 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                     {item.title}
                   </h3>
                   <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">
-                    {item.type}
+                    {item.product_type || 'Merchandise'}
                   </p>
                   <p className="text-gray-500 text-xs line-clamp-2 group-hover:text-gray-400 transition-colors duration-300">
                     {item.description}
@@ -598,30 +669,32 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                   
                   <div className="flex items-center justify-between pt-2">
                     <div className="text-gray-400 text-xs">
-                      {item.reviews} reviews
+                      Stock: {item.stock_quantity || 0}
                     </div>
                     <Button 
                       size="sm" 
-                      disabled={!item.inStock}
+                      disabled={!item.stock_quantity || item.stock_quantity <= 0}
                       className={`${
-                        item.inStock 
+                        item.stock_quantity > 0 
                           ? 'bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white' 
                           : 'bg-gray-600 text-gray-400 cursor-not-allowed'
                       } text-xs font-semibold transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-red-500/25`}
                       onClick={(e) => {
                         e.stopPropagation();
-                        if (item.inStock) {
+                        if (item.stock_quantity > 0) {
                           handleMerchandiseClick(item.id);
                         }
                       }}
                     >
-                      {item.inStock ? 'Add to Cart' : 'Out of Stock'}
+                      {item.stock_quantity > 0 ? 'Add to Cart' : 'Out of Stock'}
                     </Button>
                   </div>
                 </div>
               </div>
             ))}
           </div>
+            )}
+          </>
         )}
       </div>
     </section>

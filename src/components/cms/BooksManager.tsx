@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useBooks } from "@/hooks/useBooks";
+import { useBooksOnly } from "@/hooks/useBooks";
 import {
   BookCharacterService,
   BookCharacter,
@@ -96,14 +96,9 @@ interface VolumeForm {
 }
 
 export const BooksManager = () => {
-  const { books, isLoading, createBook, updateBook, deleteBook, loadBooks, getBooksByProductType } =
-    useBooks();
+  const { books, isLoading, createBook, updateBook, deleteBook, loadBooks } =
+    useBooksOnly();
   const { toast } = useToast();
-
-  // Get only book products from the database
-  const bookProducts = getBooksByProductType("book").concat(
-    books.filter(book => !book.product_type) // Include books without product_type for backward compatibility
-  );
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hoverFileInputRef = useRef<HTMLInputElement>(null);
   const coverPageFileInputRef = useRef<HTMLInputElement>(null);
@@ -1116,7 +1111,7 @@ export const BooksManager = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {bookProducts.length === 0 ? (
+          {books.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">
                 No books created yet. Start by adding your first book to display
@@ -1129,7 +1124,7 @@ export const BooksManager = () => {
             </div>
           ) : (
             <div className="grid gap-4">
-              {bookProducts.map((book) => (
+              {books.map((book) => (
                 <Card key={book.id} className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
@@ -1662,7 +1657,7 @@ export const BooksManager = () => {
 
               {/* Volume Management Section */}
               {editingId &&
-                !bookProducts.find((b) => b.id === editingId)?.is_volume && (
+                !books.find((b) => b.id === editingId)?.is_volume && (
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">

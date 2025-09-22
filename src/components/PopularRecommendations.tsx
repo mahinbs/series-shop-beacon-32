@@ -38,17 +38,14 @@ const PopularRecommendations = () => {
           .select("*")
           .eq("is_active", true);
 
-        // Add product type filter based on selectedFilter
+        // Filter by product type based on selected filter
         if (selectedFilter === "digital") {
-          // Show all products except merchandise (books, digital, print)
-          query = query.neq("product_type", "merchandise");
+          // Show all products except merchandise and print
+          query = query.not("product_type", "eq", "merchandise").not("product_type", "eq", "print");
         } else if (selectedFilter === "print") {
           query = query.eq("product_type", "print");
         } else if (selectedFilter === "merchandise") {
           query = query.eq("product_type", "merchandise");
-        } else {
-          // Default to showing all except merchandise
-          query = query.neq("product_type", "merchandise");
         }
 
         const { data, error } = await query.order("display_order", { ascending: true });
@@ -84,7 +81,7 @@ const PopularRecommendations = () => {
     };
 
     fetchPopularBooks();
-  }, [selectedFilter]); // Add selectedFilter as dependency
+  }, [selectedFilter]);
 
   const handleAddToCart = async (book: BookType) => {
     try {
@@ -398,54 +395,6 @@ const PopularRecommendations = () => {
     }
   ];
 
-  // Merchandise data
-  const merchandise = [
-    {
-      id: "merch-1",
-      title: "One Piece Figure Set",
-      category: "Figures",
-      type: "Collectibles",
-      description: "Premium quality figures featuring Luffy, Zoro, and Sanji from the Straw Hat Pirates.",
-      imageUrl: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png",
-      rating: 5,
-      price: "$89.99",
-      inStock: true,
-      reviews: "2.1K"
-    },
-    {
-      id: "merch-2", 
-      title: "Demon Slayer T-Shirt",
-      category: "Apparel",
-      type: "Clothing",
-      description: "Official Demon Slayer anime t-shirt with high-quality print and comfortable fit.",
-      imageUrl: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&h=600&fit=crop&crop=center",
-      rating: 4.8,
-      price: "$24.99",
-      inStock: true,
-      reviews: "1.5K"
-    },
-    {
-      id: "merch-3",
-      title: "Naruto Keychain Set",
-      category: "Accessories", 
-      type: "Collectibles",
-      description: "Exclusive Naruto character keychains with detailed designs and durable materials.",
-      imageUrl: "https://images.unsplash.com/photo-1618519764620-7403abdbdfe9?w=400&h=600&fit=crop&crop=center",
-      rating: 4.9,
-      price: "$12.99",
-      inStock: false,
-      reviews: "856"
-    }
-  ];
-
-  const handleMerchandiseClick = (merchandiseId: string) => {
-    const product = merchandise.find(item => item.id === merchandiseId);
-    if (product) {
-      navigate(`/merchandise/${merchandiseId}`, { 
-        state: { product } 
-      });
-    }
-  };
 
   return (
     <section
@@ -541,7 +490,19 @@ const PopularRecommendations = () => {
                   onClick={() => (window.location.href = "/shop-all")}
                   className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg"
                 >
-                  View All ({books.length})
+                  View All (
+                  {
+                    books.filter((book) => {
+                      if (selectedFilter === "digital")
+                        return book.product_type === "digital";
+                      if (selectedFilter === "print")
+                        return book.product_type === "print";
+                      if (selectedFilter === "merchandise")
+                        return book.product_type === "merchandise";
+                      return true;
+                    }).length
+                  }
+                  )
                 </button>
               )}
             </div>
@@ -562,7 +523,7 @@ const PopularRecommendations = () => {
                 {selectedFilter === "print" ? (
                   /* Print Books Grid */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {books.map((book, index) => (
+                    {books.filter(book => book.product_type === 'print').map((book, index) => (
                       <div
                         key={book.id}
                         className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
@@ -652,10 +613,10 @@ const PopularRecommendations = () => {
                       </div>
                     ))}
                     
-                    {books.length === 0 && (
+                    {books.filter(book => book.product_type === 'print').length === 0 && (
                       <div className="col-span-full text-center py-12">
                         <BookOpen className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                        <p className="text-gray-400 text-lg">No {selectedFilter} products available yet.</p>
+                        <p className="text-gray-400 text-lg">No print books available yet.</p>
                         <p className="text-gray-500 text-sm">Check back later for new releases!</p>
                       </div>
                     )}
@@ -669,7 +630,7 @@ const PopularRecommendations = () => {
                         className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
                         onMouseEnter={() => setHoveredSeries(item.id)}
                         onMouseLeave={() => setHoveredSeries(null)}
-                        onClick={() => handleViewProduct(item)}
+                        onClick={() => navigate(`/merchandise/${item.id}`, { state: { product: item } })}
                         style={{ 
                           transitionDelay: `${index * 100}ms`,
                           opacity: 1,
@@ -679,7 +640,7 @@ const PopularRecommendations = () => {
                         {/* Image Section with Badges */}
                         <div className="relative overflow-hidden">
                           <img 
-                            src={item.image_url} 
+                            src={item.image_url || item.hover_image_url || "/placeholder.svg"} 
                             alt={item.title}
                             className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
                           />
@@ -698,7 +659,7 @@ const PopularRecommendations = () => {
                           {/* Price Badge */}
                           <div className="absolute top-3 right-3">
                             <span className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                              {item.price}
+                              ${item.price || '0.00'}
                             </span>
                           </div>
 
@@ -708,11 +669,11 @@ const PopularRecommendations = () => {
                               <div className="space-y-2">
                                 <div className="flex items-center text-white text-sm">
                                   <Star className="w-4 h-4 mr-2 text-yellow-400" />
-                                  4.5/5 Rating
+                                  {item.is_new ? 'New Product' : 'Available'}
                                 </div>
                                 <div className="flex items-center text-white text-sm">
                                   <Users className="w-4 h-4 mr-2" />
-                                  New Product
+                                  Stock: {item.stock_quantity || 0}
                                 </div>
                               </div>
                             </div>
@@ -729,7 +690,7 @@ const PopularRecommendations = () => {
                             {item.title}
                           </h3>
                           <p className="text-gray-400 text-sm group-hover:text-gray-300 transition-colors duration-300">
-                            {item.category || 'Merchandise'}
+                            {item.product_type || 'Merchandise'}
                           </p>
                           <p className="text-gray-500 text-xs line-clamp-2 group-hover:text-gray-400 transition-colors duration-300">
                             {item.description}
@@ -737,7 +698,7 @@ const PopularRecommendations = () => {
                           
                           <div className="flex items-center justify-between pt-2">
                             <div className="text-gray-400 text-xs">
-                              New Product
+                              Stock: {item.stock_quantity || 0}
                             </div>
                             <Button 
                               size="sm" 
@@ -760,6 +721,13 @@ const PopularRecommendations = () => {
                         </div>
                       </div>
                     ))}
+                    
+                    {books.length === 0 && (
+                      <div className="col-span-full text-center py-12">
+                        <div className="text-gray-400 text-lg mb-2">No merchandise available yet.</div>
+                        <div className="text-gray-500 text-sm">Check back later for new merchandise!</div>
+                      </div>
+                    )}
                   </div>
                 ) : (
                   /* Popular Recommendations from Database */

@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { booksService, type Book } from '@/services/database';
 
-export const useBooks = () => {
+export const useBooks = (productType?: string) => {
   const [books, setBooks] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadBooks();
-  }, []);
+  }, [productType]);
 
   const loadBooks = async () => {
     try {
@@ -23,6 +23,11 @@ export const useBooks = () => {
         data = await booksService.getAll();
       }
       
+      // Filter by product type if specified
+      if (productType) {
+        data = data.filter(book => book.product_type === productType);
+      }
+      
       setBooks(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -35,8 +40,10 @@ export const useBooks = () => {
     try {
       const newBook = await booksService.create(book);
       
-      // Update local state
-      setBooks(prev => [...prev, newBook].sort((a, b) => a.display_order - b.display_order));
+      // Update local state only if the new book matches the current filter
+      if (!productType || newBook.product_type === productType) {
+        setBooks(prev => [...prev, newBook].sort((a, b) => a.display_order - b.display_order));
+      }
       return newBook;
     } catch (error) {
       throw error;
@@ -48,11 +55,16 @@ export const useBooks = () => {
       const updatedBook = await booksService.update(id, updates);
       
       // Update local state
-      setBooks(prev => 
-        prev.map(book => 
-          book.id === id ? updatedBook : book
-        ).sort((a, b) => a.display_order - b.display_order)
-      );
+      setBooks(prev => {
+        const filtered = prev.filter(book => book.id !== id);
+        
+        // Only add back if it matches the current filter
+        if (!productType || updatedBook.product_type === productType) {
+          return [...filtered, updatedBook].sort((a, b) => a.display_order - b.display_order);
+        }
+        
+        return filtered.sort((a, b) => a.display_order - b.display_order);
+      });
       return updatedBook;
     } catch (error) {
       throw error;
@@ -105,3 +117,7 @@ export const useBooks = () => {
     searchBooks
   };
 };
+
+// Specialized hooks for different product types
+export const useBooksOnly = () => useBooks('book');
+export const useMerchandiseOnly = () => useBooks('merchandise');

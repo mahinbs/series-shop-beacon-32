@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { useBooks } from "@/hooks/useBooks";
+import { useMerchandiseOnly } from "@/hooks/useBooks";
 import { testDatabaseConnection } from "@/services/database";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -82,7 +82,7 @@ const SECTION_TYPES = [
 
 export const MerchandiseManager = () => {
   const { books, isLoading, createBook, updateBook, deleteBook, loadBooks } =
-    useBooks();
+    useMerchandiseOnly();
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const hoverFileInputRef = useRef<HTMLInputElement>(null);
@@ -113,11 +113,6 @@ export const MerchandiseManager = () => {
     dimensions: "",
     tags: [],
   });
-
-  // Filter only merchandise products
-  const merchandiseProducts = books.filter(
-    (book) => book.product_type === "merchandise"
-  );
 
   const resetForm = () => {
     setFormData({
@@ -373,7 +368,7 @@ export const MerchandiseManager = () => {
           </div>
         </CardHeader>
         <CardContent>
-          {merchandiseProducts.length === 0 ? (
+          {books.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground mb-4">
                 No merchandise created yet. Start by adding your first
@@ -386,7 +381,7 @@ export const MerchandiseManager = () => {
             </div>
           ) : (
             <div className="grid gap-4">
-              {merchandiseProducts.map((merchandise) => (
+              {books.map((merchandise) => (
                 <Card key={merchandise.id} className="p-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-4">
