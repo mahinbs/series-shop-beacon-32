@@ -261,9 +261,9 @@ const ComicsHome = () => {
         {/* Enhanced Search and Filters */}
         <div className="mb-12 space-y-6">
           {/* Search Bar with View Mode */}
-          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+          <div className="flex flex-col lg:flex-row gap-4 items-center">
             {/* Search Bar */}
-            <div className="relative flex-1 max-w-2xl">
+            <div className="relative flex-1">
               <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
               <Input 
                 placeholder="Search comics, authors, or tags..."
