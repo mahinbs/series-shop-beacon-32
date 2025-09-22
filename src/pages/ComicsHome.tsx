@@ -295,7 +295,7 @@ const ComicsHome = () => {
                     variant={activeFilter === filter.id ? 'default' : 'outline'}
                     onClick={() => setActiveFilter(filter.id)}
                     className={`
-                      transition-all duration-300 rounded-full px-6 py-3 text-sm font-medium
+                      transition-all duration-300 rounded-lg px-6 py-3 text-sm font-medium
                       ${activeFilter === filter.id 
                         ? 'bg-red-600 hover:bg-red-700 text-white border-red-600 shadow-lg' 
                         : 'bg-gray-800/50 border-gray-600/50 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-gray-700/50'
