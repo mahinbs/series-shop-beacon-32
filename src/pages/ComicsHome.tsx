@@ -260,27 +260,58 @@ const ComicsHome = () => {
       <div className="container mx-auto px-4 py-8 pb-16">
         {/* Enhanced Search and Filters */}
         <div className="mb-12 space-y-6">
-          {/* Search Bar */}
-          <div className="relative max-w-2xl mx-auto">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-            <Input 
-              placeholder="Search comics, authors, genres..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="pl-12 pr-12 h-14 bg-gray-800/50 border-gray-700/50 text-white placeholder-gray-400 rounded-xl text-lg backdrop-blur-sm focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
-            />
-            {searchTerm && (
-              <button
-                onClick={clearSearch}
-                className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
-                aria-label="Clear search"
-                title="Clear search"
+          {/* Search Bar with View Mode */}
+          <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
+            {/* Search Bar */}
+            <div className="relative flex-1 max-w-2xl">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Input 
+                placeholder="Search comics, authors, or tags..."
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className="pl-12 pr-12 h-12 bg-gray-800 border-gray-700 text-white placeholder-gray-400 rounded-lg text-base focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
+              />
+              {searchTerm && (
+                <button
+                  onClick={clearSearch}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+                  aria-label="Clear search"
+                  title="Clear search"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
+            
+            {/* View Mode Toggle */}
+            <div className="flex gap-2">
+              <Button 
+                variant={viewMode === 'grid' ? 'outline' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className={`w-12 h-12 rounded-lg transition-all duration-300 ${
+                  viewMode === 'grid' 
+                    ? 'bg-gray-800 border-gray-600 text-white' 
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white'
+                }`}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
+                <Grid className="w-4 h-4" />
+              </Button>
+              <Button 
+                variant={viewMode === 'list' ? 'outline' : 'ghost'}
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className={`w-12 h-12 rounded-lg transition-all duration-300 ${
+                  viewMode === 'list' 
+                    ? 'bg-gray-900 border-gray-500 text-white' 
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300 hover:text-white'
+                }`}
+              >
+                <List className="w-4 h-4" />
+              </Button>
+            </div>
           </div>
           
           {/* Filter Controls */}
@@ -317,14 +348,13 @@ const ComicsHome = () => {
               })}
             </div>
             
-            {/* View Mode and Sort */}
+            {/* Sort Dropdown */}
             <div className="flex gap-3 items-center">
-              {/* Sort Dropdown */}
               <div className="relative">
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none bg-gray-800/50 border-gray-700/50 text-white rounded-xl px-4 py-2 pr-8 text-sm backdrop-blur-sm focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
+                  className="appearance-none bg-gray-800/50 border-gray-700/50 text-white rounded-lg px-4 py-2 pr-8 text-sm backdrop-blur-sm focus:border-red-500/50 focus:ring-2 focus:ring-red-500/20 transition-all duration-300"
                   aria-label="Sort comics by"
                   title="Sort comics by"
                 >
@@ -334,26 +364,6 @@ const ComicsHome = () => {
                   <option value="updated">Recently Updated</option>
                 </select>
                 <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              </div>
-              
-              {/* View Mode Toggle */}
-              <div className="flex gap-1 bg-gray-800/50 rounded-xl p-1 backdrop-blur-sm">
-                <Button 
-                  variant={viewMode === 'grid' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('grid')}
-                  className={`${viewMode === 'grid' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'} rounded-lg transition-all duration-300`}
-                >
-                  <Grid className="w-4 h-4" />
-                </Button>
-                <Button 
-                  variant={viewMode === 'list' ? 'default' : 'ghost'}
-                  size="sm"
-                  onClick={() => setViewMode('list')}
-                  className={`${viewMode === 'list' ? 'bg-red-600 text-white' : 'text-gray-400 hover:text-white'} rounded-lg transition-all duration-300`}
-                >
-                  <List className="w-4 h-4" />
-                </Button>
               </div>
             </div>
           </div>
