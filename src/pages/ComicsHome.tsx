@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Search, Filter, Grid, List, Star, Clock, Users, TrendingUp, Eye, Heart, Bookmark, ChevronDown, ArrowRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { Link } from 'react-router-dom';
-import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 
 const ComicsHome = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -16,8 +15,6 @@ const ComicsHome = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
-  const { elementRef: heroRef, isVisible: isHeroVisible } = useScrollAnimation();
-  const { elementRef: gridRef, isVisible: isGridVisible } = useScrollAnimation();
 
   // Mock comic data with enhanced properties
   const comics = [
@@ -156,9 +153,7 @@ const ComicsHome = () => {
 
   const EnhancedComicCard = ({ comic, index }: { comic: any; index: number }) => (
     <div 
-      className={`group transform transition-all duration-500 hover:scale-105 ${
-        isGridVisible ? 'animate-fade-in' : 'opacity-0'
-      }`}
+      className="group transform transition-all duration-500 hover:scale-105 animate-fade-in"
       style={{ animationDelay: `${index * 100}ms` }}
     >
       <Link to={`/comic/${comic.id}`}>
@@ -261,50 +256,8 @@ const ComicsHome = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-black">
       <Header />
       
-      {/* Enhanced Hero Section */}
-      <section 
-        ref={heroRef}
-        className={`relative py-20 overflow-hidden transition-all duration-1000 ${
-          isHeroVisible ? 'animate-fade-in' : 'opacity-0'
-        }`}
-      >
-        <div className="absolute inset-0 bg-gradient-to-r from-red-900/20 via-purple-900/20 to-blue-900/20"></div>
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-red-500/10 via-transparent to-transparent"></div>
-        
-        <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center max-w-4xl mx-auto">
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
-              Discover Amazing
-              <span className="block bg-gradient-to-r from-red-400 via-pink-500 to-purple-600 bg-clip-text text-transparent">
-                Comics
-              </span>
-            </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto leading-relaxed">
-              Dive into incredible stories, explore fascinating worlds, and follow your favorite characters through epic adventures.
-            </p>
-            
-            {/* Featured Comic Preview */}
-            <div className="relative max-w-md mx-auto mb-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-red-500 to-purple-600 rounded-2xl blur-2xl opacity-30 animate-pulse-scale"></div>
-              <img 
-                src="/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png" 
-                alt="Featured Comic"
-                className="relative rounded-2xl shadow-2xl max-w-full h-auto transform hover:scale-105 transition-transform duration-300"
-              />
-            </div>
-            
-            <Button 
-              size="lg" 
-              className="bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white px-8 py-6 text-lg font-semibold rounded-xl shadow-2xl hover:shadow-red-500/25 transform hover:scale-105 transition-all duration-300"
-            >
-              Start Reading
-              <ArrowRight className="ml-2 w-5 h-5" />
-            </Button>
-          </div>
-        </div>
-      </section>
       
-      <div className="container mx-auto px-4 pb-16">
+      <div className="container mx-auto px-4 py-8 pb-16">
         {/* Enhanced Search and Filters */}
         <div className="mb-12 space-y-6">
           {/* Search Bar */}
@@ -415,7 +368,7 @@ const ComicsHome = () => {
         </div>
 
         {/* Comics Grid */}
-        <div ref={gridRef}>
+        <div>
           {isLoading ? (
             <LoadingSkeleton />
           ) : sortedComics.length > 0 ? (
