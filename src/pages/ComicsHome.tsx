@@ -286,7 +286,7 @@ const ComicsHome = () => {
           {/* Filter Controls */}
           <div className="flex flex-col lg:flex-row gap-4 items-center justify-between">
             {/* Filter Tabs */}
-            <div className="flex flex-wrap gap-2 justify-center lg:justify-start">
+            <div className="flex flex-wrap gap-3 justify-center lg:justify-start">
               {filters.map((filter, index) => {
                 const Icon = filter.icon;
                 return (
@@ -295,17 +295,21 @@ const ComicsHome = () => {
                     variant={activeFilter === filter.id ? 'default' : 'outline'}
                     onClick={() => setActiveFilter(filter.id)}
                     className={`
-                      border-gray-700/50 transition-all duration-300 rounded-xl
+                      transition-all duration-300 rounded-full px-6 py-3 text-sm font-medium
                       ${activeFilter === filter.id 
-                        ? 'bg-gradient-to-r from-red-600 to-red-700 border-red-600 text-white shadow-lg shadow-red-500/25' 
-                        : 'text-gray-300 hover:border-red-500/50 hover:text-red-400 hover:shadow-lg backdrop-blur-sm bg-gray-800/30'
+                        ? 'bg-red-600 hover:bg-red-700 text-white border-red-600 shadow-lg' 
+                        : 'bg-gray-800/50 border-gray-600/50 text-gray-300 hover:border-gray-500 hover:text-white hover:bg-gray-700/50'
                       }
                     `}
                     style={{ animationDelay: `${index * 100}ms` }}
                   >
                     <Icon className="w-4 h-4 mr-2" />
                     {filter.label}
-                    <Badge className={`ml-2 ${activeFilter === filter.id ? 'bg-white/20' : 'bg-gray-600/50'} text-white border-0`}>
+                    <Badge className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                      activeFilter === filter.id 
+                        ? 'bg-white/20 text-white' 
+                        : 'bg-gray-600/50 text-gray-300'
+                    }`}>
                       {filter.count}
                     </Badge>
                   </Button>
