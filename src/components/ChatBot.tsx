@@ -148,7 +148,7 @@ const ChatBot = () => {
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-6 right-2 z-50">
+      <div className="fixed flex flex-col items-center bottom-6 right-2 z-50">
         {/* Text with waving hand */}
         <div className="mb-2 mr-4 bg-white text-gray-800 px-3 py-2 rounded-lg shadow-lg relative animate-bounce">
           <div className="flex items-center space-x-1">

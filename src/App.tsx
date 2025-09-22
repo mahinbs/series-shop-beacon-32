@@ -26,6 +26,7 @@ import DigitalReader from "./pages/DigitalReader";
 import DigitalReaderSpecs from "./pages/DigitalReaderSpecs";
 import ComicSeries from "./pages/ComicSeries";
 import MerchandiseDetail from "./pages/MerchandiseDetail";
+import ProductDetail from "./pages/ProductDetail";
 import Coins from "./pages/Coins";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
@@ -73,7 +74,7 @@ const App = () => (
               <Route path="/announcement/:id" element={<AnnouncementDetail />} />
               <Route path="/pre-order/:productId" element={<PreOrder />} />
               <Route path="/series/:seriesId" element={<SeriesPage />} />
-              <Route path="/product/:productId" element={<MerchandiseDetail />} />
+              <Route path="/product/:productId" element={<ProductDetail />} />
               <Route path="/merchandise/:productId" element={<MerchandiseDetail />} />
               <Route path="/checkout/:productId" element={<Checkout />} />
               <Route path="/direct-checkout/:productId" element={<DirectCheckout />} />
