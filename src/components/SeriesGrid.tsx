@@ -348,8 +348,8 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
 
   const handleBookClick = (bookId: string) => {
     console.log('📚 Book clicked:', bookId);
-    // Navigate to the product detail page (books use the same route as merchandise)
-    navigate(`/product/${bookId}`);
+    // Navigate to the book detail page for books
+    navigate(`/book/${bookId}`);
   };
 
   const handleAddToCart = async (book: Book) => {

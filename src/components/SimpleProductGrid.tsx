@@ -141,7 +141,12 @@ const SimpleProductGrid = () => {
   };
 
   const handleViewProduct = (product: any) => {
-    navigate(`/product/${product.id}`);
+    // Navigate to book detail page for books, product page for merchandise
+    if (product.product_type === 'book' || !product.product_type) {
+      navigate(`/book/${product.id}`);
+    } else {
+      navigate(`/product/${product.id}`);
+    }
   };
 
   const handleWishlistToggle = (product: any) => {

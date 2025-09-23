@@ -46,6 +46,7 @@ import ChatBot from "./components/ChatBot";
 import ScrollToTop from "./components/ScrollToTop";
 import ReadersMode from "./pages/ReadersMode";
 import PrintReader from "./pages/PrintReader";
+import BookDetail from "./pages/BookDetail";
 import { AuthProvider as SupabaseAuthProvider } from "./hooks/useSupabaseAuth";
 import { CartProvider } from "./hooks/useCart";
 import AuthPage from "./pages/AuthPage";
@@ -90,6 +91,7 @@ const App = () => (
               <Route path="/digital-reader-specs" element={<DigitalReaderSpecs />} />
               <Route path="/readers/:seriesTitle" element={<ReadersMode />} />
               <Route path="/print-reader/:bookId" element={<PrintReader />} />
+              <Route path="/book/:bookId" element={<BookDetail />} />
               <Route path="/coins" element={<Coins />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/auth" element={<AuthPage />} />

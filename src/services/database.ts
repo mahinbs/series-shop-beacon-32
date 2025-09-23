@@ -347,7 +347,7 @@ export const booksService = {
         price: volumeData.price || parentBook.price,
         original_price: volumeData.original_price || parentBook.original_price,
         coins: volumeData.coins || parentBook.coins,
-        image_url: parentBook.image_url, // Inherit parent's image
+        image_url: volumeData.image_url || parentBook.image_url, // Use custom volume image or inherit parent's image
         hover_image_url: parentBook.hover_image_url,
         cover_page_url: parentBook.cover_page_url,
         description: volumeData.description || parentBook.description,
@@ -388,19 +388,42 @@ export const booksService = {
     }
   },
 
-  async updateVolume(volumeId: string, updates: Partial<BookUpdate>) {
+
+  async updateVolume(volumeId: string, volumeData: Partial<BookInsert>) {
     try {
+      // Get the current volume to get parent book info
+      const { data: currentVolume, error: fetchError } = await supabase
+        .from('books')
+        .select('parent_book_id, volume_number')
+        .eq('id', volumeId)
+        .eq('is_volume', true)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching current volume:', fetchError);
+        throw new Error(`Failed to fetch current volume: ${fetchError.message}`);
+      }
+
+      // Get parent book to update title
+      const parentBook = await this.getById(currentVolume.parent_book_id);
+      
+      // Update the title if volume number changed
+      const updatedData = {
+        ...volumeData,
+        title: `${parentBook.title}, Vol.${volumeData.volume_number || currentVolume.volume_number}`
+      };
+
       const { data, error } = await supabase
         .from('books')
-        .update(updates)
+        .update(updatedData)
         .eq('id', volumeId)
         .eq('is_volume', true)
         .select()
         .single();
       
       if (error) {
-        console.error('Error updating book volume:', error);
-        throw new Error(`Failed to update book volume: ${error.message}`);
+        console.error('Error updating volume:', error);
+        throw new Error(`Failed to update volume: ${error.message}`);
       }
       
       return data;

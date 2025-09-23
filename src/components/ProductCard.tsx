@@ -94,7 +94,8 @@ const ProductCard = ({
     console.log('📝 ProductCard: Author:', author);
     console.log('🆔 ProductCard: Using ID:', productId);
     console.log('🆔 ProductCard: Provided ID:', id);
-    navigate(`/product/${productId}`);
+    // Navigate to book detail page for books
+    navigate(`/book/${productId}`);
   };
 
   const handleWishlistToggle = (e: React.MouseEvent) => {
