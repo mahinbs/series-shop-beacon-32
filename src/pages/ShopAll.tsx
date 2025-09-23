@@ -5,16 +5,10 @@ import ShopGrid from '@/components/ShopGrid';
 import ShopFilters from '@/components/ShopFilters';
 import FeaturedSeriesSlideshow from '@/components/FeaturedSeriesSlideshow';
 import SeriesGrid from '@/components/SeriesGrid';
-import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useState } from 'react';
 import shopHeroBg from '@/assets/shop-hero-bg.jpg';
 
 const ShopAll = () => {
-  const { elementRef: heroRef, isVisible: heroVisible } = useScrollAnimation(0.1);
-  const { elementRef: statsRef, isVisible: statsVisible } = useScrollAnimation(0.2);
-  const { elementRef: filtersRef, isVisible: filtersVisible } = useScrollAnimation(0.2);
-  const { elementRef: gridRef, isVisible: gridVisible } = useScrollAnimation(0.2);
-  
   const [viewMode, setViewMode] = useState<'series' | 'volume'>('series');
   const [appliedFilters, setAppliedFilters] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState('Newest First');
@@ -34,10 +28,7 @@ const ShopAll = () => {
       <Header />
       
       {/* Hero Section */}
-      <section 
-        ref={heroRef as any}
-        className="relative bg-gradient-to-br from-gray-800 via-gray-900 to-black py-16 overflow-hidden"
-      >
+      <section className="relative bg-gradient-to-br from-gray-800 via-gray-900 to-black py-16 overflow-hidden">
         {/* Hero Background Image */}
         <div className="absolute inset-0">
           <img 
@@ -52,20 +43,14 @@ const ShopAll = () => {
         <div className="container mx-auto px-4 relative z-10">
           <div className="flex flex-col lg:flex-row items-center justify-between min-h-[400px]">
             <div className="text-left lg:w-1/2">
-              <h1 className={`text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4 transition-all duration-1000 transform ${
-                heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}>
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-4">
                 Explore Series
               </h1>
-              <p className={`text-lg md:text-xl text-gray-300 max-w-lg mb-8 leading-relaxed transition-all duration-1000 delay-300 transform ${
-                heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}>
+              <p className="text-lg md:text-xl text-gray-300 max-w-lg mb-8 leading-relaxed">
                 Discover new series through manga and anime stories. Read stories, discover new characters, and learn lore through the life cycle.
               </p>
               
-              <div className={`flex flex-wrap gap-4 transition-all duration-1000 delay-500 transform ${
-                heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-              }`}>
+              <div className="flex flex-wrap gap-4">
                 <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
                   <span>Popular Series</span>
                 </button>
@@ -90,12 +75,7 @@ const ShopAll = () => {
       <FeaturedSeriesSlideshow />
 
       {/* Content Grid - Show SeriesGrid */}
-      <div 
-        ref={gridRef as any}
-        className={`transition-all duration-1000 transform ${
-          gridVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-        }`}
-      >
+      <div>
         <SeriesGrid />
       </div>
 

@@ -287,7 +287,11 @@ const VolumeDetail = () => {
                 )}
               </div>
               
-              <h1 className="text-3xl font-bold text-white mb-2">{volume.title}</h1>
+              <h1 className="text-3xl font-bold text-white mb-2">
+                {volume.title.includes(',') && volume.title.includes('Vol.') 
+                  ? volume.title.split(',')[0] 
+                  : volume.title}
+              </h1>
               
               {parentBook && (
                 <p className="text-gray-400 mb-4">

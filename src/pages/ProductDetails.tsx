@@ -481,7 +481,7 @@ const ProductDetails = () => {
                   </p>
 
                   {/* Action Buttons - Right below author */}
-                  <div className="flex space-x-4 mt-4">
+                  <div className="flex sm:flex-row flex-col gap-4 mt-4">
                     <Button
                       onClick={handleAddToCart}
                       disabled={
@@ -741,9 +741,9 @@ const ProductDetails = () => {
                 <h2 className="text-white text-xl font-bold uppercase">
                   All The Volume
                 </h2>
-                <button className="text-red-400 hover:text-red-300 font-bold text-sm uppercase">
+                {/* <button className="text-red-400 hover:text-red-300 font-bold text-sm uppercase">
                   See All
-                </button>
+                </button> */}
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
