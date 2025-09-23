@@ -34,6 +34,7 @@ import {
   BookCopy,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import VolumePagesManager from './VolumePagesManager';
 
 interface BookForm {
   title: string;
@@ -93,6 +94,7 @@ interface VolumeForm {
   is_on_sale: boolean;
   stock_quantity: number;
   description?: string;
+  image_url?: string;
 }
 
 export const BooksManager = () => {
@@ -126,6 +128,11 @@ export const BooksManager = () => {
   // Volume management state
   const [volumes, setVolumes] = useState<any[]>([]);
   const [showVolumeForm, setShowVolumeForm] = useState(false);
+  const [editingVolumeId, setEditingVolumeId] = useState<string | null>(null);
+  const [selectedVolumeForPages, setSelectedVolumeForPages] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
   const [volumeForm, setVolumeForm] = useState<VolumeForm>({
     volume_number: 1,
     price: 0,
@@ -135,6 +142,7 @@ export const BooksManager = () => {
     is_on_sale: false,
     stock_quantity: 0,
     description: "",
+    image_url: "",
   });
   const [formData, setFormData] = useState<BookForm>({
     title: "",
@@ -630,6 +638,27 @@ export const BooksManager = () => {
     setCharacters(bookCharacters);
     setOriginalCharacters([...bookCharacters]);
 
+    // Load existing volumes for this book
+    try {
+      const { data: volumesData, error: volumesError } = await supabase
+        .from('books')
+        .select('*')
+        .eq('parent_book_id', book.id)
+        .eq('is_active', true)
+        .eq('is_volume', true)
+        .order('volume_number', { ascending: true });
+
+      if (volumesError) {
+        console.error('Error fetching volumes:', volumesError);
+        setVolumes([]);
+      } else {
+        setVolumes(volumesData || []);
+      }
+    } catch (error) {
+      console.error('Error loading volumes:', error);
+      setVolumes([]);
+    }
+
     setShowAddForm(true);
   };
 
@@ -667,6 +696,7 @@ export const BooksManager = () => {
   ) => {
     setUploading(true);
     try {
+      // Create temporary preview URL for immediate display
       const tempUrl = URL.createObjectURL(file);
       if (imageType === "hover") {
         setFormData((prev) => ({ ...prev, hover_image_url: tempUrl }));
@@ -676,11 +706,42 @@ export const BooksManager = () => {
         setFormData((prev) => ({ ...prev, image_url: tempUrl }));
       }
 
+      // Upload to Supabase Storage
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `book-images/${fileName}`;
+      
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from('comic-pages')
+        .upload(filePath, file);
+      
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from('comic-pages')
+        .getPublicUrl(filePath);
+
+      // Update form data with permanent URL
+      if (imageType === "hover") {
+        setFormData((prev) => ({ ...prev, hover_image_url: urlData.publicUrl }));
+      } else if (imageType === "cover") {
+        setFormData((prev) => ({ ...prev, cover_page_url: urlData.publicUrl }));
+      } else {
+        setFormData((prev) => ({ ...prev, image_url: urlData.publicUrl }));
+      }
+
+      // Clean up temporary URL
+      URL.revokeObjectURL(tempUrl);
+
       toast({
         title: "Image uploaded",
-        description: "Image has been uploaded successfully",
+        description: "Image has been uploaded successfully to cloud storage",
       });
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
         title: "Upload failed",
         description: "Failed to upload image. Please try again.",
@@ -994,7 +1055,63 @@ export const BooksManager = () => {
     });
   };
 
-  const handleAddVolume = async () => {
+  const handleAddVolume = () => {
+    // Calculate next volume number
+    const maxVolumeNumber = volumes.length > 0 ? Math.max(...volumes.map((v) => v.volume_number), 0) : 0;
+    setVolumeForm({
+      volume_number: maxVolumeNumber + 1,
+      price: 0,
+      original_price: undefined,
+      label: "",
+      is_new: false,
+      is_on_sale: false,
+      stock_quantity: 0,
+      description: "",
+      image_url: "",
+    });
+    setEditingVolumeId(null);
+    setShowVolumeForm(true);
+  };
+
+  const handleEditVolume = (volume: any) => {
+    setEditingVolumeId(volume.id);
+    setVolumeForm({
+      volume_number: volume.volume_number,
+      price: volume.price,
+      original_price: volume.original_price,
+      label: volume.label || "",
+      is_new: volume.is_new || false,
+      is_on_sale: volume.is_on_sale || false,
+      stock_quantity: volume.stock_quantity || 0,
+      description: volume.description || "",
+      image_url: volume.image_url || "",
+    });
+    setShowVolumeForm(true);
+  };
+
+  const loadVolumes = async (bookId: string) => {
+    try {
+      const { data: volumesData, error: volumesError } = await supabase
+        .from('books')
+        .select('*')
+        .eq('parent_book_id', bookId)
+        .eq('is_active', true)
+        .eq('is_volume', true)
+        .order('volume_number', { ascending: true });
+
+      if (volumesError) {
+        console.error('Error fetching volumes:', volumesError);
+        setVolumes([]);
+      } else {
+        setVolumes(volumesData || []);
+      }
+    } catch (error) {
+      console.error('Error loading volumes:', error);
+      setVolumes([]);
+    }
+  };
+
+  const handleSubmitVolume = async () => {
     if (!editingId || !volumeForm.volume_number) {
       toast({
         title: "Error",
@@ -1006,10 +1123,25 @@ export const BooksManager = () => {
 
     try {
       setSubmitting(true);
-      const newVolume = await booksService.createVolume(editingId, volumeForm);
-      setVolumes((prev) =>
-        [...prev, newVolume].sort((a, b) => a.volume_number - b.volume_number)
-      );
+      
+      if (editingVolumeId) {
+        // Update existing volume
+        console.log('Updating volume with data:', volumeForm);
+        await booksService.updateVolume(editingVolumeId, volumeForm);
+        await loadVolumes(editingId);
+        toast({
+          title: "Success",
+          description: "Volume updated successfully",
+        });
+      } else {
+        // Create new volume
+        await booksService.createVolume(editingId, volumeForm);
+        await loadVolumes(editingId);
+        toast({
+          title: "Success",
+          description: "Volume added successfully",
+        });
+      }
 
       // Reset form
       setVolumeForm({
@@ -1021,19 +1153,16 @@ export const BooksManager = () => {
         is_on_sale: false,
         stock_quantity: 0,
         description: "",
+        image_url: "",
       });
       setShowVolumeForm(false);
-
-      toast({
-        title: "Success",
-        description: "Volume added successfully",
-      });
+      setEditingVolumeId(null);
     } catch (error) {
-      console.error("Error adding volume:", error);
+      console.error("Error adding/updating volume:", error);
       toast({
         title: "Error",
         description:
-          error instanceof Error ? error.message : "Failed to add volume",
+          error instanceof Error ? error.message : "Failed to add/update volume",
         variant: "destructive",
       });
     } finally {
@@ -1045,7 +1174,7 @@ export const BooksManager = () => {
     try {
       setSubmitting(true);
       await booksService.deleteVolume(volumeId);
-      setVolumes((prev) => prev.filter((v) => v.id !== volumeId));
+      await loadVolumes(editingId!);
 
       toast({
         title: "Success",
@@ -1356,47 +1485,133 @@ export const BooksManager = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="image_url">Image URL *</Label>
-                  <Input
-                    id="image_url"
-                    value={formData.image_url}
-                    onChange={(e) =>
-                      setFormData({ ...formData, image_url: e.target.value })
-                    }
-                    required
-                    disabled={submitting}
-                  />
-                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="image_url">Main Image *</Label>
+                    <div className="space-y-2">
+                      <Input
+                        id="image_url"
+                        value={formData.image_url}
+                        onChange={(e) =>
+                          setFormData({ ...formData, image_url: e.target.value })
+                        }
+                        placeholder="Enter image URL or upload file below"
+                        required
+                        disabled={submitting}
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(file, "main");
+                            }
+                          }}
+                          className="hidden"
+                          disabled={submitting}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={submitting || uploading}
+                          className="flex items-center gap-2"
+                        >
+                          <Upload className="h-4 w-4" />
+                          {uploading ? "Uploading..." : "Upload Image"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
 
-                <div>
-                  <Label htmlFor="hover_image_url">Hover Image URL</Label>
-                  <Input
-                    id="hover_image_url"
-                    value={formData.hover_image_url}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        hover_image_url: e.target.value,
-                      })
-                    }
-                    disabled={submitting}
-                  />
+                  <div>
+                    <Label htmlFor="hover_image_url">Hover Image</Label>
+                    <div className="space-y-2">
+                      <Input
+                        id="hover_image_url"
+                        value={formData.hover_image_url}
+                        onChange={(e) =>
+                          setFormData({
+                            ...formData,
+                            hover_image_url: e.target.value,
+                          })
+                        }
+                        placeholder="Enter hover image URL or upload file below"
+                        disabled={submitting}
+                      />
+                      <div className="flex items-center space-x-2">
+                        <Input
+                          ref={hoverFileInputRef}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              handleImageUpload(file, "hover");
+                            }
+                          }}
+                          className="hidden"
+                          disabled={submitting}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => hoverFileInputRef.current?.click()}
+                          disabled={submitting || uploading}
+                          className="flex items-center gap-2"
+                        >
+                          <Upload className="h-4 w-4" />
+                          {uploading ? "Uploading..." : "Upload Hover Image"}
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
 
               <div>
-                <Label htmlFor="cover_page_url">Cover Page URL</Label>
-                <Input
-                  id="cover_page_url"
-                  value={formData.cover_page_url}
-                  onChange={(e) =>
-                    setFormData({ ...formData, cover_page_url: e.target.value })
-                  }
-                  placeholder="LinkedIn-style cover image for book detail page"
-                  disabled={submitting}
-                />
+                <Label htmlFor="cover_page_url">Cover Page Image</Label>
+                <div className="space-y-2">
+                  <Input
+                    id="cover_page_url"
+                    value={formData.cover_page_url}
+                    onChange={(e) =>
+                      setFormData({ ...formData, cover_page_url: e.target.value })
+                    }
+                    placeholder="Enter cover image URL or upload file below"
+                    disabled={submitting}
+                  />
+                  <div className="flex items-center space-x-2">
+                    <Input
+                      ref={coverPageFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          handleImageUpload(file, "cover");
+                        }
+                      }}
+                      className="hidden"
+                      disabled={submitting}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => coverPageFileInputRef.current?.click()}
+                      disabled={submitting || uploading}
+                      className="flex items-center gap-2"
+                    >
+                      <Upload className="h-4 w-4" />
+                      {uploading ? "Uploading..." : "Upload Cover Image"}
+                    </Button>
+                  </div>
+                </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   Optional: Add a cover image that will display at the top of
                   the book detail page (LinkedIn-style)
@@ -1670,7 +1885,7 @@ export const BooksManager = () => {
                         type="button"
                         variant="outline"
                         size="sm"
-                        onClick={() => setShowVolumeForm(true)}
+                        onClick={handleAddVolume}
                         disabled={submitting}
                         className="flex items-center gap-2"
                       >
@@ -1693,7 +1908,9 @@ export const BooksManager = () => {
                                 className="w-10 h-10 rounded object-cover"
                               />
                               <div>
-                                <p className="font-medium">{volume.title}</p>
+                                <p className="font-medium">
+                                  {volume.title} • Vol.{volume.volume_number}
+                                </p>
                                 <p className="text-sm text-muted-foreground">
                                   ${volume.price} • Stock:{" "}
                                   {volume.stock_quantity}
@@ -1710,15 +1927,41 @@ export const BooksManager = () => {
                                 </p>
                               </div>
                             </div>
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleRemoveVolume(volume.id)}
-                              disabled={submitting}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedVolumeForPages({
+                                  id: volume.id,
+                                  title: volume.title
+                                })}
+                                disabled={submitting}
+                                title="Manage Pages"
+                              >
+                                <BookOpen className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEditVolume(volume)}
+                                disabled={submitting}
+                                title="Edit Volume"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRemoveVolume(volume.id)}
+                                disabled={submitting}
+                                title="Delete Volume"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -1728,7 +1971,9 @@ export const BooksManager = () => {
                       <Card className="border-2 border-green-200">
                         <CardContent className="p-4 space-y-4">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-semibold">Add Volume</h4>
+                            <h4 className="font-semibold">
+                              {editingVolumeId ? "Edit Volume" : "Add Volume"}
+                            </h4>
                             <Button
                               type="button"
                               variant="ghost"
@@ -1872,21 +2117,105 @@ export const BooksManager = () => {
                             </div>
                           </div>
 
+                          <div>
+                            <Label htmlFor="volume_image_url">Volume Cover Image</Label>
+                            <div className="space-y-2">
+                              <Input
+                                id="volume_image_url"
+                                value={volumeForm.image_url || ""}
+                                onChange={(e) =>
+                                  setVolumeForm({
+                                    ...volumeForm,
+                                    image_url: e.target.value,
+                                  })
+                                }
+                                placeholder="Enter image URL or upload file below"
+                                disabled={submitting}
+                              />
+                              <div className="flex items-center space-x-2">
+                                <Input
+                                  id="volume_file_upload"
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={async (e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                      try {
+                                        setUploading(true);
+                                        const fileExt = file.name.split('.').pop();
+                                        const fileName = `volume_${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+                                        const filePath = `book-images/${fileName}`;
+                                        
+                                        const { data: uploadData, error: uploadError } = await supabase.storage
+                                          .from('comic-pages')
+                                          .upload(filePath, file);
+                                        
+                                        if (uploadError) throw uploadError;
+
+                                        const { data: urlData } = supabase.storage
+                                          .from('comic-pages')
+                                          .getPublicUrl(filePath);
+
+                                        setVolumeForm(prev => ({ ...prev, image_url: urlData.publicUrl }));
+                                        
+                                        toast({
+                                          title: "Image uploaded",
+                                          description: "Volume cover image uploaded successfully",
+                                        });
+                                      } catch (error) {
+                                        console.error('Volume image upload error:', error);
+                                        toast({
+                                          title: "Upload failed",
+                                          description: "Failed to upload volume image",
+                                          variant: "destructive",
+                                        });
+                                      } finally {
+                                        setUploading(false);
+                                      }
+                                    }
+                                  }}
+                                  className="hidden"
+                                  disabled={submitting || uploading}
+                                />
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    const input = document.getElementById('volume_file_upload') as HTMLInputElement;
+                                    input?.click();
+                                  }}
+                                  disabled={submitting || uploading}
+                                  className="flex items-center gap-2"
+                                >
+                                  <Upload className="h-4 w-4" />
+                                  {uploading ? "Uploading..." : "Upload Image"}
+                                </Button>
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
+                              Optional: Upload a custom cover image for this volume
+                            </p>
+                          </div>
+
                           <div className="flex justify-end gap-2">
                             <Button
                               type="button"
                               variant="outline"
-                              onClick={() => setShowVolumeForm(false)}
+                              onClick={() => {
+                                setShowVolumeForm(false);
+                                setEditingVolumeId(null);
+                              }}
                               disabled={submitting}
                             >
                               Cancel
                             </Button>
                             <Button
                               type="button"
-                              onClick={handleAddVolume}
+                              onClick={handleSubmitVolume}
                               disabled={submitting}
                             >
-                              Add Volume
+                              {editingVolumeId ? "Update Volume" : "Add Volume"}
                             </Button>
                           </div>
                         </CardContent>
@@ -1968,6 +2297,15 @@ export const BooksManager = () => {
             </form>
           </CardContent>
         </Card>
+      )}
+
+      {/* Volume Pages Manager Modal */}
+      {selectedVolumeForPages && (
+        <VolumePagesManager
+          volumeId={selectedVolumeForPages.id}
+          volumeTitle={selectedVolumeForPages.title}
+          onClose={() => setSelectedVolumeForPages(null)}
+        />
       )}
     </div>
   );

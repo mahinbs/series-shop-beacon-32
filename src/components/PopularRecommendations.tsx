@@ -16,6 +16,7 @@ const PopularRecommendations = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [hoveredBook, setHoveredBook] = useState<string | null>(null);
   const [hoveredSeries, setHoveredSeries] = useState<string | null>(null);
+  const [volumeCounts, setVolumeCounts] = useState<Record<string, number>>({});
   const [selectedFilter, setSelectedFilter] = useState<
     "digital" | "print" | "merchandise"
   >("digital");
@@ -82,6 +83,36 @@ const PopularRecommendations = () => {
 
     fetchPopularBooks();
   }, [selectedFilter]);
+
+  // Load volume counts for books
+  useEffect(() => {
+    const loadVolumeCounts = async () => {
+      if (books.length > 0) {
+        try {
+          const { booksService } = await import('@/services/database');
+          const counts: Record<string, number> = {};
+          
+          for (const book of books) {
+            if (!book.is_volume) {
+              try {
+                const volumes = await booksService.getVolumes(book.id);
+                counts[book.id] = volumes.length;
+              } catch (error) {
+                console.error(`Error loading volumes for book ${book.id}:`, error);
+                counts[book.id] = 0;
+              }
+            }
+          }
+          
+          setVolumeCounts(counts);
+        } catch (error) {
+          console.error('Error loading volume counts:', error);
+        }
+      }
+    };
+
+    loadVolumeCounts();
+  }, [books]);
 
   const handleAddToCart = async (book: BookType) => {
     try {
@@ -589,7 +620,10 @@ const PopularRecommendations = () => {
                           {/* Series Details */}
                           <div className="flex items-center justify-between mb-4">
                             <div className="text-sm text-gray-400">
-                              {book.volume_number ? `${book.volume_number} Volumes` : '1 Volume'}
+                              {book.is_volume 
+                                ? `Vol. ${book.volume_number || 1}` 
+                                : `${volumeCounts[book.id] || 0} Volume${(volumeCounts[book.id] || 0) !== 1 ? 's' : ''}`
+                              }
                             </div>
                             <div className="text-sm text-gray-400">
                               {book.is_new ? 'New Release' : 'Available'}

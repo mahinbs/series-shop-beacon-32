@@ -748,10 +748,19 @@ const ProductDetails = () => {
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {volumes.map((volume) => (
-                  <div
-                    key={volume.id}
-                    className="bg-gray-900 rounded-lg overflow-hidden grid grid-cols-1"
-                  >
+                    <div
+                      key={volume.id}
+                      className="bg-gray-900 rounded-lg overflow-hidden grid grid-cols-1 cursor-pointer hover:bg-gray-800 transition-colors"
+                      onClick={() => {
+                        // Navigate to volume detail page
+                        navigate(`/book/${product.id}/volume/${volume.id}`, {
+                          state: {
+                            volume: volume,
+                            parentBook: product
+                          }
+                        });
+                      }}
+                    >
                     {/* Labels */}
                     {volume.label && (
                       <div className="bg-orange-600 text-white text-center py-1 text-xs font-bold uppercase">
@@ -802,9 +811,31 @@ const ProductDetails = () => {
                                 : "bg-gray-500 text-gray-300 cursor-not-allowed"
                             }`}
                             disabled={volume.stock_quantity <= 0}
-                            onClick={() =>
-                              navigate(`/merchandise/${volume.id}`)
-                            }
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent card click
+                              const volumeProduct = {
+                                id: volume.id,
+                                title: volume.title,
+                                author: volume.author || 'Unknown Author',
+                                price: volume.price,
+                                originalPrice: volume.original_price,
+                                imageUrl: volume.image_url,
+                                category: volume.category,
+                                product_type: (volume.product_type || 'book') as 'book' | 'merchandise' | 'digital' | 'other',
+                                inStock: volume.stock_quantity > 0,
+                                coins: volume.coins,
+                                canUnlockWithCoins: volume.can_unlock_with_coins || false
+                              };
+                              
+                              // Navigate to direct checkout with volume details
+                              navigate(`/direct-checkout/${volume.id}`, {
+                                state: {
+                                  product: volumeProduct,
+                                  quantity: 1,
+                                  totalPrice: volume.price
+                                }
+                              });
+                            }}
                           >
                             {volume.stock_quantity > 0
                               ? volume.label === "Pre-Order"
@@ -816,6 +847,29 @@ const ProductDetails = () => {
                             <button
                               className="flex-1 bg-gray-700 hover:bg-gray-600 text-white py-1 px-2 rounded text-xs font-bold"
                               disabled={volume.stock_quantity <= 0}
+                              onClick={(e) => {
+                                e.stopPropagation(); // Prevent card click
+                                const volumeProduct = {
+                                  id: volume.id,
+                                  title: volume.title,
+                                  author: volume.author || 'Unknown Author',
+                                  price: volume.price,
+                                  originalPrice: volume.original_price,
+                                  imageUrl: volume.image_url,
+                                  category: volume.category,
+                                  product_type: (volume.product_type || 'book') as 'book' | 'merchandise' | 'digital' | 'other',
+                                  inStock: volume.stock_quantity > 0,
+                                  coins: volume.coins,
+                                  canUnlockWithCoins: volume.can_unlock_with_coins || false
+                                };
+                                
+                                addToCart(volumeProduct);
+                                toast({
+                                  title: "Added to Cart!",
+                                  description: `${volume.title} has been added to your cart.`,
+                                  duration: 3000,
+                                });
+                              }}
                             >
                               Cart
                             </button>

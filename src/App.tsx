@@ -50,6 +50,8 @@ import { CartProvider } from "./hooks/useCart";
 import AuthPage from "./pages/AuthPage";
 import ProductDetails from "./pages/ProductDetails";
 import MerchandiseDetail from "./pages/MerchandiseDetail";
+import VolumeDetail from "./pages/VolumeDetail";
+import VolumeReader from "./pages/VolumeReader";
 
 const queryClient = new QueryClient();
 
@@ -77,6 +79,8 @@ const App = () => (
               <Route path="/series/:seriesId" element={<SeriesPage />} />
               <Route path="/product/:productId" element={<ProductDetails />} />
               <Route path="/merchandise/:productId" element={<MerchandiseDetail />} />
+              <Route path="/book/:bookId/volume/:volumeId" element={<VolumeDetail />} />
+              <Route path="/volume-reader/:volumeId" element={<VolumeReader />} />
               <Route path="/checkout/:productId" element={<Checkout />} />
               <Route path="/direct-checkout/:productId" element={<DirectCheckout />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />

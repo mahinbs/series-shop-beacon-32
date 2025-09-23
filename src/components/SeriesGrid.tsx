@@ -23,6 +23,7 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
   const [filteredBooks, setFilteredBooks] = useState<Book[]>([]);
   const [filteredMerchandise, setFilteredMerchandise] = useState<Book[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [volumeCounts, setVolumeCounts] = useState<Record<string, number>>({});
   
   // Use the specialized hooks for books and merchandise
   const { books, isLoading: booksLoading } = useBooksOnly();
@@ -35,6 +36,36 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
   useEffect(() => {
     loadSeries();
   }, []);
+
+  // Load volume counts for books
+  useEffect(() => {
+    const loadVolumeCounts = async () => {
+      if (books.length > 0) {
+        try {
+          const { booksService } = await import('@/services/database');
+          const counts: Record<string, number> = {};
+          
+          for (const book of books) {
+            if (!book.is_volume) {
+              try {
+                const volumes = await booksService.getVolumes(book.id);
+                counts[book.id] = volumes.length;
+              } catch (error) {
+                console.error(`Error loading volumes for book ${book.id}:`, error);
+                counts[book.id] = 0;
+              }
+            }
+          }
+          
+          setVolumeCounts(counts);
+        } catch (error) {
+          console.error('Error loading volume counts:', error);
+        }
+      }
+    };
+
+    loadVolumeCounts();
+  }, [books]);
 
   useEffect(() => {
     applyFiltersAndSearch();
@@ -545,7 +576,10 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                   <div className="flex items-center justify-between pt-2">
                     {/* Volume count on the left */}
                     <div className="text-gray-400 text-xs">
-                      {bookItem.is_volume ? `Vol. ${bookItem.volume_number || 1}` : '1 Volume'}
+                      {bookItem.is_volume 
+                        ? `Vol. ${bookItem.volume_number || 1}` 
+                        : `${volumeCounts[bookItem.id] || 0} Volume${(volumeCounts[bookItem.id] || 0) !== 1 ? 's' : ''}`
+                      }
                     </div>
                     
                     {/* Add to Cart button on the right */}

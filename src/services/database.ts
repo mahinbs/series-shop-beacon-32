@@ -390,6 +390,7 @@ export const booksService = {
 
   async updateVolume(volumeId: string, updates: Partial<BookUpdate>) {
     try {
+      console.log('Database updateVolume called with:', { volumeId, updates });
       const { data, error } = await supabase
         .from('books')
         .update(updates)
@@ -403,6 +404,7 @@ export const booksService = {
         throw new Error(`Failed to update book volume: ${error.message}`);
       }
       
+      console.log('Volume updated successfully:', data);
       return data;
     } catch (error) {
       console.error('Books service updateVolume error:', error);
