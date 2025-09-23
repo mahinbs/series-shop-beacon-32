@@ -18,6 +18,7 @@ import { DatabaseSetupHelper } from './DatabaseSetupHelper';
 import { DigitalReaderManager } from './DigitalReaderManager';
 import { ShopAllManager } from './ShopAllManager';
 import { FeaturedSeriesManager } from './FeaturedSeriesManager';
+import PrintBookManager from './PrintBookManager';
 import { useCMS } from '@/hooks/useCMS';
 import { useToast } from '@/hooks/use-toast';
 import { AdminPage } from './AdminSidebar';
@@ -312,6 +313,18 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
           return <AdminPanelStatus />;
         case 'database-setup':
           return <DatabaseSetupHelper />;
+        case 'print-books-management':
+          return (
+            <div className="space-y-6">
+              <div>
+                <h2 className="text-xl font-semibold mb-4">Print Books Management</h2>
+                <p className="text-muted-foreground mb-6">
+                  Manage print books and their pages for the print reader
+                </p>
+              </div>
+              <PrintBookManager />
+            </div>
+          );
         default:
       return (
         <Card>

@@ -600,9 +600,15 @@ const PopularRecommendations = () => {
                           <Button
                             onClick={(e) => {
                               e.stopPropagation();
-                              navigate(`/readers/${book.title.toLowerCase().replace(/\s+/g, '-')}`, { 
-                                state: { from: 'popular-recommendations' } 
-                              });
+                              if (book.product_type === 'print') {
+                                navigate(`/print-reader/${book.id}`, { 
+                                  state: { from: 'popular-recommendations' } 
+                                });
+                              } else {
+                                navigate(`/readers/${book.title.toLowerCase().replace(/\s+/g, '-')}`, { 
+                                  state: { from: 'popular-recommendations' } 
+                                });
+                              }
                             }}
                             className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/25"
                           >

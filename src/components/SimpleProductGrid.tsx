@@ -13,7 +13,7 @@ const SimpleProductGrid = () => {
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [activeTab] = useState<'books' | 'merchandise'>('books');
+  const [activeTab, setActiveTab] = useState<'books' | 'merchandise' | 'print'>('books');
   const [activeSection, setActiveSection] = useState('new-releases');
   const [hoveredBook, setHoveredBook] = useState<string | null>(null);
 
@@ -27,6 +27,8 @@ const SimpleProductGrid = () => {
       filteredProducts = books.filter(book => (book.product_type || 'book') === 'book');
     } else if (activeTab === 'merchandise') {
       filteredProducts = books.filter(book => (book.product_type || 'book') === 'merchandise');
+    } else if (activeTab === 'print') {
+      filteredProducts = books.filter(book => (book.product_type || 'book') === 'print');
     }
     
     // If "all" is selected, show all products of the selected type (deduplicated)
@@ -207,7 +209,7 @@ const SimpleProductGrid = () => {
                   activeSection === 'all' ? 'text-red-500' : 'text-gray-400 hover:text-white'
                 }`}
               >
-                All {activeTab === 'books' ? 'Books' : 'Merchandise'}
+                All {activeTab === 'books' ? 'Books' : activeTab === 'print' ? 'Print Books' : 'Merchandise'}
               </button>
             )}
           </div>
@@ -218,6 +220,42 @@ const SimpleProductGrid = () => {
             View All
           </button>
         </div>
+
+        {/* Product Type Tabs */}
+        {/* <div className="flex justify-center mb-8">
+          <div className="flex space-x-1 bg-gray-800 p-1 rounded-lg">
+            <button
+              onClick={() => setActiveTab('books')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                activeTab === 'books'
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              Books
+            </button>
+            <button
+              onClick={() => setActiveTab('print')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                activeTab === 'print'
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              Print
+            </button>
+            <button
+              onClick={() => setActiveTab('merchandise')}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
+                activeTab === 'merchandise'
+                  ? 'bg-red-600 text-white shadow-lg'
+                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
+              }`}
+            >
+              Merchandise
+            </button>
+          </div>
+        </div> */}
 
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
@@ -366,11 +404,11 @@ const SimpleProductGrid = () => {
             <div className="col-span-full text-center py-12">
               <div className="text-white text-lg">No {activeTab} in "{activeSection.replace('-', ' ')}" section</div>
               <div className="text-gray-400 text-sm mt-2">
-                Total {activeTab} available: {books?.filter(book => (book.product_type || 'book') === (activeTab === 'books' ? 'book' : 'merchandise')).length || 0}
+                Total {activeTab} available: {books?.filter(book => (book.product_type || 'book') === (activeTab === 'books' ? 'book' : activeTab === 'print' ? 'print' : 'merchandise')).length || 0}
               </div>
               {books && books.length > 0 && (
                 <div className="text-gray-400 text-sm mt-1">
-                  Available sections: {books.filter(book => (book.product_type || 'book') === (activeTab === 'books' ? 'book' : 'merchandise')).map(b => b.section_type).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
+                  Available sections: {books.filter(book => (book.product_type || 'book') === (activeTab === 'books' ? 'book' : activeTab === 'print' ? 'print' : 'merchandise')).map(b => b.section_type).filter((v, i, a) => a.indexOf(v) === i).join(', ')}
                 </div>
               )}
               {books && books.length === 0 && (
@@ -384,7 +422,7 @@ const SimpleProductGrid = () => {
                     onClick={() => setActiveSection('all')}
                     className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors"
                   >
-                    View All {activeTab === 'books' ? 'Books' : 'Merchandise'} ({books.filter(book => (book.product_type || 'book') === (activeTab === 'books' ? 'book' : 'merchandise')).length})
+                    View All {activeTab === 'books' ? 'Books' : activeTab === 'print' ? 'Print Books' : 'Merchandise'} ({books.filter(book => (book.product_type || 'book') === (activeTab === 'books' ? 'book' : activeTab === 'print' ? 'print' : 'merchandise')).length})
                   </button>
                 </div>
               )}

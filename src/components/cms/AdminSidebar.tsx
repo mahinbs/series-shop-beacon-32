@@ -84,6 +84,12 @@ const adminPages: AdminPage[] = [
     description: 'Manage book catalog and metadata'
   },
   { 
+    id: 'print-books-management', 
+    title: 'Print Books Management', 
+    icon: BookOpen,
+    description: 'Manage print books and their pages for the print reader'
+  },
+  { 
     id: 'merchandise-management', 
     title: 'Merchandise Management', 
     icon: ShoppingBag,
