@@ -35,6 +35,8 @@ const PopularRecommendations = () => {
       imageUrl: string;
     }>;
   }>>([]);
+  const [showAllBooks, setShowAllBooks] = useState(false);
+  const displayLimit = 6;
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
@@ -44,6 +46,7 @@ const PopularRecommendations = () => {
   useEffect(() => {
     const fetchPopularBooks = async () => {
       setIsLoading(true);
+      setShowAllBooks(false); // Reset to collapsed view when filter changes
       try {
         // Fetch products based on selected filter - only popular recommendations
         let query = supabase
@@ -434,22 +437,46 @@ const PopularRecommendations = () => {
               </div>
               {activeTab === "recommendations" && (
                 <button
-                  onClick={() => (window.location.href = "/shop-all")}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg"
-                >
-                  View All (
-                  {
-                    books.filter((book) => {
+                  onClick={() => {
+                    const filteredBooks = books.filter((book) => {
                       if (selectedFilter === "digital")
-                        return book.product_type === "digital";
+                        return book.product_type !== "merchandise" && book.product_type !== "print";
                       if (selectedFilter === "print")
                         return book.product_type === "print";
                       if (selectedFilter === "merchandise")
                         return book.product_type === "merchandise";
                       return true;
-                    }).length
-                  }
-                  )
+                    });
+
+                    if (filteredBooks.length > displayLimit && !showAllBooks) {
+                      setShowAllBooks(true);
+                    } else if (showAllBooks) {
+                      setShowAllBooks(false);
+                    } else {
+                      window.location.href = "/shop-all";
+                    }
+                  }}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold transition-all duration-300 hover:shadow-lg"
+                >
+                  {(() => {
+                    const filteredBooks = books.filter((book) => {
+                      if (selectedFilter === "digital")
+                        return book.product_type !== "merchandise" && book.product_type !== "print";
+                      if (selectedFilter === "print")
+                        return book.product_type === "print";
+                      if (selectedFilter === "merchandise")
+                        return book.product_type === "merchandise";
+                      return true;
+                    });
+
+                    if (filteredBooks.length > displayLimit && showAllBooks) {
+                      return "Show Less";
+                    } else if (filteredBooks.length > displayLimit) {
+                      return `View All (${filteredBooks.length})`;
+                    } else {
+                      return `View All (${filteredBooks.length})`;
+                    }
+                  })()}
                 </button>
               )}
             </div>
@@ -470,7 +497,10 @@ const PopularRecommendations = () => {
                 {selectedFilter === "print" ? (
                   /* Print Books Grid */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                    {books.filter(book => book.product_type === 'print').map((book, index) => (
+                    {books
+                      .filter(book => book.product_type === 'print')
+                      .slice(0, showAllBooks ? undefined : displayLimit)
+                      .map((book, index) => (
                       <div
                         key={book.id}
                         className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
@@ -688,7 +718,9 @@ const PopularRecommendations = () => {
                 ) : (
                   /* Popular Recommendations from Database */
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-                {books.map((book, index) => (
+                {books
+                  .slice(0, showAllBooks ? undefined : displayLimit)
+                  .map((book, index) => (
                   <div
                     key={book.id}
                     className={`group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 h-[520px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30 cursor-pointer ${
