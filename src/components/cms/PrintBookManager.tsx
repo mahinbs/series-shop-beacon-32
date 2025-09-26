@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { Plus, Trash2, Edit, Eye, Upload, BookOpen, FileText, Save } from 'lucide-react';
@@ -18,6 +19,7 @@ interface PrintBook {
   image_url: string;
   price: number;
   product_type: string;
+  is_popular_recommendation: boolean;
   created_at: string;
 }
 
@@ -45,7 +47,8 @@ const PrintBookManager = () => {
     title: '',
     author: '',
     description: '',
-    price: 0
+    price: 0,
+    is_popular_recommendation: false
   });
   const { toast } = useToast();
 
@@ -66,7 +69,7 @@ const PrintBookManager = () => {
       setIsLoading(true);
       const { data, error } = await supabase
         .from('books')
-        .select('*')
+        .select('id, title, author, description, image_url, price, product_type, is_popular_recommendation, created_at')
         .eq('product_type', 'print')
         .order('created_at', { ascending: false });
 
@@ -233,7 +236,8 @@ const PrintBookManager = () => {
       title: book.title,
       author: book.author || '',
       description: book.description || '',
-      price: book.price
+      price: book.price,
+      is_popular_recommendation: book.is_popular_recommendation || false
     });
   };
 
@@ -247,7 +251,8 @@ const PrintBookManager = () => {
           title: editForm.title,
           author: editForm.author,
           description: editForm.description,
-          price: editForm.price
+          price: editForm.price,
+          is_popular_recommendation: editForm.is_popular_recommendation
         })
         .eq('id', editingBook.id);
 
@@ -377,17 +382,27 @@ const PrintBookManager = () => {
                                    rows={3}
                                  />
                                </div>
-                               <div>
-                                 <Label htmlFor="editPrice" className="text-white">Price ($)</Label>
-                                 <Input
-                                   id="editPrice"
-                                   type="number"
-                                   step="0.01"
-                                   value={editForm.price}
-                                   onChange={(e) => setEditForm({...editForm, price: parseFloat(e.target.value) || 0})}
-                                   className="bg-gray-600 border-gray-500 text-white"
-                                 />
-                               </div>
+                                <div>
+                                  <Label htmlFor="editPrice" className="text-white">Price ($)</Label>
+                                  <Input
+                                    id="editPrice"
+                                    type="number"
+                                    step="0.01"
+                                    value={editForm.price}
+                                    onChange={(e) => setEditForm({...editForm, price: parseFloat(e.target.value) || 0})}
+                                    className="bg-gray-600 border-gray-500 text-white"
+                                  />
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                  <Switch
+                                    id="popularRecommendation"
+                                    checked={editForm.is_popular_recommendation}
+                                    onCheckedChange={(checked) => setEditForm({...editForm, is_popular_recommendation: checked})}
+                                  />
+                                  <Label htmlFor="popularRecommendation" className="text-white">
+                                    Popular Recommendation
+                                  </Label>
+                                </div>
                                <Button onClick={handleSaveBook} className="bg-green-600 hover:bg-green-700 w-full">
                                  <Save className="w-4 h-4 mr-2" />
                                  Save Changes
