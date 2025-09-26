@@ -67,6 +67,7 @@ interface BookForm {
   dimensions?: string;
   weight?: number;
   stock_quantity: number;
+  is_popular_recommendation: boolean;
 }
 
 interface CharacterForm {
@@ -170,6 +171,7 @@ export const BooksManager = () => {
     dimensions: "",
     weight: undefined,
     stock_quantity: 0,
+    is_popular_recommendation: false,
   });
 
   const resetFormData = () => {
@@ -200,6 +202,7 @@ export const BooksManager = () => {
       dimensions: "",
       weight: undefined,
       stock_quantity: 0,
+      is_popular_recommendation: false,
     });
     setEditingId(null);
     setCharacters([]);
@@ -623,11 +626,12 @@ export const BooksManager = () => {
       is_active: book.is_active !== undefined ? book.is_active : true,
       product_type: book.product_type || "book",
       description: book.description || "",
-      tags: book.tags || [],
+      tags: Array.isArray(book.tags) ? book.tags : [],
       sku: book.sku || "",
       dimensions: book.dimensions || "",
       weight: book.weight,
       stock_quantity: book.stock_quantity || 0,
+      is_popular_recommendation: book.is_popular_recommendation || false,
     });
     setEditingId(book.id);
 
@@ -2259,6 +2263,18 @@ export const BooksManager = () => {
                     disabled={submitting}
                   />
                   <Label htmlFor="is_active">Active</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_popular_recommendation"
+                    checked={formData.is_popular_recommendation}
+                    onCheckedChange={(checked) =>
+                      setFormData({ ...formData, is_popular_recommendation: checked })
+                    }
+                    disabled={submitting}
+                  />
+                  <Label htmlFor="is_popular_recommendation">Popular Recommendation</Label>
                 </div>
               </div>
 

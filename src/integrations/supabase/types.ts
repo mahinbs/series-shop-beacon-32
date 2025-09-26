@@ -180,6 +180,7 @@ export type Database = {
           is_active: boolean
           is_new: boolean | null
           is_on_sale: boolean | null
+          is_popular_recommendation: boolean | null
           is_volume: boolean | null
           label: string | null
           original_price: number | null
@@ -214,6 +215,7 @@ export type Database = {
           is_active?: boolean
           is_new?: boolean | null
           is_on_sale?: boolean | null
+          is_popular_recommendation?: boolean | null
           is_volume?: boolean | null
           label?: string | null
           original_price?: number | null
@@ -248,6 +250,7 @@ export type Database = {
           is_active?: boolean
           is_new?: boolean | null
           is_on_sale?: boolean | null
+          is_popular_recommendation?: boolean | null
           is_volume?: boolean | null
           label?: string | null
           original_price?: number | null
@@ -1090,6 +1093,41 @@ export type Database = {
         }
         Relationships: []
       }
+      print_pages: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          page_number: number
+          print_book_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          page_number: number
+          print_book_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          page_number?: number
+          print_book_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_pages_print_book_id_fkey"
+            columns: ["print_book_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -1461,6 +1499,44 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      volume_pages: {
+        Row: {
+          created_at: string | null
+          id: string
+          image_url: string
+          is_active: boolean | null
+          page_number: number
+          updated_at: string | null
+          volume_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          image_url: string
+          is_active?: boolean | null
+          page_number: number
+          updated_at?: string | null
+          volume_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          image_url?: string
+          is_active?: boolean | null
+          page_number?: number
+          updated_at?: string | null
+          volume_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "volume_pages_volume_id_fkey"
+            columns: ["volume_id"]
+            isOneToOne: false
+            referencedRelation: "books"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       wishlist: {
         Row: {

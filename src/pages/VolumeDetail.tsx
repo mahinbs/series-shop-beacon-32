@@ -146,7 +146,9 @@ const VolumeDetail = () => {
         originalPrice: volume.original_price,
         imageUrl: volume.image_url,
         category: volume.category,
-        product_type: (volume.product_type || 'book') as 'book' | 'merchandise' | 'digital' | 'other',
+        product_type: (['book', 'merchandise'].includes(volume.product_type) 
+          ? volume.product_type 
+          : 'book') as 'book' | 'merchandise',
         inStock: volume.stock_quantity > 0,
         coins: volume.coins,
         canUnlockWithCoins: volume.can_unlock_with_coins || false,

@@ -33,11 +33,12 @@ const PopularRecommendations = () => {
     const fetchPopularBooks = async () => {
       setIsLoading(true);
       try {
-        // Fetch products based on selected filter
+        // Fetch products based on selected filter - only popular recommendations
         let query = supabase
           .from("books")
           .select("*")
-          .eq("is_active", true);
+          .eq("is_active", true)
+          .eq("is_popular_recommendation", true);
 
         // Filter by product type based on selected filter
         if (selectedFilter === "digital") {
