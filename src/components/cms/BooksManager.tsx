@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -63,6 +64,7 @@ interface BookForm {
   product_type: string;
   description: string;
   tags: string[];
+  genre: string[];
   sku?: string;
   dimensions?: string;
   weight?: number;
@@ -125,6 +127,7 @@ export const BooksManager = () => {
   const [editingCharacterId, setEditingCharacterId] = useState<string | null>(
     null
   );
+  const [newGenre, setNewGenre] = useState('');
 
   // Volume management state
   const [volumes, setVolumes] = useState<any[]>([]);
@@ -167,6 +170,7 @@ export const BooksManager = () => {
     product_type: "book",
     description: "",
     tags: [],
+    genre: [],
     sku: "",
     dimensions: "",
     weight: undefined,
@@ -198,6 +202,7 @@ export const BooksManager = () => {
       product_type: "book",
       description: "",
       tags: [],
+      genre: [],
       sku: "",
       dimensions: "",
       weight: undefined,
@@ -243,6 +248,23 @@ export const BooksManager = () => {
     } finally {
       setTesting(false);
     }
+  };
+
+  const addGenre = () => {
+    if (newGenre.trim() && !formData.genre.includes(newGenre.trim())) {
+      setFormData(prev => ({
+        ...prev,
+        genre: [...prev.genre, newGenre.trim()]
+      }));
+      setNewGenre('');
+    }
+  };
+
+  const removeGenre = (genre: string) => {
+    setFormData(prev => ({
+      ...prev,
+      genre: prev.genre.filter(g => g !== genre)
+    }));
   };
 
   const saveCharactersForBook = async (bookId: string) => {
@@ -627,6 +649,7 @@ export const BooksManager = () => {
       product_type: book.product_type || "book",
       description: book.description || "",
       tags: Array.isArray(book.tags) ? book.tags : [],
+      genre: Array.isArray(book.genre) ? book.genre : [],
       sku: book.sku || "",
       dimensions: book.dimensions || "",
       weight: book.weight,
@@ -1637,6 +1660,74 @@ export const BooksManager = () => {
                   Optional: Add a YouTube video that will be displayed above the
                   characters section
                 </p>
+              </div>
+
+              {/* Description Field */}
+              <div>
+                <Label htmlFor="description">Description</Label>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) =>
+                    setFormData({ ...formData, description: e.target.value })
+                  }
+                  placeholder="Enter book description..."
+                  disabled={submitting}
+                  rows={4}
+                />
+              </div>
+
+              {/* Genre Management */}
+              <div>
+                <Label>Genres</Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    value={newGenre}
+                    onChange={(e) => setNewGenre(e.target.value)}
+                    placeholder="Add genre (e.g., SLICE OF LIFE, DRAMA, HIGH SCHOOL ROMANCE, FANTASY, ACTION TALES)"
+                    onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addGenre())}
+                  />
+                  <Button type="button" onClick={addGenre} variant="outline">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {formData.genre.map(genre => (
+                    <Badge key={genre} variant="secondary" className="flex items-center gap-1">
+                      {genre}
+                      <button
+                        type="button"
+                        onClick={() => removeGenre(genre)}
+                        className="ml-1 hover:text-destructive"
+                      >
+                        ×
+                      </button>
+                    </Badge>
+                  ))}
+                </div>
+                {/* Predefined genre buttons */}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {['SLICE OF LIFE', 'DRAMA', 'HIGH SCHOOL ROMANCE', 'FANTASY', 'ACTION TALES'].map(genre => (
+                    <Button
+                      key={genre}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        if (!formData.genre.includes(genre)) {
+                          setFormData(prev => ({
+                            ...prev,
+                            genre: [...prev.genre, genre]
+                          }));
+                        }
+                      }}
+                      disabled={formData.genre.includes(genre)}
+                      className="text-xs"
+                    >
+                      {genre}
+                    </Button>
+                  ))}
+                </div>
               </div>
 
               {/* Characters Section */}

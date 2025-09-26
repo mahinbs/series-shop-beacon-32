@@ -174,6 +174,7 @@ export type Database = {
           description: string | null
           dimensions: string | null
           display_order: number | null
+          genre: string[] | null
           hover_image_url: string | null
           id: string
           image_url: string
@@ -209,6 +210,7 @@ export type Database = {
           description?: string | null
           dimensions?: string | null
           display_order?: number | null
+          genre?: string[] | null
           hover_image_url?: string | null
           id?: string
           image_url: string
@@ -244,6 +246,7 @@ export type Database = {
           description?: string | null
           dimensions?: string | null
           display_order?: number | null
+          genre?: string[] | null
           hover_image_url?: string | null
           id?: string
           image_url?: string
