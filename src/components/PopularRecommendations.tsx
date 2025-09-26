@@ -23,6 +23,18 @@ const PopularRecommendations = () => {
   const [activeTab, setActiveTab] = useState<"recommendations" | "genres">(
     "recommendations"
   );
+  const [dynamicGenreSections, setDynamicGenreSections] = useState<Array<{
+    name: string;
+    books: Array<{
+      id: string;
+      title: string;
+      author: string;
+      price: string;
+      coins: string;
+      type: string;
+      imageUrl: string;
+    }>;
+  }>>([]);
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const navigate = useNavigate();
@@ -84,6 +96,70 @@ const PopularRecommendations = () => {
 
     fetchPopularBooks();
   }, [selectedFilter]);
+
+  // Fetch genre data for genres tab
+  useEffect(() => {
+    const fetchGenreData = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("books")
+          .select("id, title, author, price, genre, image_url, product_type, can_unlock_with_coins")
+          .eq("is_active", true)
+          .not("genre", "is", null);
+
+        if (error) {
+          console.error("Error fetching genre data:", error);
+          return;
+        }
+
+        if (data) {
+          // Extract unique genres and group books
+          const genreMap = new Map<string, any[]>();
+          
+          data.forEach(book => {
+            if (book.genre && Array.isArray(book.genre)) {
+              book.genre.forEach(genre => {
+                if (genre && genre.trim()) {
+                  const normalizedGenre = genre.toUpperCase().trim();
+                  if (!genreMap.has(normalizedGenre)) {
+                    genreMap.set(normalizedGenre, []);
+                  }
+                  genreMap.get(normalizedGenre)?.push(book);
+                }
+              });
+            }
+          });
+
+          // Convert to genre sections format, limit to 4 books per genre
+          const genreSections = Array.from(genreMap.entries())
+            .filter(([_, books]) => books.length > 0)
+            .slice(0, 6) // Limit to first 6 genres
+            .map(([genreName, genreBooks]) => ({
+              name: genreName,
+              books: genreBooks.slice(0, 4).map(book => ({
+                id: book.id,
+                title: book.title,
+                author: book.author || "Unknown Author",
+                price: `$${Number(book.price).toFixed(2)}`,
+                coins: book.can_unlock_with_coins ? 
+                  `${Math.round(Number(book.price) * 100)} coins` : 
+                  "Not available with coins",
+                type: book.product_type === 'merchandise' ? 'merchandise' : 'digital',
+                imageUrl: book.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png'
+              }))
+            }));
+
+          setDynamicGenreSections(genreSections);
+        }
+      } catch (error) {
+        console.error("Error fetching genre data:", error);
+      }
+    };
+
+    if (activeTab === "genres") {
+      fetchGenreData();
+    }
+  }, [activeTab]);
 
   // Load volume counts for books
   useEffect(() => {
@@ -228,175 +304,6 @@ const PopularRecommendations = () => {
       });
     }
   };
-
-  // Sample genre data with books
-  const genreSections = [
-    {
-      name: "SLICE OF LIFE",
-      books: [
-        {
-          title: "Tokyo Ghoul Vol. 14",
-          author: "Sui Ishida",
-          price: "$12.99",
-          coins: "1299 coins",
-          type: "digital",
-        },
-        {
-          title: "Demon Slayer Tanjiro Figure",
-          author: "Koyoharu Gotouge",
-          price: "$49.99",
-          coins: "4999 coins",
-          type: "merchandise",
-        },
-        {
-          title: "Naruto Vol. 72",
-          author: "Masashi Kishimoto",
-          price: "$9.99",
-          coins: "999 coins",
-          type: "digital",
-        },
-        {
-          title: "My Hero Academia Vol. 35",
-          author: "Kohei Horikoshi",
-          price: "$11.99",
-          coins: "1199 coins",
-          type: "digital",
-        },
-      ],
-    },
-    {
-      name: "DRAMA",
-      books: [
-        {
-          title: "Tokyo Ghoul Vol. 14",
-          author: "Sui Ishida",
-          price: "$12.99",
-          coins: "1299 coins",
-          type: "merchandise",
-        },
-        {
-          title: "Demon Slayer Tanjiro Figure",
-          author: "Koyoharu Gotouge",
-          price: "$49.99",
-          coins: "4999 coins",
-          type: "digital",
-        },
-        {
-          title: "Naruto Vol. 72",
-          author: "Masashi Kishimoto",
-          price: "$9.99",
-          coins: "999 coins",
-          type: "digital",
-        },
-        {
-          title: "My Hero Academia Vol. 35",
-          author: "Kohei Horikoshi",
-          price: "$11.99",
-          coins: "1199 coins",
-          type: "digital",
-        },
-      ],
-    },
-    {
-      name: "HIGH SCHOOL ROMANCE",
-      books: [
-        {
-          title: "Your Name Vol. 1",
-          author: "Makoto Shinkai",
-          price: "$14.99",
-          coins: "1499 coins",
-          type: "digital",
-        },
-        {
-          title: "A Silent Voice Vol. 7",
-          author: "Yoshitoki Oima",
-          price: "$13.99",
-          coins: "1399 coins",
-          type: "digital",
-        },
-        {
-          title: "Orange Vol. 3",
-          author: "Ichigo Takano",
-          price: "$12.99",
-          coins: "1299 coins",
-          type: "digital",
-        },
-        {
-          title: "Toradora! Vol. 10",
-          author: "Yuyuko Takemiya",
-          price: "$11.99",
-          coins: "1199 coins",
-          type: "digital",
-        },
-      ],
-    },
-    {
-      name: "FANTASY",
-      books: [
-        {
-          title: "Attack on Titan Vol. 34",
-          author: "Hajime Isayama",
-          price: "$15.99",
-          coins: "1599 coins",
-          type: "digital",
-        },
-        {
-          title: "One Piece Vol. 100",
-          author: "Eiichiro Oda",
-          price: "$16.99",
-          coins: "1699 coins",
-          type: "digital",
-        },
-        {
-          title: "Demon Slayer Vol. 23",
-          author: "Koyoharu Gotouge",
-          price: "$14.99",
-          coins: "1499 coins",
-          type: "digital",
-        },
-        {
-          title: "Jujutsu Kaisen Vol. 20",
-          author: "Gege Akutami",
-          price: "$13.99",
-          coins: "1399 coins",
-          type: "digital",
-        },
-      ],
-    },
-    {
-      name: "ACTION TALES",
-      books: [
-        {
-          title: "Bleach Vol. 74",
-          author: "Tite Kubo",
-          price: "$15.99",
-          coins: "1599 coins",
-          type: "digital",
-        },
-        {
-          title: "Dragon Ball Super Vol. 18",
-          author: "Akira Toriyama",
-          price: "$16.99",
-          coins: "1699 coins",
-          type: "digital",
-        },
-        {
-          title: "Black Clover Vol. 32",
-          author: "Yuki Tabata",
-          price: "$14.99",
-          coins: "1499 coins",
-          type: "digital",
-        },
-        {
-          title: "Chainsaw Man Vol. 11",
-          author: "Tatsuki Fujimoto",
-          price: "$13.99",
-          coins: "1399 coins",
-          type: "digital",
-        },
-      ],
-    },
-  ];
 
   // Print series data
   const printSeries = [
@@ -1008,38 +915,45 @@ const PopularRecommendations = () => {
             ) : (
               /* Genre-based Content */
               <div className="space-y-12">
-                {genreSections.map((genre, genreIndex) => (
-                  <div key={genre.name} className="space-y-6">
-                    {/* Genre Header */}
-                    <div className="flex items-center justify-between">
-                      <h3 className="text-3xl font-bold text-white">
-                        {genre.name}
-                      </h3>
-                      <button
-                        onClick={() => handleGenreClick(genre.name)}
-                        className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all duration-300"
-                      >
-                        View All
-                      </button>
-                    </div>
-
-                    {/* Books Grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                      {genre.books.map((book, bookIndex) => (
-                        <div
-                          key={`${genre.name}-${bookIndex}`}
-                          className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[400px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30"
-                          onMouseEnter={() =>
-                            setHoveredBook(`${genre.name}-${bookIndex}`)
-                          }
-                          onMouseLeave={() => setHoveredBook(null)}
+                {activeTab === "genres" && dynamicGenreSections.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-400 text-lg">
+                      {isLoading ? "Loading genres..." : "No genres available at the moment."}
+                    </p>
+                  </div>
+                ) : (
+                  dynamicGenreSections.map((genre, genreIndex) => (
+                    <div key={genre.name} className="space-y-6">
+                      {/* Genre Header */}
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-3xl font-bold text-white">
+                          {genre.name}
+                        </h3>
+                        <button
+                          onClick={() => handleGenreClick(genre.name)}
+                          className="bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-all duration-300"
                         >
-                          <div className="relative overflow-hidden">
-                            <img
-                              src="/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png"
-                              alt={book.title}
-                              className="w-full h-64 object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:brightness-110"
-                            />
+                          View All
+                        </button>
+                      </div>
+
+                      {/* Books Grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {genre.books.map((book, bookIndex) => (
+                          <div
+                            key={`${genre.name}-${bookIndex}`}
+                            className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[400px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30"
+                            onMouseEnter={() =>
+                              setHoveredBook(`${genre.name}-${bookIndex}`)
+                            }
+                            onMouseLeave={() => setHoveredBook(null)}
+                          >
+                            <div className="relative overflow-hidden">
+                              <img
+                                src={book.imageUrl}
+                                alt={book.title}
+                                className="w-full h-64 object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:brightness-110"
+                              />
 
                             {/* Type Badge */}
                             <div className="absolute top-3 left-3 z-10">
@@ -1102,7 +1016,8 @@ const PopularRecommendations = () => {
                       ))}
                     </div>
                   </div>
-                ))}
+                  ))
+                )}
               </div>
             )}
           </>
