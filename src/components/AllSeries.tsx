@@ -1,42 +1,58 @@
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { ComicService, type ComicSeries } from '@/services/comicService';
+import { BookOpen } from 'lucide-react';
 
 const AllSeries = () => {
   const navigate = useNavigate();
+  const [allSeries, setAllSeries] = useState<ComicSeries[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   
-  const handleReadClick = (title: string) => {
-    const seriesSlug = title.toLowerCase().replace(/\s+/g, '-');
-    navigate(`/digital-reader/${encodeURIComponent(seriesSlug)}`);
+  useEffect(() => {
+    loadSeries();
+  }, []);
+
+  const loadSeries = async () => {
+    try {
+      setIsLoading(true);
+      const seriesData = await ComicService.getSeries();
+      // Filter out "Drama Seryes" series
+      const filteredSeries = seriesData.filter(series => 
+        series.title.toLowerCase() !== 'drama seryes'
+      );
+      setAllSeries(filteredSeries);
+    } catch (error) {
+      console.error('Error loading series:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
-  const allSeries = [
-    { title: "Chainsaw Man", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "A dark supernatural thriller about devils and chainsaw powers", genre: "Action", episodes: 24 },
-    { title: "My Hero Academia", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Superheroes in training at an elite academy", genre: "Superhero", episodes: 156 },
-    { title: "Attack on Titan", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Humanity's fight against giant humanoid Titans", genre: "Drama", episodes: 87 },
-    { title: "Spy x Family", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "A spy, assassin, and telepath form a fake family", genre: "Comedy", episodes: 25 },
-    { title: "Tokyo Revengers", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Time travel gang warfare and redemption", genre: "Drama", episodes: 50 },
-    { title: "Black Clover", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Magic knights in a world of spells and adventure", genre: "Fantasy", episodes: 170 },
-    { title: "Bleach", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Soul Reapers and spiritual warfare", genre: "Supernatural", episodes: 366 },
-    { title: "Naruto", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Young ninja's journey to become Hokage", genre: "Action", episodes: 720 },
-    { title: "Dragon Ball Super", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Goku's adventures across multiple universes", genre: "Action", episodes: 131 },
-    { title: "One Punch Man", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Superhero who defeats enemies with one punch", genre: "Comedy", episodes: 24 },
-    { title: "Haikyuu!", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "High school volleyball team's journey to nationals", genre: "Sports", episodes: 85 },
-    { title: "Demon Slayer", image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png", description: "Tanjiro's quest to save his demon sister", genre: "Supernatural", episodes: 44 }
-  ];
+  
+  const handleReadClick = (series: ComicSeries) => {
+    navigate(`/readers/${series.slug}`);
+  };
 
   return (
     <section id="all-series" className="bg-gray-850 py-16">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between mb-8">
           <h2 className="text-3xl font-bold text-white">All Series</h2>
-          <span className="text-gray-400">Showing 12 series</span>
+          <span className="text-gray-400">Showing {allSeries.length} series</span>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {allSeries.map((series, index) => (
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+            <span className="ml-3 text-gray-400">Loading series...</span>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-6">
+            {allSeries.map((series, index) => (
             <div key={index} className="group cursor-pointer">
                 <div className="relative overflow-hidden rounded-lg mb-3">
                   <img 
-                    src={series.image} 
+                    src={series.cover_image_url || '/placeholder.svg'} 
                     alt={series.title}
                     className="w-full h-64 object-cover group-hover:scale-110 transition-transform duration-300"
                   />
@@ -45,24 +61,25 @@ const AllSeries = () => {
                   <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
                     <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
                       <h3 className="text-lg font-bold text-red-300">{series.title}</h3>
-                      <p className="text-xs text-gray-300 line-clamp-2">{series.description}</p>
+                      <p className="text-xs text-gray-300 line-clamp-2">{series.description || 'No description available'}</p>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs text-gray-400 uppercase">{series.genre}</span>
-                        <span className="text-xs text-gray-400">{series.episodes} episodes</span>
+                        <span className="text-xs text-gray-400 uppercase">{series.genre?.[0] || 'General'}</span>
+                        <span className="text-xs text-gray-400">{series.total_episodes || 0} episodes</span>
                       </div>
                     </div>
                   </div>
 
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-4">
                     <Button 
-                      size="sm" 
-                      className="bg-red-600 hover:bg-red-700 text-white text-xs"
+                      size="sm"
+                      className="bg-red-600 hover:bg-red-700 text-white text-xs px-4 py-2"
                       onClick={(e) => {
                         e.stopPropagation();
-                        handleReadClick(series.title);
+                        handleReadClick(series);
                       }}
                     >
-                      Read
+                      <BookOpen className="w-3 h-3 mr-1" />
+                      Read Now
                     </Button>
                   </div>
                 </div>
@@ -71,13 +88,15 @@ const AllSeries = () => {
               </h3>
             </div>
           ))}
-        </div>
+          </div>
+        )}
         
-        <div className="text-center mt-12">
-          <Button className="bg-gray-700 hover:bg-gray-600 text-white px-8 py-3">
-            Load More
-          </Button>
-        </div>
+        {!isLoading && allSeries.length === 0 && (
+          <div className="text-center py-12">
+            <div className="text-white text-lg mb-2">No series available</div>
+            <div className="text-gray-400 text-sm">Check back soon for new series!</div>
+          </div>
+        )}
       </div>
     </section>
   );

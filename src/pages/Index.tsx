@@ -3,7 +3,6 @@ import Header from '@/components/Header';
 import HeroSection from '@/components/HeroSection';
 import SimpleProductGrid from '@/components/SimpleProductGrid';
 import PopularRecommendations from '@/components/PopularRecommendations';
-import AnnouncementsSection from '@/components/AnnouncementsSection';
 import SocialsSection from '@/components/SocialsSection';
 import Newsletter from '@/components/Newsletter';
 import Footer from '@/components/Footer';
@@ -15,7 +14,6 @@ const Index = () => {
       <HeroSection />
       <SimpleProductGrid />
       <PopularRecommendations />
-      <AnnouncementsSection />
       <SocialsSection />
       <Newsletter />
       <Footer />

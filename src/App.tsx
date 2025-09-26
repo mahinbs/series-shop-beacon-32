@@ -38,7 +38,6 @@ import ReturnExchange from "./pages/ReturnExchange";
 import CustomerSupport from "./pages/CustomerSupport";
 import LanguageTerms from "./pages/LanguageTerms";
 import Wishlist from "./pages/Wishlist";
-import SearchPage from "./pages/SearchPage";
 import CartPage from "./pages/CartPage";
 import LibraryPage from "./pages/LibraryPage";
 import ChatBot from "./components/ChatBot";
@@ -89,7 +88,6 @@ const App = () => (
               <Route path="/cart" element={<CartPage />} />
               <Route path="/wishlist" element={<Wishlist />} />
               <Route path="/profile" element={<Profile />} />
-              <Route path="/search" element={<SearchPage />} />
               <Route path="/library" element={<LibraryPage />} />
               <Route path="/digital-reader/:seriesTitle" element={<DigitalReader />} />
               <Route path="/digital-reader-specs" element={<DigitalReaderSpecs />} />

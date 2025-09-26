@@ -28,7 +28,7 @@ const Wishlist = () => {
 
     // Show success message and remove from wishlist
     setTimeout(() => {
-      removeFromWishlist(itemId);
+      removeFromWishlist(item.product_id);
     }, 1000);
   };
 
@@ -178,7 +178,7 @@ const Wishlist = () => {
                           variant="ghost"
                           size="icon"
                           className="absolute top-3 right-3 bg-background/80 hover:bg-background"
-                          onClick={() => removeFromWishlist(item.id)}
+                          onClick={() => removeFromWishlist(item.product_id)}
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
                         </Button>
@@ -233,7 +233,7 @@ const Wishlist = () => {
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => removeFromWishlist(item.id)}
+                                onClick={() => removeFromWishlist(item.product_id)}
                               >
                                 <Trash2 className="w-4 h-4 text-destructive" />
                               </Button>

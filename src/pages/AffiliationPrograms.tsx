@@ -42,7 +42,7 @@ const AffiliationPrograms = () => {
 
   const programTypes = [
     {
-      title: "JOIN THE CROSSED HEART NETWORK",
+      title: "COLLECTOR'S CIRCLE",
       icon: BookOpen,
       description: "Step into the Collector's Circle, an exclusive membership designed for readers and collectors who love being first in line for something truly special. Think of it as your all-access pass to the world of Crossed Hearts — where stories, surprises, and community meet.",
       features: [

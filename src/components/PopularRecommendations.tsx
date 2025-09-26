@@ -786,7 +786,7 @@ const PopularRecommendations = () => {
                               e.stopPropagation();
                               handleAddToCart(book);
                             }}
-                            className="bg-orange-600 hover:bg-orange-700 text-white p-2 rounded-full transition-all duration-300 hover:scale-110"
+                            className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-300 hover:scale-110"
                             title="Add to Cart"
                           >
                             <ShoppingCart className="w-4 h-4" />
@@ -903,7 +903,7 @@ const PopularRecommendations = () => {
                             e.stopPropagation();
                             handleAddToCart(book);
                           }}
-                          className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/30 transform hover:scale-105"
+                          className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30 transform hover:scale-105"
                         >
                           <ShoppingCart className="w-4 h-4 inline mr-2" />
                           Add to Cart
@@ -1030,7 +1030,7 @@ const PopularRecommendations = () => {
                             <div className="flex flex-col space-y-2">
                               <button
                                 onClick={() => handleAddToCart(book as any)}
-                                className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-orange-500/30"
+                                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
                               >
                                 <ShoppingCart className="w-4 h-4 inline mr-2" />
                                 Add to Cart

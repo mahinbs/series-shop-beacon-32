@@ -5,16 +5,20 @@ import { Button } from '@/components/ui/button';
 import { Link, useLocation } from 'react-router-dom';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useCart } from '@/hooks/useCart';
+import { useWishlist } from '@/hooks/useWishlist';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import CoinDisplay from './CoinDisplay';
+import SearchModal from './SearchModal';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const location = useLocation();
   const { user, isAuthenticated, signOut, isLoading, profile } = useSupabaseAuth();
   const { getCartItemCount } = useCart();
+  const { getWishlistCount } = useWishlist();
 
   const scrollToFeaturedSeries = () => {
     const element = document.getElementById('featured-series');
@@ -95,9 +99,14 @@ const Header = () => {
                   <Button 
                     variant="ghost" 
                     size="icon"
-                    className="text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300"
+                    className="text-gray-300 hover:text-red-400 hover:bg-red-500/10 transition-all duration-300 relative"
                   >
                     <Heart className="w-5 h-5" />
+                    {getWishlistCount() > 0 && (
+                      <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                        {getWishlistCount() > 99 ? '99+' : getWishlistCount()}
+                      </span>
+                    )}
                   </Button>
                 </Link>
               </TooltipTrigger>
@@ -123,11 +132,14 @@ const Header = () => {
             </Tooltip>
             <Tooltip>
               <TooltipTrigger asChild>
-                <Link to="/search">
-                  <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                    <Search className="h-5 w-5" />
-                  </Button>
-                </Link>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="text-gray-300 hover:text-white"
+                  onClick={() => setIsSearchOpen(true)}
+                >
+                  <Search className="h-5 w-5" />
+                </Button>
               </TooltipTrigger>
               <TooltipContent>
                 <p>Search</p>
@@ -306,14 +318,34 @@ const Header = () => {
               <div className="flex items-center justify-center space-x-4 px-3 pt-4 border-t border-gray-800">
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Link to="/search">
-                      <Button variant="ghost" size="icon" className="text-gray-300 hover:text-white">
-                        <Search className="h-5 w-5" />
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="text-gray-300 hover:text-white"
+                      onClick={() => setIsSearchOpen(true)}
+                    >
+                      <Search className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Search</p>
+                  </TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Link to="/wishlist">
+                      <Button variant="ghost" size="icon" className="text-gray-300 hover:text-red-400 relative">
+                        <Heart className="h-5 w-5" />
+                        {getWishlistCount() > 0 && (
+                          <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-bold">
+                            {getWishlistCount() > 99 ? '99+' : getWishlistCount()}
+                          </span>
+                        )}
                       </Button>
                     </Link>
                   </TooltipTrigger>
                   <TooltipContent>
-                    <p>Search</p>
+                    <p>Wishlist</p>
                   </TooltipContent>
                 </Tooltip>
                 <Tooltip>
@@ -338,6 +370,12 @@ const Header = () => {
           </div>
         )}
       </div>
+      
+      {/* Search Modal */}
+      <SearchModal 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
     </header>
     </TooltipProvider>
   );
