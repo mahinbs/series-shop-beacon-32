@@ -4,9 +4,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { Plus, Trash2, Edit, Eye, Upload, BookOpen, FileText } from 'lucide-react';
+import { Plus, Trash2, Edit, Eye, Upload, BookOpen, FileText, Save } from 'lucide-react';
 
 interface PrintBook {
   id: string;
@@ -38,6 +40,13 @@ const PrintBookManager = () => {
   const [newPageImageUrl, setNewPageImageUrl] = useState('');
   const [uploadingFile, setUploadingFile] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [editingBook, setEditingBook] = useState<PrintBook | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    author: '',
+    description: '',
+    price: 0
+  });
   const { toast } = useToast();
 
   // Load print books
@@ -78,19 +87,14 @@ const PrintBookManager = () => {
   const loadPages = async (bookId: string) => {
     try {
       setIsLoadingPages(true);
-      // TODO: Fix print_pages table type issue
-      // const { data, error } = await supabase
-      //   .from('print_pages')
-      //   .select('*')
-      //   .eq('print_book_id', bookId)
-      //   .order('page_number', { ascending: true });
+      const { data, error } = await supabase
+        .from('print_pages')
+        .select('*')
+        .eq('print_book_id', bookId)
+        .order('page_number', { ascending: true });
 
-      // if (error) throw error;
-      // setPages(data || []);
-      
-      // Temporarily disabled until Supabase types are updated
-      console.warn('Print pages loading disabled due to type issues');
-      setPages([]);
+      if (error) throw error;
+      setPages(data || []);
     } catch (error) {
       console.error('Error loading pages:', error);
       setPages([]);
@@ -156,19 +160,15 @@ const PrintBookManager = () => {
         imageUrl = await handleFileUpload(selectedFile);
       }
 
-      // TODO: Fix print_pages table type issue
-      // const { error } = await supabase
-      //   .from('print_pages')
-      //   .insert({
-      //     print_book_id: selectedBook.id,
-      //     page_number: newPageNumber,
-      //     image_url: imageUrl,
-      //   });
+      const { error } = await supabase
+        .from('print_pages')
+        .insert({
+          print_book_id: selectedBook.id,
+          page_number: newPageNumber,
+          image_url: imageUrl,
+        });
 
-      // if (error) throw error;
-      
-      // Temporarily disabled until Supabase types are updated
-      console.warn('Print page creation disabled due to type issues');
+      if (error) throw error;
 
       toast({
         title: "Success",
@@ -197,16 +197,12 @@ const PrintBookManager = () => {
     if (!confirm('Are you sure you want to delete this page?')) return;
 
     try {
-      // TODO: Fix print_pages table type issue
-      // const { error } = await supabase
-      //   .from('print_pages')
-      //   .delete()
-      //   .eq('id', pageId);
+      const { error } = await supabase
+        .from('print_pages')
+        .delete()
+        .eq('id', pageId);
 
-      // if (error) throw error;
-      
-      // Temporarily disabled until Supabase types are updated
-      console.warn('Print page deletion disabled due to type issues');
+      if (error) throw error;
 
       toast({
         title: "Success",
@@ -229,6 +225,49 @@ const PrintBookManager = () => {
 
   const handleViewBook = (book: PrintBook) => {
     window.open(`/print-reader/${book.id}`, '_blank');
+  };
+
+  const handleEditBook = (book: PrintBook) => {
+    setEditingBook(book);
+    setEditForm({
+      title: book.title,
+      author: book.author || '',
+      description: book.description || '',
+      price: book.price
+    });
+  };
+
+  const handleSaveBook = async () => {
+    if (!editingBook) return;
+
+    try {
+      const { error } = await supabase
+        .from('books')
+        .update({
+          title: editForm.title,
+          author: editForm.author,
+          description: editForm.description,
+          price: editForm.price
+        })
+        .eq('id', editingBook.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Book updated successfully",
+      });
+
+      setEditingBook(null);
+      loadPrintBooks();
+    } catch (error) {
+      console.error('Error updating book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update book",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -279,19 +318,84 @@ const PrintBookManager = () => {
                       <h3 className="text-white font-semibold truncate">{book.title}</h3>
                       <p className="text-gray-400 text-sm">{book.author}</p>
                       <p className="text-red-400 font-semibold">${book.price}</p>
-                      <div className="flex items-center space-x-2 mt-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleViewBook(book);
-                          }}
-                        >
-                          <Eye className="w-4 h-4 mr-1" />
-                          View
-                        </Button>
-                      </div>
+                       <div className="flex items-center space-x-2 mt-2">
+                         <Button
+                           size="sm"
+                           variant="outline"
+                           onClick={(e) => {
+                             e.stopPropagation();
+                             handleViewBook(book);
+                           }}
+                         >
+                           <Eye className="w-4 h-4 mr-1" />
+                           View
+                         </Button>
+                         <Dialog>
+                           <DialogTrigger asChild>
+                             <Button
+                               size="sm"
+                               variant="outline"
+                               onClick={(e) => {
+                                 e.stopPropagation();
+                                 handleEditBook(book);
+                               }}
+                             >
+                               <Edit className="w-4 h-4 mr-1" />
+                               Edit
+                             </Button>
+                           </DialogTrigger>
+                           <DialogContent className="bg-gray-800 border-gray-700">
+                             <DialogHeader>
+                               <DialogTitle className="text-white">Edit Print Book</DialogTitle>
+                             </DialogHeader>
+                             <div className="space-y-4">
+                               <div>
+                                 <Label htmlFor="editTitle" className="text-white">Title</Label>
+                                 <Input
+                                   id="editTitle"
+                                   value={editForm.title}
+                                   onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                                   className="bg-gray-600 border-gray-500 text-white"
+                                 />
+                               </div>
+                               <div>
+                                 <Label htmlFor="editAuthor" className="text-white">Author</Label>
+                                 <Input
+                                   id="editAuthor"
+                                   value={editForm.author}
+                                   onChange={(e) => setEditForm({...editForm, author: e.target.value})}
+                                   className="bg-gray-600 border-gray-500 text-white"
+                                 />
+                               </div>
+                               <div>
+                                 <Label htmlFor="editDescription" className="text-white">Description</Label>
+                                 <Textarea
+                                   id="editDescription"
+                                   value={editForm.description}
+                                   onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                                   className="bg-gray-600 border-gray-500 text-white"
+                                   rows={3}
+                                 />
+                               </div>
+                               <div>
+                                 <Label htmlFor="editPrice" className="text-white">Price ($)</Label>
+                                 <Input
+                                   id="editPrice"
+                                   type="number"
+                                   step="0.01"
+                                   value={editForm.price}
+                                   onChange={(e) => setEditForm({...editForm, price: parseFloat(e.target.value) || 0})}
+                                   className="bg-gray-600 border-gray-500 text-white"
+                                 />
+                               </div>
+                               <Button onClick={handleSaveBook} className="bg-green-600 hover:bg-green-700 w-full">
+                                 <Save className="w-4 h-4 mr-2" />
+                                 Save Changes
+                               </Button>
+                             </div>
+                           </DialogContent>
+                         </Dialog>
+                       </div>
                     </div>
                   </div>
                 </div>
