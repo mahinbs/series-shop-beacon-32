@@ -36,10 +36,13 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import VolumePagesManager from './VolumePagesManager';
+import ChapterManager from './ChapterManager';
+import VolumeChapterManager from './VolumeChapterManager';
+import { RetailerService, Retailer, BookRetailer } from '@/services/retailerService';
 
 interface BookForm {
   title: string;
-  author: string;
+  author: string; // Keep for database compatibility
   category: string;
   price: number;
   original_price?: number;
@@ -63,6 +66,9 @@ interface BookForm {
   is_active: boolean;
   product_type: string;
   description: string;
+  about_series: string;
+  creators: string;
+  length: string;
   tags: string[];
   genre: string[];
   sku?: string;
@@ -70,6 +76,14 @@ interface BookForm {
   weight?: number;
   stock_quantity: number;
   is_popular_recommendation: boolean;
+  // Format availability controls
+  available_digital: boolean;
+  available_paperback: boolean;
+  available_hardcover: boolean;
+  // Stock controls
+  digital_stock: number;
+  paperback_stock: number;
+  hardcover_stock: number;
 }
 
 interface CharacterForm {
@@ -129,11 +143,38 @@ export const BooksManager = () => {
   );
   const [newGenre, setNewGenre] = useState('');
 
+  // Retailer management state
+  const [retailers, setRetailers] = useState<Retailer[]>([]);
+  const [bookRetailers, setBookRetailers] = useState<BookRetailer[]>([]);
+  const [showRetailerForm, setShowRetailerForm] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState<'digital' | 'paperback' | 'hardcover'>('digital');
+  const [newRetailerUrl, setNewRetailerUrl] = useState('');
+  
+  // Custom retailer creation state
+  const [showCustomRetailerForm, setShowCustomRetailerForm] = useState(false);
+  const [customRetailerForm, setCustomRetailerForm] = useState({
+    name: '',
+    website_url: '',
+    logo_url: ''
+  });
+
   // Volume management state
   const [volumes, setVolumes] = useState<any[]>([]);
   const [showVolumeForm, setShowVolumeForm] = useState(false);
   const [editingVolumeId, setEditingVolumeId] = useState<string | null>(null);
   const [selectedVolumeForPages, setSelectedVolumeForPages] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  
+  // Chapter management state
+  const [selectedBookForChapters, setSelectedBookForChapters] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  
+  // Volume chapter management state
+  const [selectedVolumeForChapters, setSelectedVolumeForChapters] = useState<{
     id: string;
     title: string;
   } | null>(null);
@@ -150,7 +191,7 @@ export const BooksManager = () => {
   });
   const [formData, setFormData] = useState<BookForm>({
     title: "",
-    author: "",
+    author: "", // Keep for database compatibility
     category: "",
     price: 0,
     original_price: undefined,
@@ -169,6 +210,9 @@ export const BooksManager = () => {
     is_active: true,
     product_type: "book",
     description: "",
+    about_series: "",
+    creators: "",
+    length: "",
     tags: [],
     genre: [],
     sku: "",
@@ -176,13 +220,21 @@ export const BooksManager = () => {
     weight: undefined,
     stock_quantity: 0,
     is_popular_recommendation: false,
+    // Format availability controls
+    available_digital: true,
+    available_paperback: true,
+    available_hardcover: true,
+    // Stock controls
+    digital_stock: 0,
+    paperback_stock: 0,
+    hardcover_stock: 0,
   });
 
   const resetFormData = () => {
     console.log("Resetting form data only");
     setFormData({
       title: "",
-      author: "",
+      author: "", // Keep for database compatibility
       category: "",
       price: 0,
       original_price: undefined,
@@ -201,6 +253,9 @@ export const BooksManager = () => {
       is_active: true,
       product_type: "book",
       description: "",
+      about_series: "",
+      creators: "",
+      length: "",
       tags: [],
       genre: [],
       sku: "",
@@ -208,6 +263,14 @@ export const BooksManager = () => {
       weight: undefined,
       stock_quantity: 0,
       is_popular_recommendation: false,
+      // Format availability controls
+      available_digital: true,
+      available_paperback: true,
+      available_hardcover: true,
+      // Stock controls
+      digital_stock: 0,
+      paperback_stock: 0,
+      hardcover_stock: 0,
     });
     setEditingId(null);
     setCharacters([]);
@@ -247,6 +310,109 @@ export const BooksManager = () => {
       });
     } finally {
       setTesting(false);
+    }
+  };
+
+  // Load retailers
+  const loadRetailers = async () => {
+    try {
+      const retailersData = await RetailerService.getRetailers();
+      setRetailers(retailersData);
+    } catch (error) {
+      console.error('Error loading retailers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load retailers",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Load book retailers
+  const loadBookRetailers = async (bookId: string) => {
+    try {
+      const bookRetailersData = await RetailerService.getBookRetailers(bookId);
+      setBookRetailers(bookRetailersData);
+    } catch (error) {
+      console.error('Error loading book retailers:', error);
+    }
+  };
+
+  // Add retailer to book
+  const addRetailerToBook = async (retailerId: string, formatType: string, url?: string) => {
+    if (!editingId) return;
+    
+    try {
+      await RetailerService.addBookRetailer(editingId, retailerId, formatType, url);
+      await loadBookRetailers(editingId);
+      toast({
+        title: "Success",
+        description: "Retailer added to book",
+      });
+    } catch (error) {
+      console.error('Error adding retailer to book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add retailer to book",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Remove retailer from book
+  const removeRetailerFromBook = async (retailerId: string) => {
+    try {
+      await RetailerService.removeBookRetailer(retailerId);
+      await loadBookRetailers(editingId || '');
+      toast({
+        title: "Success",
+        description: "Retailer removed from book",
+      });
+    } catch (error) {
+      console.error('Error removing retailer from book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to remove retailer from book",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Create custom retailer
+  const createCustomRetailer = async () => {
+    if (!customRetailerForm.name.trim()) {
+      toast({
+        title: "Error",
+        description: "Retailer name is required",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const newRetailer = await RetailerService.createRetailer({
+        name: customRetailerForm.name.trim(),
+        website_url: customRetailerForm.website_url.trim() || null,
+        logo_url: customRetailerForm.logo_url.trim() || null,
+        is_active: true,
+        display_order: retailers.length
+      });
+
+      setRetailers(prev => [...prev, newRetailer]);
+      setCustomRetailerForm({ name: '', website_url: '', logo_url: '' });
+      setShowCustomRetailerForm(false);
+      
+      toast({
+        title: "Success",
+        description: "Custom retailer created successfully",
+      });
+    } catch (error) {
+      console.error('Error creating custom retailer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create custom retailer",
+        variant: "destructive",
+      });
     }
   };
 
@@ -629,7 +795,6 @@ export const BooksManager = () => {
   const handleEdit = async (book: any) => {
     setFormData({
       title: book.title || "",
-      author: book.author || "",
       category: book.category || "",
       price: book.price || 0,
       original_price: book.original_price,
@@ -648,6 +813,10 @@ export const BooksManager = () => {
       is_active: book.is_active !== undefined ? book.is_active : true,
       product_type: book.product_type || "book",
       description: book.description || "",
+      about_series: book.about_series || "",
+      author: book.author || book.creators || "", // Keep author for database compatibility
+      creators: book.creators || book.author || "", // Use creators field, fallback to author for backward compatibility
+      length: book.length || "",
       tags: Array.isArray(book.tags) ? book.tags : [],
       genre: Array.isArray(book.genre) ? book.genre : [],
       sku: book.sku || "",
@@ -655,6 +824,14 @@ export const BooksManager = () => {
       weight: book.weight,
       stock_quantity: book.stock_quantity || 0,
       is_popular_recommendation: book.is_popular_recommendation || false,
+      // Format availability controls
+      available_digital: book.available_digital !== undefined ? book.available_digital : true,
+      available_paperback: book.available_paperback !== undefined ? book.available_paperback : true,
+      available_hardcover: book.available_hardcover !== undefined ? book.available_hardcover : true,
+      // Stock controls
+      digital_stock: book.digital_stock || 0,
+      paperback_stock: book.paperback_stock || 0,
+      hardcover_stock: book.hardcover_stock || 0,
     });
     setEditingId(book.id);
 
@@ -685,6 +862,10 @@ export const BooksManager = () => {
       console.error('Error loading volumes:', error);
       setVolumes([]);
     }
+
+    // Load retailers and book retailers
+    await loadRetailers();
+    await loadBookRetailers(book.id);
 
     setShowAddForm(true);
   };
@@ -1326,6 +1507,18 @@ export const BooksManager = () => {
                       <Button
                         variant="outline"
                         size="sm"
+                        onClick={() => setSelectedBookForChapters({
+                          id: book.id,
+                          title: book.title
+                        })}
+                        disabled={submitting}
+                        title="Manage Chapters"
+                      >
+                        <BookCopy className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
                         onClick={() => handleDelete(book.id)}
                         disabled={submitting}
                       >
@@ -1382,17 +1575,6 @@ export const BooksManager = () => {
                   />
                 </div>
 
-                <div>
-                  <Label htmlFor="author">Author</Label>
-                  <Input
-                    id="author"
-                    value={formData.author}
-                    onChange={(e) =>
-                      setFormData({ ...formData, author: e.target.value })
-                    }
-                    disabled={submitting}
-                  />
-                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1675,6 +1857,368 @@ export const BooksManager = () => {
                   disabled={submitting}
                   rows={4}
                 />
+              </div>
+
+              {/* About the Series Field */}
+              <div>
+                <Label htmlFor="about_series">About the Series</Label>
+                <Textarea
+                  id="about_series"
+                  value={formData.about_series}
+                  onChange={(e) =>
+                    setFormData({ ...formData, about_series: e.target.value })
+                  }
+                  placeholder="Enter series description that will appear in the 'About the Series' section..."
+                  disabled={submitting}
+                  rows={4}
+                />
+                <p className="text-sm text-muted-foreground mt-1">
+                  This content will be displayed in the "About the Series" section on the product details page.
+                </p>
+              </div>
+
+              {/* Additional Book Details */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="creators">Creators</Label>
+                  <Input
+                    id="creators"
+                    value={formData.creators}
+                    onChange={(e) =>
+                      setFormData({ 
+                        ...formData, 
+                        creators: e.target.value,
+                        author: e.target.value // Keep author in sync with creators
+                      })
+                    }
+                    placeholder="Enter creator names (separated by commas)"
+                    disabled={submitting}
+                  />
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Multiple creators can be separated by commas
+                  </p>
+                </div>
+
+                <div>
+                  <Label htmlFor="length">Length</Label>
+                  <Input
+                    id="length"
+                    value={formData.length}
+                    onChange={(e) =>
+                      setFormData({ ...formData, length: e.target.value })
+                    }
+                    placeholder="e.g., 200 pages, 2 hours, etc."
+                    disabled={submitting}
+                  />
+                </div>
+              </div>
+
+              {/* Stock Management Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-primary">Stock Management</h3>
+                
+                {/* Format Availability Controls */}
+                <div className="space-y-4">
+                  <h4 className="text-md font-medium">Format Availability</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="available_digital"
+                        checked={formData.available_digital}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, available_digital: checked })
+                        }
+                        disabled={submitting}
+                      />
+                      <Label htmlFor="available_digital">Digital Available</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="available_paperback"
+                        checked={formData.available_paperback}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, available_paperback: checked })
+                        }
+                        disabled={submitting}
+                      />
+                      <Label htmlFor="available_paperback">Paperback Available</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Switch
+                        id="available_hardcover"
+                        checked={formData.available_hardcover}
+                        onCheckedChange={(checked) =>
+                          setFormData({ ...formData, available_hardcover: checked })
+                        }
+                        disabled={submitting}
+                      />
+                      <Label htmlFor="available_hardcover">Hardcover Available</Label>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Stock Quantity Controls */}
+                <div className="space-y-4">
+                  <h4 className="text-md font-medium">Stock Quantities</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="digital_stock">Digital Stock</Label>
+                      <Input
+                        id="digital_stock"
+                        type="number"
+                        min="0"
+                        value={formData.digital_stock}
+                        onChange={(e) =>
+                          setFormData({ ...formData, digital_stock: parseInt(e.target.value) || 0 })
+                        }
+                        disabled={submitting || !formData.available_digital}
+                        placeholder="Digital stock quantity"
+                      />
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Set to 0 for unlimited digital stock
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="paperback_stock">Paperback Stock</Label>
+                      <Input
+                        id="paperback_stock"
+                        type="number"
+                        min="0"
+                        value={formData.paperback_stock}
+                        onChange={(e) =>
+                          setFormData({ ...formData, paperback_stock: parseInt(e.target.value) || 0 })
+                        }
+                        disabled={submitting || !formData.available_paperback}
+                        placeholder="Paperback stock quantity"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="hardcover_stock">Hardcover Stock</Label>
+                      <Input
+                        id="hardcover_stock"
+                        type="number"
+                        min="0"
+                        value={formData.hardcover_stock}
+                        onChange={(e) =>
+                          setFormData({ ...formData, hardcover_stock: parseInt(e.target.value) || 0 })
+                        }
+                        disabled={submitting || !formData.available_hardcover}
+                        placeholder="Hardcover stock quantity"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Overall Stock Status */}
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="text-md font-medium mb-2">Overall Stock Status</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span>Digital:</span>
+                      <span className={formData.available_digital && formData.digital_stock > 0 ? "text-green-600" : "text-red-600"}>
+                        {formData.available_digital ? (formData.digital_stock > 0 ? "In Stock" : "Out of Stock") : "Not Available"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Paperback:</span>
+                      <span className={formData.available_paperback && formData.paperback_stock > 0 ? "text-green-600" : "text-red-600"}>
+                        {formData.available_paperback ? (formData.paperback_stock > 0 ? "In Stock" : "Out of Stock") : "Not Available"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Hardcover:</span>
+                      <span className={formData.available_hardcover && formData.hardcover_stock > 0 ? "text-green-600" : "text-red-600"}>
+                        {formData.available_hardcover ? (formData.hardcover_stock > 0 ? "In Stock" : "Out of Stock") : "Not Available"}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Retailer Management Section */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-primary">Where to Buy Management</h3>
+                
+                {/* Format Selection for Retailers */}
+                <div className="space-y-4">
+                  <h4 className="text-md font-medium">Select Format to Manage Retailers</h4>
+                  <div className="flex space-x-2">
+                    {['digital', 'paperback', 'hardcover'].map((format) => (
+                      <Button
+                        key={format}
+                        type="button"
+                        variant={selectedFormat === format ? "default" : "outline"}
+                        onClick={() => setSelectedFormat(format as 'digital' | 'paperback' | 'hardcover')}
+                        className="capitalize"
+                      >
+                        {format}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Current Retailers for Selected Format */}
+                <div className="space-y-4">
+                  <h4 className="text-md font-medium">Current Retailers for {selectedFormat.charAt(0).toUpperCase() + selectedFormat.slice(1)}</h4>
+                  <div className="space-y-2">
+                    {bookRetailers
+                      .filter(br => br.format_type === selectedFormat)
+                      .map((bookRetailer) => (
+                        <div key={bookRetailer.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3">
+                            <span className="font-medium">{bookRetailer.retailer?.name}</span>
+                            {bookRetailer.url && (
+                              <a 
+                                href={bookRetailer.url} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="text-blue-600 hover:text-blue-800 text-sm"
+                              >
+                                View Link
+                              </a>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removeRetailerFromBook(bookRetailer.id)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    {bookRetailers.filter(br => br.format_type === selectedFormat).length === 0 && (
+                      <p className="text-muted-foreground text-sm">No retailers added for {selectedFormat} format</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Add New Retailer */}
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-md font-medium">Add Retailer for {selectedFormat.charAt(0).toUpperCase() + selectedFormat.slice(1)}</h4>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowCustomRetailerForm(!showCustomRetailerForm)}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Create Custom Retailer
+                    </Button>
+                  </div>
+
+                  {/* Custom Retailer Creation Form */}
+                  {showCustomRetailerForm && (
+                    <div className="p-4 border rounded-lg bg-muted/50">
+                      <h5 className="text-sm font-medium mb-3">Create New Retailer</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="custom_retailer_name">Retailer Name *</Label>
+                          <Input
+                            id="custom_retailer_name"
+                            value={customRetailerForm.name}
+                            onChange={(e) => setCustomRetailerForm(prev => ({ ...prev, name: e.target.value }))}
+                            placeholder="Enter retailer name"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="custom_retailer_website">Website URL</Label>
+                          <Input
+                            id="custom_retailer_website"
+                            value={customRetailerForm.website_url}
+                            onChange={(e) => setCustomRetailerForm(prev => ({ ...prev, website_url: e.target.value }))}
+                            placeholder="https://example.com"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="custom_retailer_logo">Logo URL</Label>
+                          <Input
+                            id="custom_retailer_logo"
+                            value={customRetailerForm.logo_url}
+                            onChange={(e) => setCustomRetailerForm(prev => ({ ...prev, logo_url: e.target.value }))}
+                            placeholder="https://example.com/logo.png"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex gap-2 mt-3">
+                        <Button
+                          type="button"
+                          onClick={createCustomRetailer}
+                          disabled={!customRetailerForm.name.trim()}
+                          size="sm"
+                        >
+                          Create Retailer
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            setShowCustomRetailerForm(false);
+                            setCustomRetailerForm({ name: '', website_url: '', logo_url: '' });
+                          }}
+                          size="sm"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <Label>Select Retailer</Label>
+                      <Select onValueChange={(value) => {
+                        const retailer = retailers.find(r => r.id === value);
+                        if (retailer) {
+                          addRetailerToBook(retailer.id, selectedFormat, newRetailerUrl || undefined);
+                          setNewRetailerUrl('');
+                        }
+                      }}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choose a retailer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {retailers
+                            .filter(retailer => 
+                              !bookRetailers.some(br => 
+                                br.retailer_id === retailer.id && br.format_type === selectedFormat
+                              )
+                            )
+                            .map((retailer) => (
+                              <SelectItem key={retailer.id} value={retailer.id}>
+                                {retailer.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="retailer_url">Custom URL (Optional)</Label>
+                      <Input
+                        id="retailer_url"
+                        value={newRetailerUrl}
+                        onChange={(e) => setNewRetailerUrl(e.target.value)}
+                        placeholder="Enter custom URL for this retailer"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Retailer Management Info */}
+                <div className="p-4 bg-muted rounded-lg">
+                  <h4 className="text-md font-medium mb-2">Retailer Management Info</h4>
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p>• Add retailers for each format (Digital, Paperback, Hardcover)</p>
+                    <p>• Each format can have different retailers</p>
+                    <p>• Create custom retailers using the "Create Custom Retailer" button</p>
+                    <p>• Custom URLs can be set for specific book-retailer combinations</p>
+                    <p>• Retailers will appear in the "Where to Buy" section on the product page</p>
+                    <p>• Custom retailers are available for all books once created</p>
+                  </div>
+                </div>
               </div>
 
               {/* Genre Management */}
@@ -2023,7 +2567,8 @@ export const BooksManager = () => {
                               </div>
                             </div>
                             <div className="flex items-center gap-2">
-                              <Button
+                              {/* Pages Button - COMMENTED OUT (pages now managed inside chapters) */}
+                              {/* <Button
                                 type="button"
                                 variant="outline"
                                 size="sm"
@@ -2035,6 +2580,19 @@ export const BooksManager = () => {
                                 title="Manage Pages"
                               >
                                 <BookOpen className="h-4 w-4" />
+                              </Button> */}
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedVolumeForChapters({
+                                  id: volume.id,
+                                  title: volume.title
+                                })}
+                                disabled={submitting}
+                                title="Manage Chapters"
+                              >
+                                <BookCopy className="h-4 w-4" />
                               </Button>
                               <Button
                                 type="button"
@@ -2412,6 +2970,24 @@ export const BooksManager = () => {
           volumeId={selectedVolumeForPages.id}
           volumeTitle={selectedVolumeForPages.title}
           onClose={() => setSelectedVolumeForPages(null)}
+        />
+      )}
+
+      {/* Chapter Manager Modal */}
+      {selectedBookForChapters && (
+        <ChapterManager
+          bookId={selectedBookForChapters.id}
+          bookTitle={selectedBookForChapters.title}
+          onClose={() => setSelectedBookForChapters(null)}
+        />
+      )}
+
+      {/* Volume Chapter Manager Modal */}
+      {selectedVolumeForChapters && (
+        <VolumeChapterManager
+          volumeId={selectedVolumeForChapters.id}
+          volumeTitle={selectedVolumeForChapters.title}
+          onClose={() => setSelectedVolumeForChapters(null)}
         />
       )}
     </div>

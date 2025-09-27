@@ -164,17 +164,24 @@ export type Database = {
       }
       books: {
         Row: {
+          about_series: string | null
           age_rating: string | null
           author: string | null
+          available_digital: boolean | null
+          available_hardcover: boolean | null
+          available_paperback: boolean | null
           can_unlock_with_coins: boolean
           category: string
           coins: string | null
           cover_page_url: string | null
           created_at: string
+          creators: string | null
           description: string | null
+          digital_stock: number | null
           dimensions: string | null
           display_order: number | null
           genre: string[] | null
+          hardcover_stock: number | null
           hover_image_url: string | null
           id: string
           image_url: string
@@ -184,8 +191,10 @@ export type Database = {
           is_popular_recommendation: boolean | null
           is_volume: boolean | null
           label: string | null
+          length: string | null
           original_price: number | null
           parent_book_id: string | null
+          paperback_stock: number | null
           price: number
           product_type: string | null
           section_type: string
@@ -200,17 +209,24 @@ export type Database = {
           weight: number | null
         }
         Insert: {
+          about_series?: string | null
           age_rating?: string | null
           author?: string | null
+          available_digital?: boolean | null
+          available_hardcover?: boolean | null
+          available_paperback?: boolean | null
           can_unlock_with_coins?: boolean
           category: string
           coins?: string | null
           cover_page_url?: string | null
           created_at?: string
+          creators?: string | null
           description?: string | null
+          digital_stock?: number | null
           dimensions?: string | null
           display_order?: number | null
           genre?: string[] | null
+          hardcover_stock?: number | null
           hover_image_url?: string | null
           id?: string
           image_url: string
@@ -220,8 +236,10 @@ export type Database = {
           is_popular_recommendation?: boolean | null
           is_volume?: boolean | null
           label?: string | null
+          length?: string | null
           original_price?: number | null
           parent_book_id?: string | null
+          paperback_stock?: number | null
           price: number
           product_type?: string | null
           section_type: string
@@ -236,17 +254,24 @@ export type Database = {
           weight?: number | null
         }
         Update: {
+          about_series?: string | null
           age_rating?: string | null
           author?: string | null
+          available_digital?: boolean | null
+          available_hardcover?: boolean | null
+          available_paperback?: boolean | null
           can_unlock_with_coins?: boolean
           category?: string
           coins?: string | null
           cover_page_url?: string | null
           created_at?: string
+          creators?: string | null
           description?: string | null
+          digital_stock?: number | null
           dimensions?: string | null
           display_order?: number | null
           genre?: string[] | null
+          hardcover_stock?: number | null
           hover_image_url?: string | null
           id?: string
           image_url?: string
@@ -256,8 +281,10 @@ export type Database = {
           is_popular_recommendation?: boolean | null
           is_volume?: boolean | null
           label?: string | null
+          length?: string | null
           original_price?: number | null
           parent_book_id?: string | null
+          paperback_stock?: number | null
           price?: number
           product_type?: string | null
           section_type?: string

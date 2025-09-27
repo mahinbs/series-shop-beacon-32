@@ -23,6 +23,8 @@ import { ComicService } from "@/services/comicService";
 import { BookCharacters, BookCharactersRef } from "@/components/BookCharacters";
 import { CharacterPreviewBox } from "@/components/CharacterPreviewBox";
 import { YouTubeVideo } from "@/components/YouTubeVideo";
+import { RetailerService, BookRetailer } from "@/services/retailerService";
+import ChapterPreview from "@/components/ChapterPreview";
 
 const ProductDetails = () => {
   const { productId } = useParams();
@@ -91,9 +93,21 @@ const ProductDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [volumes, setVolumes] = useState<any[]>([]);
+  const [retailers, setRetailers] = useState<BookRetailer[]>([]);
+  const [selectedFormat, setSelectedFormat] = useState<'digital' | 'paperback' | 'hardcover'>('digital');
   const { addToCart } = useCart();
   const { toast } = useToast();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
+
+  // Load retailers for the product
+  const loadRetailers = async (bookId: string) => {
+    try {
+      const retailersData = await RetailerService.getBookRetailers(bookId);
+      setRetailers(retailersData);
+    } catch (error) {
+      console.error('Error loading retailers:', error);
+    }
+  };
 
   // Debug logging
   console.log("🎯 ProductDetails: Component loaded");
@@ -190,6 +204,9 @@ const ProductDetails = () => {
                 }
               }
             }
+
+            // Load retailers for this book
+            await loadRetailers(book.id);
 
             setIsLoading(false);
             return;
@@ -477,7 +494,7 @@ const ProductDetails = () => {
                     {getCleanTitle(product?.title)}
                   </button>
                   <p className="text-gray-400 text-sm mt-1">
-                    by {product?.author || "Author"}
+                    by {product?.creators || product?.author || "Author"}
                   </p>
 
                   {/* Action Buttons - Right below author */}
@@ -485,19 +502,28 @@ const ProductDetails = () => {
                     <Button
                       onClick={handleAddToCart}
                       disabled={
-                        product?.stock_quantity !== undefined
-                          ? product.stock_quantity <= 0
-                          : false
+                        // Check if any format is available and in stock
+                        !(
+                          (product?.available_digital && (product?.digital_stock || 0) > 0) ||
+                          (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
+                          (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
+                        )
                       }
                       className={`px-8 py-3 font-bold uppercase transition-all duration-200 ${
-                        product?.stock_quantity !== undefined &&
-                        product.stock_quantity <= 0
+                        !(
+                          (product?.available_digital && (product?.digital_stock || 0) > 0) ||
+                          (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
+                          (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
+                        )
                           ? "bg-gray-500 text-gray-300 cursor-not-allowed hover:bg-gray-500"
                           : "bg-red-600 hover:bg-red-700 text-white"
                       }`}
                     >
-                      {product?.stock_quantity !== undefined &&
-                      product.stock_quantity <= 0
+                      {!(
+                        (product?.available_digital && (product?.digital_stock || 0) > 0) ||
+                        (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
+                        (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
+                      )
                         ? "OUT OF STOCK"
                         : "ADD TO CART"}
                     </Button>
@@ -555,7 +581,7 @@ const ProductDetails = () => {
           </div>
 
           {/* Trailer and Preview Section */}
-          {product?.video_url && (
+          {product?.video_url ? (
             <div className="mt-8 bg-gray-900 p-6 rounded-lg mb-8">
               <div className="flex flex-col lg:flex-row gap-6 h-[500px]">
                 {/* Left Side - Trailer Video */}
@@ -572,45 +598,24 @@ const ProductDetails = () => {
                     <h3 className="text-black font-bold text-lg mb-4 uppercase">
                       Preview
                     </h3>
-                    <div
-                      ref={chapterListRef}
-                      className="flex-1 overflow-y-auto space-y-3 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 relative"
-                      style={{
-                        scrollbarWidth: "thin",
-                        scrollbarColor: "#cbd5e1 #f1f5f9",
-                        msOverflowStyle: "scrollbar",
-                      }}
-                    >
-                      <div className="flex items-center justify-between py-2 border-b border-gray-200">
-                        <span className="text-black font-bold">CH. 1</span>
-                        <button className="bg-red-600 hover:bg-red-700 text-white px-4 py-1 rounded text-sm font-bold">
-                          📖 READ NOW
-                        </button>
-                      </div>
-                      {[
-                        2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17,
-                        18, 19, 20,
-                      ].map((ch) => (
-                        <div
-                          key={ch}
-                          className="flex items-center justify-between py-2 border-b border-gray-200"
-                        >
-                          <span className="text-black font-bold">CH. {ch}</span>
-                          <button className="bg-gray-800 hover:bg-gray-900 text-white px-4 py-1 rounded text-sm font-bold">
-                            🔒 JOIN TO CONTINUE
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="text-center pt-2 mt-2 border-t border-gray-200">
-                      <button 
-                        onClick={handleScrollDown}
-                        className="text-gray-600 hover:text-gray-800 transition-colors duration-200"
-                      >
-                        ▼
-                      </button>
+                    <div className="flex-1 overflow-y-auto">
+                      <ChapterPreview 
+                        bookId={productId!}
+                        variant="compact"
+                      />
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* No Video - Centered Chapter Preview */
+            <div className="mt-8 bg-gray-900 p-6 rounded-lg mb-8">
+              <div className="flex justify-center">
+                <div className="w-full max-w-2xl">
+                  <ChapterPreview 
+                    bookId={productId!}
+                  />
                 </div>
               </div>
             </div>
@@ -634,7 +639,8 @@ const ProductDetails = () => {
                 About the Series
               </h3>
               <p className="text-gray-300 text-sm leading-relaxed">
-                {product?.description ||
+                {product?.about_series ||
+                  product?.description ||
                   "Product description will be displayed here. This is a placeholder text for the product description section."}
               </p>
             </div>
@@ -646,13 +652,13 @@ const ProductDetails = () => {
                   Creators:{" "}
                 </span>
                 <span className="text-white font-bold">
-                  {product?.author || "Creator Name"}
+                  {product?.creators || product?.author || "Creator Name"}
                 </span>
               </div>
 
               <div className="text-sm">
                 <span className="text-red-400 font-bold uppercase">
-                  Rated as:{" "}
+                  Category:{" "}
                 </span>
                 <span className="text-white font-bold">
                   {product?.category || "Category"}
@@ -660,11 +666,29 @@ const ProductDetails = () => {
               </div>
 
               <div className="text-sm">
-                <span className="text-red-400 font-bold uppercase">Type: </span>
+                <span className="text-red-400 font-bold uppercase">Age Rating: </span>
                 <span className="text-white font-bold">
-                  {product?.product_type || "Product Type"}
+                  {product?.age_rating || "All Ages"}
                 </span>
               </div>
+
+              <div className="text-sm">
+                <span className="text-red-400 font-bold uppercase">Genre: </span>
+                <span className="text-white font-bold">
+                  {Array.isArray(product?.genre) && product.genre.length > 0 
+                    ? product.genre.join(", ") 
+                    : "General"}
+                </span>
+              </div>
+
+              {product?.length && (
+                <div className="text-sm">
+                  <span className="text-red-400 font-bold uppercase">Length: </span>
+                  <span className="text-white font-bold">
+                    {product.length}
+                  </span>
+                </div>
+              )}
 
               <div className="text-sm">
                 <span className="text-red-400 font-bold uppercase">
@@ -682,13 +706,30 @@ const ProductDetails = () => {
             <Button
               onClick={handleCheckout}
               disabled={
-                product?.stock_quantity !== undefined
-                  ? product.stock_quantity <= 0
-                  : false
+                // Check if any format is available and in stock
+                !(
+                  (product?.available_digital && (product?.digital_stock || 0) > 0) ||
+                  (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
+                  (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
+                )
               }
-              className="bg-red-600 hover:bg-red-700 text-white px-12 py-4 text-lg font-bold uppercase"
+              className={`px-12 py-4 text-lg font-bold uppercase transition-all duration-200 ${
+                !(
+                  (product?.available_digital && (product?.digital_stock || 0) > 0) ||
+                  (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
+                  (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
+                )
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed hover:bg-gray-500"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+              }`}
             >
-              CHECKOUT - ${totalPrice.toFixed(2)}
+              {!(
+                (product?.available_digital && (product?.digital_stock || 0) > 0) ||
+                (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
+                (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
+              )
+                ? "OUT OF STOCK"
+                : `CHECKOUT - $${totalPrice.toFixed(2)}`}
             </Button>
           </div>
 
@@ -698,41 +739,75 @@ const ProductDetails = () => {
               Where to Buy
             </h2>
 
-            {/* Format Tabs */}
+            {/* Format Tabs - Only show available formats */}
             <div className="flex space-x-1 mb-6">
-              <button className="bg-white text-black px-6 py-2 font-bold text-sm uppercase">
-                Digital
-              </button>
-              <button className="bg-transparent text-red-400 px-6 py-2 font-bold text-sm uppercase border-b-2 border-red-400">
-                Paperback
-              </button>
-              <button className="bg-transparent text-red-400 px-6 py-2 font-bold text-sm uppercase border-b-2 border-red-400">
-                Hardcover
-              </button>
+              {product?.available_digital && (
+                <button 
+                  className={`px-6 py-2 font-bold text-sm uppercase transition-colors ${
+                    selectedFormat === 'digital' 
+                      ? 'bg-white text-black' 
+                      : 'bg-transparent text-red-400 border-b-2 border-red-400'
+                  }`}
+                  onClick={() => setSelectedFormat('digital')}
+                >
+                  Digital
+                </button>
+              )}
+              {product?.available_paperback && (
+                <button 
+                  className={`px-6 py-2 font-bold text-sm uppercase transition-colors ${
+                    selectedFormat === 'paperback' 
+                      ? 'bg-white text-black' 
+                      : 'bg-transparent text-red-400 border-b-2 border-red-400'
+                  }`}
+                  onClick={() => setSelectedFormat('paperback')}
+                >
+                  Paperback
+                </button>
+              )}
+              {product?.available_hardcover && (
+                <button 
+                  className={`px-6 py-2 font-bold text-sm uppercase transition-colors ${
+                    selectedFormat === 'hardcover' 
+                      ? 'bg-white text-black' 
+                      : 'bg-transparent text-red-400 border-b-2 border-red-400'
+                  }`}
+                  onClick={() => setSelectedFormat('hardcover')}
+                >
+                  Hardcover
+                </button>
+              )}
             </div>
 
-            {/* Retailer Buttons */}
+            {/* Dynamic Retailer Buttons */}
             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {[
-                "Flipkart",
-                "Amazon",
-                "Amazon",
-                "Flipkart",
-                "Amazon",
-                "Flipkart",
-                "Flipkart",
-                "Amazon",
-                "Amazon",
-              ].map((retailer, index) => (
-                <button
-                  key={index}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase"
-                >
-                  {retailer}
-                </button>
-              ))}
+              {retailers
+                .filter(retailer => retailer.format_type === selectedFormat)
+                .map((bookRetailer) => (
+                  <button
+                    key={bookRetailer.id}
+                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase"
+                    onClick={() => {
+                      if (bookRetailer.url) {
+                        window.open(bookRetailer.url, '_blank', 'noopener,noreferrer');
+                      } else if (bookRetailer.retailer?.website_url) {
+                        window.open(bookRetailer.retailer.website_url, '_blank', 'noopener,noreferrer');
+                      }
+                    }}
+                  >
+                    {bookRetailer.retailer?.name}
+                  </button>
+                ))}
+              {retailers.filter(retailer => retailer.format_type === selectedFormat).length === 0 && (
+                <div className="col-span-full text-center text-gray-400 py-8">
+                  <p>No retailers available for {selectedFormat} format</p>
+                  <p className="text-sm">Contact admin to add retailers for this format</p>
+                </div>
+              )}
             </div>
           </div>
+
+          {/* Chapter Preview Section - REMOVED (now handled above) */}
 
           {/* All The Volume Section */}
           {volumes.length > 0 && (

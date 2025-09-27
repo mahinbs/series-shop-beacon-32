@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useWishlist } from '@/hooks/useWishlist';
 import { booksService } from '@/services/database';
 import { supabase } from '@/integrations/supabase/client';
+import { ChapterService, BookChapter } from '@/services/chapterService';
 
 interface VolumePage {
   id: string;
@@ -31,6 +32,7 @@ const VolumeDetail = () => {
   const [volume, setVolume] = useState<any>(null);
   const [parentBook, setParentBook] = useState<any>(null);
   const [volumePages, setVolumePages] = useState<VolumePage[]>([]);
+  const [volumeChapters, setVolumeChapters] = useState<BookChapter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,6 +66,9 @@ const VolumeDetail = () => {
       // Load volume pages
       await loadVolumePages(volumeId!);
 
+      // Load volume chapters
+      await loadVolumeChapters(volumeId!);
+
       // Check if volume is in wishlist
       const wishlist = JSON.parse(localStorage.getItem('wishlist') || '[]');
       const isInWishlist = wishlist.some((item: any) => item.id === volumeId);
@@ -95,6 +100,18 @@ const VolumeDetail = () => {
     } catch (error) {
       console.error('Error loading volume pages:', error);
       setVolumePages([]);
+    }
+  };
+
+  const loadVolumeChapters = async (volId: string) => {
+    try {
+      console.log('Loading chapters for volume ID:', volId);
+      // For volumes, we use volume_id as book_id in the chapters table
+      const chapters = await ChapterService.getBookChapters(volId);
+      console.log('Loaded chapters:', chapters);
+      setVolumeChapters(chapters);
+    } catch (err) {
+      console.error('Error loading volume chapters:', err);
     }
   };
 
@@ -244,8 +261,8 @@ const VolumeDetail = () => {
               />
             </div>
             
-            {/* Volume Pages Preview */}
-            {volumePages.length > 0 && (
+            {/* Volume Pages Preview - COMMENTED OUT */}
+            {/* {volumePages.length > 0 && (
               <div className="space-y-2">
                 <h3 className="text-white font-semibold">Preview Pages</h3>
                 <div className="grid grid-cols-4 gap-2">
@@ -266,7 +283,56 @@ const VolumeDetail = () => {
                   )}
                 </div>
               </div>
-            )}
+            )} */}
+
+            {/* Volume Chapters Preview */}
+            <div className="space-y-4">
+              <h3 className="text-white font-semibold text-lg">Chapters</h3>
+              {volumeChapters.length > 0 ? (
+                <div className={`space-y-3 ${volumeChapters.length > 4 ? 'max-h-96 overflow-y-auto' : ''}`}>
+                  {volumeChapters.map((chapter) => (
+                    <Card key={chapter.id} className="bg-gray-800 border-gray-700">
+                      <CardContent className="p-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <Badge variant="secondary" className="bg-red-600 text-white">
+                                Chapter {chapter.chapter_number}
+                              </Badge>
+                              {chapter.is_preview && (
+                                <Badge variant="outline" className="bg-green-600 text-white">
+                                  Preview
+                                </Badge>
+                              )}
+                            </div>
+                            <h4 className="font-semibold text-white text-lg mb-1">
+                              {chapter.chapter_title}
+                            </h4>
+                            {chapter.chapter_description && (
+                              <p className="text-gray-400 text-sm">
+                                {chapter.chapter_description}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            onClick={() => navigate(`/chapter/${chapter.id}`)}
+                            className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase"
+                          >
+                            <BookOpen className="w-4 h-4 mr-2" />
+                            Read Now
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-white mb-2">No chapters available</div>
+                  <div className="text-gray-400">Chapters will appear here when added</div>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Volume Details */}
@@ -312,11 +378,11 @@ const VolumeDetail = () => {
               )}
             </div>
 
-            {/* Volume Stats */}
+            {/* Volume Stats - SHOW CHAPTERS INSTEAD OF PAGES */}
             <div className="grid grid-cols-2 gap-4">
               <div className="flex items-center gap-2 text-gray-300">
                 <BookOpen className="w-4 h-4" />
-                <span>{volumePages.length} Pages</span>
+                <span>{volumeChapters.length} Chapters</span>
               </div>
               <div className="flex items-center gap-2 text-gray-300">
                 <Clock className="w-4 h-4" />

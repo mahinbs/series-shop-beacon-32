@@ -125,13 +125,24 @@ export const booksService = {
     }
   },
 
-  async create(book: BookInsert) {
+  async create(book: BookInsert & { 
+    about_series?: string; 
+    creators?: string; 
+    length?: string;
+    available_digital?: boolean;
+    available_paperback?: boolean;
+    available_hardcover?: boolean;
+    digital_stock?: number;
+    paperback_stock?: number;
+    hardcover_stock?: number;
+    author?: string;
+  }) {
     try {
       
       // Ensure required fields are present
       const bookData = {
         title: book.title,
-        author: book.author || '',
+        author: book.author || book.creators || '', // Use author field if provided, otherwise use creators
         category: book.category,
         product_type: book.product_type || 'book',
         price: book.price,
@@ -141,6 +152,11 @@ export const booksService = {
         image_url: book.image_url,
         hover_image_url: book.hover_image_url,
         description: book.description,
+        about_series: book.about_series,
+        creators: book.creators,
+        length: book.length,
+        age_rating: book.age_rating,
+        genre: book.genre || [],
         can_unlock_with_coins: book.can_unlock_with_coins || false,
         section_type: book.section_type || 'new-releases',
         label: book.label,
@@ -153,6 +169,14 @@ export const booksService = {
         weight: book.weight,
         dimensions: book.dimensions,
         tags: book.tags || [],
+        // Format availability
+        available_digital: book.available_digital !== undefined ? book.available_digital : true,
+        available_paperback: book.available_paperback !== undefined ? book.available_paperback : true,
+        available_hardcover: book.available_hardcover !== undefined ? book.available_hardcover : true,
+        // Stock quantities
+        digital_stock: book.digital_stock || 0,
+        paperback_stock: book.paperback_stock || 0,
+        hardcover_stock: book.hardcover_stock || 0,
       };
 
       const { data, error } = await supabase
