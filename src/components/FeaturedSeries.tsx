@@ -1,11 +1,20 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { BookOpen, Play, RefreshCw } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { ComicService, type ComicSeries } from '@/services/comicService';
 import { FeaturedSeriesService, type FeaturedSeriesConfig, type FeaturedSeriesBadge } from '@/services/featuredSeriesService';
 
-const FeaturedSeries = () => {
+interface FeaturedSeriesProps {
+  filters?: {
+    search: string;
+    genre: string;
+    sortBy: string;
+    sortOrder: 'asc' | 'desc';
+  };
+}
+
+const FeaturedSeries = ({ filters }: FeaturedSeriesProps) => {
   const navigate = useNavigate();
   const [featuredSeries, setFeaturedSeries] = useState<ComicSeries[]>([]);
   const [configs, setConfigs] = useState<FeaturedSeriesConfig[]>([]);
@@ -107,6 +116,65 @@ const FeaturedSeries = () => {
     loadConfigsAndBadges();
   }, []);
 
+  // Filter and sort series based on filters
+  const filteredAndSortedSeries = useMemo(() => {
+    let filtered = [...featuredSeries];
+
+    // Apply search filter
+    if (filters?.search) {
+      const searchTerm = filters.search.toLowerCase();
+      filtered = filtered.filter(series => 
+        series.title.toLowerCase().includes(searchTerm) ||
+        series.description.toLowerCase().includes(searchTerm) ||
+        series.tags?.some(tag => tag.toLowerCase().includes(searchTerm))
+      );
+    }
+
+    // Apply genre filter
+    if (filters?.genre && filters.genre !== 'All') {
+      filtered = filtered.filter(series => 
+        series.genre?.includes(filters.genre) || 
+        series.tags?.includes(filters.genre)
+      );
+    }
+
+    // Apply sorting
+    if (filters?.sortBy) {
+      filtered.sort((a, b) => {
+        let aValue: any;
+        let bValue: any;
+
+        switch (filters.sortBy) {
+          case 'title':
+            aValue = a.title.toLowerCase();
+            bValue = b.title.toLowerCase();
+            break;
+          case 'episodes':
+            aValue = a.total_episodes || 0;
+            bValue = b.total_episodes || 0;
+            break;
+          case 'status':
+            aValue = a.status || '';
+            bValue = b.status || '';
+            break;
+          case 'created_at':
+            aValue = new Date(a.created_at).getTime();
+            bValue = new Date(b.created_at).getTime();
+            break;
+          default:
+            aValue = a.title.toLowerCase();
+            bValue = b.title.toLowerCase();
+        }
+
+        if (aValue < bValue) return filters.sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return filters.sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [featuredSeries, filters]);
+
   const getBadgeInfo = (series: ComicSeries, index: number) => {
     // Use badges from admin panel if available, otherwise use default logic
     if (badges.length > 0) {
@@ -171,14 +239,24 @@ const FeaturedSeries = () => {
           )}
         </div>
         
-        {featuredSeries.length === 0 ? (
+        {filteredAndSortedSeries.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-400 text-lg">No featured series available</p>
-            <p className="text-gray-500 text-sm mt-2">Add some series and mark them as featured in the admin panel</p>
+            <p className="text-gray-400 text-lg">
+              {featuredSeries.length === 0 
+                ? "No featured series available" 
+                : "No series match your current filters"
+              }
+            </p>
+            <p className="text-gray-500 text-sm mt-2">
+              {featuredSeries.length === 0 
+                ? "Add some series and mark them as featured in the admin panel"
+                : "Try adjusting your search or filter criteria"
+              }
+            </p>
           </div>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredSeries.map((series, index) => {
+            {filteredAndSortedSeries.map((series, index) => {
               const badgeInfo = getBadgeInfo(series, index);
               return (
             <div

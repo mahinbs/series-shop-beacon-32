@@ -1,4 +1,5 @@
 
+import { useState } from 'react';
 import Header from '@/components/Header';
 import SeriesHero from '@/components/SeriesHero';
 import SeriesFilters from '@/components/SeriesFilters';
@@ -15,6 +16,18 @@ const OurSeries = () => {
   const { elementRef: allSeriesRef, isVisible: allSeriesVisible } = useScrollAnimation(0.2);
   const { elementRef: activityRef, isVisible: activityVisible } = useScrollAnimation(0.2);
 
+  // Filter state management
+  const [filters, setFilters] = useState({
+    search: '',
+    genre: 'All',
+    sortBy: 'title',
+    sortOrder: 'asc' as 'asc' | 'desc'
+  });
+
+  const handleFiltersChange = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+  };
+
   return (
     <div className="min-h-screen bg-gray-900">
       <Header />
@@ -26,7 +39,7 @@ const OurSeries = () => {
           filtersVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
       >
-        <SeriesFilters />
+        <SeriesFilters onFiltersChange={handleFiltersChange} />
       </div>
       
       <div 
@@ -35,7 +48,7 @@ const OurSeries = () => {
           featuredVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
         }`}
       >
-        <FeaturedSeries />
+        <FeaturedSeries filters={filters} />
       </div>
       
       <div 

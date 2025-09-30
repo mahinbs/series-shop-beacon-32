@@ -48,20 +48,24 @@ const PopularRecommendations = () => {
       setIsLoading(true);
       setShowAllBooks(false); // Reset to collapsed view when filter changes
       try {
-        // Fetch products based on selected filter - only popular recommendations
+        // Fetch products based on selected filter
         let query = supabase
           .from("books")
           .select("*")
-          .eq("is_active", true)
-          .eq("is_popular_recommendation", true);
+          .eq("is_active", true);
 
         // Filter by product type based on selected filter
         if (selectedFilter === "digital") {
-          // Show all products except merchandise and print
-          query = query.not("product_type", "eq", "merchandise").not("product_type", "eq", "print");
+          // Show all products except merchandise and print, but only popular recommendations
+          query = query
+            .eq("is_popular_recommendation", true)
+            .not("product_type", "eq", "merchandise")
+            .not("product_type", "eq", "print");
         } else if (selectedFilter === "print") {
+          // Show print products, check if they're popular recommendations or just print
           query = query.eq("product_type", "print");
         } else if (selectedFilter === "merchandise") {
+          // Show merchandise products, don't require popular recommendation flag
           query = query.eq("product_type", "merchandise");
         }
 
@@ -77,20 +81,29 @@ const PopularRecommendations = () => {
         }
 
         if (data) {
-          // Deduplicate books by removing volume information from titles
-          const deduplicatedBooks = data.reduce((acc: any[], book: any) => {
-            const baseTitle = removeVolumeFromTitle(book.title);
-            const existingBook = acc.find(
-              (b) => removeVolumeFromTitle(b.title) === baseTitle
-            );
+          console.log(`🔍 Fetched ${data.length} products for filter: ${selectedFilter}`);
+          console.log('📦 Products:', data.map(p => ({ id: p.id, title: p.title, product_type: p.product_type })));
+          
+          // For merchandise, show all products without deduplication
+          // For other types, deduplicate by removing volume information from titles
+          let processedBooks = data;
+          
+          if (selectedFilter !== "merchandise") {
+            processedBooks = data.reduce((acc: any[], book: any) => {
+              const baseTitle = removeVolumeFromTitle(book.title);
+              const existingBook = acc.find(
+                (b) => removeVolumeFromTitle(b.title) === baseTitle
+              );
 
-            if (!existingBook) {
-              acc.push(book);
-            }
-            return acc;
-          }, []);
+              if (!existingBook) {
+                acc.push(book);
+              }
+              return acc;
+            }, []);
+          }
 
-          setBooks(deduplicatedBooks);
+          console.log(`✅ Processed ${processedBooks.length} books for display`);
+          setBooks(processedBooks);
         }
       } finally {
         setIsLoading(false);
