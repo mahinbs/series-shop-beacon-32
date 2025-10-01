@@ -14,7 +14,8 @@ import {
   Cog,
   Coins,
   Database,
-  Calendar
+  Calendar,
+  Sparkles
 } from 'lucide-react';
 import {
   Sidebar,
@@ -65,6 +66,12 @@ const adminPages: AdminPage[] = [
     title: 'Our Journey', 
     icon: Calendar,
     description: 'Manage timeline and journey content'
+  },
+  { 
+    id: 'creative-snippets', 
+    title: 'Creative Snippets', 
+    icon: Sparkles,
+    description: 'Manage creative snippets and behind-the-scenes content'
   },
   { 
     id: 'digital-reader', 
