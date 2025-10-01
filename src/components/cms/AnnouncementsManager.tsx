@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trash2, Edit, Plus, X } from 'lucide-react';
 import { useAnnouncements, type Announcement } from '@/hooks/useAnnouncements';
 import { useToast } from '@/hooks/use-toast';
+import ImageUploadField from './ImageUploadField';
 
 interface AnnouncementForm {
   title: string;
@@ -253,16 +254,16 @@ const AnnouncementsManager = () => {
                 />
               </div>
 
+              <div>
+                <ImageUploadField
+                  value={formData.image_url}
+                  onChange={(url) => setFormData(prev => ({ ...prev, image_url: url }))}
+                  label="Announcement Image"
+                  required
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="image_url">Image URL</Label>
-                  <Input
-                    id="image_url"
-                    value={formData.image_url}
-                    onChange={(e) => setFormData(prev => ({ ...prev, image_url: e.target.value }))}
-                    required
-                  />
-                </div>
                 <div>
                   <Label htmlFor="status">Status</Label>
                   <Input
@@ -273,9 +274,19 @@ const AnnouncementsManager = () => {
                     required
                   />
                 </div>
+                <div>
+                  <Label htmlFor="display_order">Display Order</Label>
+                  <Input
+                    id="display_order"
+                    type="number"
+                    value={formData.display_order}
+                    onChange={(e) => setFormData(prev => ({ ...prev, display_order: parseInt(e.target.value) || 0 }))}
+                    min="0"
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="badge_type">Badge Type</Label>
                   <Select 
@@ -292,15 +303,6 @@ const AnnouncementsManager = () => {
                       <SelectItem value="limited">Limited</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
-                <div>
-                  <Label htmlFor="display_order">Display Order</Label>
-                  <Input
-                    id="display_order"
-                    type="number"
-                    value={formData.display_order}
-                    onChange={(e) => setFormData(prev => ({ ...prev, display_order: parseInt(e.target.value) || 0 }))}
-                  />
                 </div>
                 <div className="flex items-center space-x-2 pt-6">
                   <Switch

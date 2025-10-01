@@ -10,6 +10,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { BookOpen, Calendar, Share2, Bookmark, ChevronLeft, ChevronRight, Bell, Heart, Diamond, Clover, Spade } from 'lucide-react';
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useAnnouncements } from '@/hooks/useAnnouncements';
 
 const Announcements = () => {
   const [activeTab, setActiveTab] = useState('announcements');
@@ -17,6 +18,9 @@ const Announcements = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [contentFilter, setContentFilter] = useState('ALL');
   const [sortOrder, setSortOrder] = useState<'desc' | 'asc'>('desc');
+  
+  // Use real data from database
+  const { announcements, isLoading, error } = useAnnouncements();
 
   // Function to get symbol and color based on category
   const getCategorySymbol = (category: string) => {
@@ -36,77 +40,24 @@ const Announcements = () => {
     }
   };
 
-  const featuredAnnouncements = [
-    {
-      id: 1,
-      title: "Summer Manga Festival 2025",
-      description: "Join us for the biggest manga event of the summer! Over 100 new series, get exclusive merchandise and meet your favorite authors.",
-      image: "/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png",
-      date: "Jul 3, 2025",
-      category: "Events",
-      isHot: true
-    },
-    {
-      id: 2,
-      title: "New Demon Slayer Volume Release",
-      description: "The highly anticipated new volume of Demon Slayer is finally available for pre-order along with exclusive character designs.",
-      image: "/lovable-uploads/26efc76c-fa83-4369-8d8d-354eab1433e6.png",
-      date: "Jul 5, 2025",
-      category: "Licensing",
-      isHot: true
-    }
-  ];
+  // Get featured announcements (first 2 with highest display_order or most recent)
+  const featuredAnnouncements = announcements
+    .filter(announcement => announcement.is_active)
+    .sort((a, b) => b.display_order - a.display_order)
+    .slice(0, 2)
+    .map(announcement => ({
+      ...announcement,
+      isHot: announcement.badge_type === 'hot',
+      category: announcement.status || 'General'
+    }));
 
-  const allAnnouncements = [
-    {
-      id: 1,
-      title: "Summer Manga Festival 2025",
-      description: "Join us for the biggest manga event of the summer! Over 100 new series, get exclusive merchandise and meet your favorite authors.",
-      image: "/lovable-uploads/0e70be33-bdfc-41db-8ae1-5c0dcf1b885c.png",
-      date: "Jul 3, 2025",
-      category: "Events"
-    },
-    {
-      id: 2,
-      title: "New Demon Slayer Volume Release", 
-      description: "The highly anticipated new volume of Demon Slayer is finally available for pre-order along with exclusive character designs.",
-      image: "/lovable-uploads/26efc76c-fa83-4369-8d8d-354eab1433e6.png",
-      date: "Jul 5, 2025",
-      category: "Licensing"
-    },
-    {
-      id: 3,
-      title: "Naruto Masterpiece Reprint",
-      description: "Our one-of-a-kind signature series is back! Get limited 200 ANNIVERSARY Inking featuring the best manga ever created!",
-      image: "/lovable-uploads/503cc23b-a28f-4564-86f9-53896fa75f10.png",
-      date: "Jul 6, 2025",
-      category: "Reprints"
-    },
-    {
-      id: 4,
-      title: "New Digital Reading Features",
-      description: "Introducing our brand new features for our digital manga reader, including improved zoom, auto-scrolling, and enhanced bookmarking.",
-      image: "/lovable-uploads/6fb6d014-0083-4f09-95a2-0416443da769.png",
-      date: "Jul 7, 2025", 
-      category: "Features"
-    },
-    {
-      id: 5,
-      title: "Limited Edition Box Sets",
-      description: "Exclusive box art and layout collection featuring 50 manga series. Each box includes exclusive artwork, character cards and special edition volumes.",
-      image: "/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png",
-      date: "Jul 8, 2025",
-      category: "Licensing"
-    },
-    {
-      id: 6,
-      title: "Manga Creator Interview Series",
-      description: "Starting next month, we'll be doing our very first interview series with top manga creators. Learn about their creative process, inspirations, and upcoming projects.",
-      image: "/lovable-uploads/7b8f7dcc-b06f-4c89-b5af-906cd241ae0c.png",
-      date: "Jul 9, 2025",
-      category: "Features"
-    }
-  ];
+  // Get all active announcements
+  const allAnnouncements = announcements
+    .filter(announcement => announcement.is_active)
+    .map(announcement => ({
+      ...announcement,
+      category: announcement.status || 'General'
+    }));
 
   const blogPosts = [
     {
@@ -148,12 +99,14 @@ const Announcements = () => {
     return content.filter(item => {
       switch (contentFilter) {
         case 'NEWS':
-          return item.category?.toLowerCase().includes('licensing') || 
-                 item.category?.toLowerCase().includes('features') ||
-                 item.category?.toLowerCase().includes('reprints');
+          return item.status?.toLowerCase().includes('licensing') || 
+                 item.status?.toLowerCase().includes('features') ||
+                 item.status?.toLowerCase().includes('reprints') ||
+                 item.status?.toLowerCase().includes('news');
         case 'ACTIVITIES':
-          return item.category?.toLowerCase().includes('events') || 
-                 item.category?.toLowerCase().includes('volume');
+          return item.status?.toLowerCase().includes('events') || 
+                 item.status?.toLowerCase().includes('volume') ||
+                 item.status?.toLowerCase().includes('activities');
         default:
           return true;
       }
@@ -166,9 +119,10 @@ const Announcements = () => {
     
     const query = searchQuery.toLowerCase();
     return content.filter(item => 
-      item.title.toLowerCase().includes(query) ||
-      item.description.toLowerCase().includes(query) ||
-      item.category.toLowerCase().includes(query) ||
+      item.title?.toLowerCase().includes(query) ||
+      item.description?.toLowerCase().includes(query) ||
+      item.full_description?.toLowerCase().includes(query) ||
+      item.status?.toLowerCase().includes(query) ||
       (item.author && item.author.toLowerCase().includes(query))
     );
   };
@@ -176,8 +130,8 @@ const Announcements = () => {
   // Sort content by date
   const getSortedContent = (content: any[]) => {
     return [...content].sort((a, b) => {
-      const dateA = new Date(a.date);
-      const dateB = new Date(b.date);
+      const dateA = new Date(a.created_at || a.date);
+      const dateB = new Date(b.created_at || b.date);
       return sortOrder === 'desc' ? dateB.getTime() - dateA.getTime() : dateA.getTime() - dateB.getTime();
     });
   };
@@ -274,6 +228,39 @@ const Announcements = () => {
       prompt('Copy this link:', shareData.url);
     }
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <TooltipProvider>
+        <div className="min-h-screen bg-background">
+          <Header />
+          <div className="container mx-auto px-4 py-8">
+            <div className="text-center">
+              <div className="text-lg text-muted-foreground">Loading announcements...</div>
+            </div>
+          </div>
+        </div>
+      </TooltipProvider>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <TooltipProvider>
+        <div className="min-h-screen bg-background">
+          <Header />
+          <div className="container mx-auto px-4 py-8">
+            <div className="text-center">
+              <div className="text-lg text-red-500">Error loading announcements: {error}</div>
+              <div className="text-sm text-muted-foreground mt-2">Please try refreshing the page</div>
+            </div>
+          </div>
+        </div>
+      </TooltipProvider>
+    );
+  }
 
   return (
     <TooltipProvider>
@@ -376,7 +363,7 @@ const Announcements = () => {
                         </Badge>
                       )}
                       <div className="absolute top-3 right-3 text-muted-foreground text-sm">
-                        {announcement.date}
+                        {new Date(announcement.created_at).toLocaleDateString()}
                       </div>
                     </div>
                     <CardContent className="p-6">
@@ -485,7 +472,7 @@ const Announcements = () => {
                             </div>
                             <span className="text-sm text-muted-foreground flex items-center gap-1">
                               <Calendar className="w-4 h-4" />
-                              {announcement.date}
+                              {new Date(announcement.created_at).toLocaleDateString()}
                             </span>
                           </div>
                           <p className="text-muted-foreground mb-4 line-clamp-2">{announcement.description}</p>

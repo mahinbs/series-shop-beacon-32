@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import CoinDisplay from './CoinDisplay';
 import SearchModal from './SearchModal';
+import NotificationBell from './NotificationBell';
 
 const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -92,6 +93,9 @@ const Header = () => {
           <div className="hidden md:flex items-center space-x-4">
             {/* Coin Display */}
             <CoinDisplay />
+            
+            {/* Notifications */}
+            <NotificationBell />
             
             <Tooltip>
               <TooltipTrigger asChild>
@@ -316,6 +320,7 @@ const Header = () => {
                 </Link>
               )}
               <div className="flex items-center justify-center space-x-4 px-3 pt-4 border-t border-gray-800">
+                <NotificationBell />
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
