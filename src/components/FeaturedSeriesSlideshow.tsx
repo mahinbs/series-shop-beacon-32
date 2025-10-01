@@ -1,11 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { BookOpen, RefreshCw } from 'lucide-react';
 import { ComicService, type ComicSeries } from '@/services/comicService';
 import { FeaturedSeriesService, type FeaturedSeriesConfig, type FeaturedSeriesBadge } from '@/services/featuredSeriesService';
 
-const FeaturedSeriesSlideshow = () => {
+interface FeaturedSeriesSlideshowProps {
+  appliedFilters?: string[];
+  searchTerm?: string;
+  sortBy?: string;
+}
+
+const FeaturedSeriesSlideshow = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest First' }: FeaturedSeriesSlideshowProps) => {
   const navigate = useNavigate();
   const [featuredSeries, setFeaturedSeries] = useState<ComicSeries[]>([]);
   const [configs, setConfigs] = useState<FeaturedSeriesConfig[]>([]);
@@ -84,6 +90,78 @@ const FeaturedSeriesSlideshow = () => {
     navigate(`/digital-reader/${encodeURIComponent(series.slug || series.title.toLowerCase().replace(/\s+/g, '-'))}`);
   };
 
+  // Filter and sort series based on props
+  const filteredAndSortedSeries = useMemo(() => {
+    let filtered = [...featuredSeries];
+
+    console.log('🎬 FeaturedSeriesSlideshow: Starting filter process');
+    console.log('📊 Total featured series:', filtered.length);
+    console.log('🔍 Search term:', searchTerm);
+    console.log('🎯 Applied filters:', appliedFilters);
+
+    // Apply search filter
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(series => {
+        const titleMatch = series.title.toLowerCase().includes(searchLower);
+        const descMatch = series.description?.toLowerCase().includes(searchLower) || false;
+        const genreMatch = series.genre?.some(g => g.toLowerCase().includes(searchLower)) || false;
+        const tagsMatch = series.tags?.some(t => t.toLowerCase().includes(searchLower)) || false;
+        
+        const matches = titleMatch || descMatch || genreMatch || tagsMatch;
+        console.log(`🔍 "${series.title}" search match:`, { titleMatch, descMatch, genreMatch, tagsMatch, matches });
+        return matches;
+      });
+      console.log('🔍 After search filter:', filtered.length, 'series remain');
+    }
+
+    // Apply category/genre filters
+    if (appliedFilters.length > 0) {
+      filtered = filtered.filter(series => {
+        const hasMatchingGenre = series.genre?.some(g => 
+          appliedFilters.some(filter => g.toLowerCase() === filter.toLowerCase())
+        ) || false;
+        
+        const hasMatchingTag = series.tags?.some(t => 
+          appliedFilters.some(filter => t.toLowerCase() === filter.toLowerCase())
+        ) || false;
+        
+        const matches = hasMatchingGenre || hasMatchingTag;
+        console.log(`🎯 "${series.title}" filter match:`, { 
+          genres: series.genre, 
+          tags: series.tags, 
+          appliedFilters, 
+          hasMatchingGenre, 
+          hasMatchingTag, 
+          matches 
+        });
+        return matches;
+      });
+      console.log('🎯 After category filter:', filtered.length, 'series remain');
+    }
+
+    // Apply sorting
+    switch (sortBy) {
+      case 'A-Z':
+        filtered.sort((a, b) => a.title.localeCompare(b.title));
+        break;
+      case 'Z-A':
+        filtered.sort((a, b) => b.title.localeCompare(a.title));
+        break;
+      case 'Newest First':
+        filtered.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        break;
+      case 'Oldest First':
+        filtered.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+        break;
+      default:
+        break;
+    }
+
+    console.log('✅ Final filtered featured series:', filtered.length, 'out of', featuredSeries.length);
+    return filtered;
+  }, [featuredSeries, appliedFilters, searchTerm, sortBy]);
+
   if (isLoading) {
     return (
       <section id="featured-series" className="relative bg-gray-900 py-8 border-b border-gray-700/50">
@@ -117,14 +195,24 @@ const FeaturedSeriesSlideshow = () => {
           </h2>
         </div>
         
-        {featuredSeries.length === 0 ? (
+        {filteredAndSortedSeries.length === 0 ? (
           <div className="text-center py-12">
-            <p className="text-gray-400 text-lg">No featured series available</p>
-            <p className="text-gray-500 text-sm mt-2">Add some series and mark them as featured in the admin panel</p>
+            <p className="text-gray-400 text-lg">
+              {featuredSeries.length === 0 
+                ? "No featured series available" 
+                : "No featured series match your current filters"
+              }
+            </p>
+            <p className="text-gray-500 text-sm mt-2">
+              {featuredSeries.length === 0 
+                ? "Add some series and mark them as featured in the admin panel"
+                : "Try adjusting your search or filter criteria"
+              }
+            </p>
           </div>
         ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredSeries.map((series, index) => {
+            {filteredAndSortedSeries.map((series, index) => {
               const badgeInfo = getBadgeForSeries(series, index);
               return (
             <div

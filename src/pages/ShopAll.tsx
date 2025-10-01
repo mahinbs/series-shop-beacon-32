@@ -12,15 +12,21 @@ const ShopAll = () => {
   const [viewMode, setViewMode] = useState<'series' | 'volume'>('series');
   const [appliedFilters, setAppliedFilters] = useState<string[]>([]);
   const [selectedSort, setSelectedSort] = useState('Newest First');
+  const [searchTerm, setSearchTerm] = useState('');
 
   const handleFiltersApply = (filters: string[]) => {
     setAppliedFilters(filters);
-    console.log('Applied filters:', filters);
+    console.log('🎯 ShopAll: Applied filters:', filters);
   };
 
   const handleSortChange = (sortOption: string) => {
     setSelectedSort(sortOption);
-    console.log('Selected sort:', sortOption);
+    console.log('🔄 ShopAll: Selected sort:', sortOption);
+  };
+
+  const handleSearchChange = (search: string) => {
+    setSearchTerm(search);
+    console.log('🔍 ShopAll: Search term:', search);
   };
 
   return (
@@ -50,14 +56,14 @@ const ShopAll = () => {
                 Discover new series through manga and anime stories. Read stories, discover new characters, and learn lore through the life cycle.
               </p>
               
-              <div className="flex flex-wrap gap-4">
+              {/* <div className="flex flex-wrap gap-4">
                 <button className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
                   <span>Popular Series</span>
                 </button>
                 <button className="bg-transparent border border-white/30 hover:bg-white/10 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 flex items-center gap-2">
                   <span>Browse All</span>
                 </button>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
@@ -69,14 +75,23 @@ const ShopAll = () => {
         setViewMode={setViewMode} 
         onFiltersApply={handleFiltersApply}
         onSortChange={handleSortChange}
+        onSearchChange={handleSearchChange}
       />
 
       {/* Featured Series Slideshow */}
-      <FeaturedSeriesSlideshow />
+      <FeaturedSeriesSlideshow 
+        appliedFilters={appliedFilters}
+        searchTerm={searchTerm}
+        sortBy={selectedSort}
+      />
 
       {/* Content Grid - Show SeriesGrid */}
       <div>
-        <SeriesGrid />
+        <SeriesGrid 
+          appliedFilters={appliedFilters}
+          searchTerm={searchTerm}
+          sortBy={selectedSort}
+        />
       </div>
 
       <Newsletter />

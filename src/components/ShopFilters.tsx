@@ -1,47 +1,71 @@
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Filter, Search, ArrowUpDown, X } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from '@/components/ui/dropdown-menu';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ShopAllService, type ShopAllFilter, type ShopAllSort } from '@/services/shopAllService';
-import { useToast } from '@/hooks/use-toast';
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Filter, Search, ArrowUpDown, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  ShopAllService,
+  type ShopAllFilter,
+  type ShopAllSort,
+} from "@/services/shopAllService";
+import { useToast } from "@/hooks/use-toast";
 
 interface ShopFiltersProps {
-  viewMode: 'series' | 'volume';
-  setViewMode: (mode: 'series' | 'volume') => void;
+  viewMode: "series" | "volume";
+  setViewMode: (mode: "series" | "volume") => void;
   onFiltersApply?: (filters: string[]) => void;
   onSortChange?: (sortOption: string) => void;
   onSearchChange?: (searchTerm: string) => void;
 }
 
-const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSearchChange }: ShopFiltersProps) => {
+const ShopFilters = ({
+  viewMode,
+  setViewMode,
+  onFiltersApply,
+  onSortChange,
+  onSearchChange,
+}: ShopFiltersProps) => {
   const { toast } = useToast();
-  const [activeCategory, setActiveCategory] = useState('All');
+  const [activeCategory, setActiveCategory] = useState("All");
   const [selectedFilters, setSelectedFilters] = useState<string[]>([]);
-  const [selectedSort, setSelectedSort] = useState('Newest First');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedSort, setSelectedSort] = useState("Newest First");
+  const [searchTerm, setSearchTerm] = useState("");
   const [dynamicFilters, setDynamicFilters] = useState<ShopAllFilter[]>([]);
   const [dynamicSorts, setDynamicSorts] = useState<ShopAllSort[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  
+
   const categories = [
-    'All', 'Action', 'Adventure', 'Romance', 'Fantasy', 'Sci-Fi', 
-    'Horror', 'Comedy', 'Drama', 'More...'
+    "All",
+    "Action",
+    "Adventure",
+    "Romance",
+    "Fantasy",
+    "Sci-Fi",
+    "Horror",
+    "Comedy",
+    "Drama",
   ];
 
   const handleCategoryClick = (category: string) => {
     setActiveCategory(category);
-    console.log('🎯 Category selected:', category);
-    
+    console.log("🎯 Category selected:", category);
+
     // Clear search when category is selected
     if (searchTerm) {
-      setSearchTerm('');
-      onSearchChange?.('');
-      console.log('🔍 Cleared search term for category filter');
+      setSearchTerm("");
+      onSearchChange?.("");
+      console.log("🔍 Cleared search term for category filter");
     }
-    
+
     // Apply category filter
-    if (category === 'All') {
+    if (category === "All") {
       onFiltersApply?.([]);
     } else {
       onFiltersApply?.([category]);
@@ -55,20 +79,19 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
   const loadShopAllData = async () => {
     try {
       setIsLoading(true);
-      console.log('🛍️ Loading Shop All filters and sorts...');
-      
+      console.log("🛍️ Loading Shop All filters and sorts...");
+
       const [filtersData, sortsData] = await Promise.all([
         ShopAllService.getFilters(),
-        ShopAllService.getSortOptions()
+        ShopAllService.getSortOptions(),
       ]);
-      
+
       setDynamicFilters(filtersData);
       setDynamicSorts(sortsData);
-      console.log('✅ Loaded dynamic filters:', filtersData);
-      console.log('✅ Loaded dynamic sorts:', sortsData);
-      
+      console.log("✅ Loaded dynamic filters:", filtersData);
+      console.log("✅ Loaded dynamic sorts:", sortsData);
     } catch (error) {
-      console.error('❌ Error loading Shop All data:', error);
+      console.error("❌ Error loading Shop All data:", error);
       toast({
         title: "Failed to load data",
         description: "Failed to load shop data. Please try again.",
@@ -83,20 +106,24 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
   const filterOptions = dynamicFilters.reduce((acc, filter) => {
     // Ensure options is always an array
     let options: string[] = [];
-    
+
     if (Array.isArray(filter.options)) {
       options = filter.options;
-    } else if (typeof filter.options === 'object' && filter.options !== null) {
+    } else if (typeof filter.options === "object" && filter.options !== null) {
       // If it's an object, convert it to an array of key-value pairs
-      options = Object.entries(filter.options).map(([key, value]) => `${key}: ${value}`);
-    } else if (typeof filter.options === 'string') {
+      options = Object.entries(filter.options).map(
+        ([key, value]) => `${key}: ${value}`
+      );
+    } else if (typeof filter.options === "string") {
       // If it's a string, try to parse it as JSON
       try {
         const parsed = JSON.parse(filter.options);
         if (Array.isArray(parsed)) {
           options = parsed;
-        } else if (typeof parsed === 'object' && parsed !== null) {
-          options = Object.entries(parsed).map(([key, value]) => `${key}: ${value}`);
+        } else if (typeof parsed === "object" && parsed !== null) {
+          options = Object.entries(parsed).map(
+            ([key, value]) => `${key}: ${value}`
+          );
         } else {
           options = [filter.options];
         }
@@ -107,31 +134,39 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
       // Fallback to empty array
       options = [];
     }
-    
+
     acc[filter.name] = options;
     return acc;
   }, {} as Record<string, string[]>);
 
   // Convert dynamic sorts to the format expected by the component
-  const sortOptions = dynamicSorts.map(sort => sort.name);
+  // Use Map to remove duplicates based on normalized keys (case-insensitive and trimmed)
+  const sortOptionsMap = new Map<string, string>();
+  dynamicSorts.forEach((sort) => {
+    const normalizedKey = sort.name.toLowerCase().replace(/[:\s]+/g, '').trim();
+    if (!sortOptionsMap.has(normalizedKey)) {
+      sortOptionsMap.set(normalizedKey, sort.name);
+    }
+  });
+  const sortOptions = Array.from(sortOptionsMap.values());
 
   const handleSortChange = (sortOption: string) => {
     setSelectedSort(sortOption);
     // Immediately apply the sort change
     onSortChange?.(sortOption);
-    console.log('🔄 Sort option changed and applied:', sortOption);
+    console.log("🔄 Sort option changed and applied:", sortOption);
   };
 
   const applySortOption = () => {
     onSortChange?.(selectedSort);
-    console.log('✅ Applied sort option:', selectedSort);
+    console.log("✅ Applied sort option:", selectedSort);
   };
 
   const handleFilterChange = (filter: string, checked: boolean) => {
     if (checked) {
       setSelectedFilters([...selectedFilters, filter]);
     } else {
-      setSelectedFilters(selectedFilters.filter(f => f !== filter));
+      setSelectedFilters(selectedFilters.filter((f) => f !== filter));
     }
   };
 
@@ -148,18 +183,18 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
     const value = e.target.value;
     setSearchTerm(value);
     onSearchChange?.(value);
-    
+
     // Clear category filters when searching
-    if (value && activeCategory !== 'All') {
-      setActiveCategory('All');
+    if (value && activeCategory !== "All") {
+      setActiveCategory("All");
       onFiltersApply?.([]);
-      console.log('🎯 Cleared category filters for search');
+      console.log("🎯 Cleared category filters for search");
     }
   };
 
   const clearSearch = () => {
-    setSearchTerm('');
-    onSearchChange?.('');
+    setSearchTerm("");
+    onSearchChange?.("");
   };
 
   return (
@@ -191,8 +226,8 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
           <div className="flex items-center gap-3">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="bg-blue-900/50 border-blue-700 text-white hover:bg-blue-800/60 px-6 py-2 rounded-lg relative"
                 >
                   <Filter className="h-4 w-4 mr-2" />
@@ -206,7 +241,9 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-80 bg-gray-800 border-gray-700">
                 <div className="flex items-center justify-between p-2">
-                  <DropdownMenuLabel className="text-white">Filter Options</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-white">
+                    Filter Options
+                  </DropdownMenuLabel>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="default"
@@ -232,18 +269,25 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
                 <DropdownMenuSeparator className="bg-gray-700" />
                 {Object.entries(filterOptions).map(([category, options]) => (
                   <div key={category} className="p-2">
-                    <div className="text-sm font-medium text-gray-300 mb-2">{category}</div>
+                    <div className="text-sm font-medium text-gray-300 mb-2">
+                      {category}
+                    </div>
                     <div className="space-y-2">
                       {options.map((option) => (
-                        <div key={option} className="flex items-center space-x-2">
+                        <div
+                          key={option}
+                          className="flex items-center space-x-2"
+                        >
                           <Checkbox
                             id={option}
                             checked={selectedFilters.includes(option)}
-                            onCheckedChange={(checked) => handleFilterChange(option, checked as boolean)}
+                            onCheckedChange={(checked) =>
+                              handleFilterChange(option, checked as boolean)
+                            }
                             className="border-gray-600 data-[state=checked]:bg-red-600 data-[state=checked]:border-red-600"
                           />
-                          <label 
-                            htmlFor={option} 
+                          <label
+                            htmlFor={option}
                             className="text-sm text-gray-300 cursor-pointer hover:text-white"
                           >
                             {option}
@@ -251,15 +295,17 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
                         </div>
                       ))}
                     </div>
-                    {category !== 'Status' && <DropdownMenuSeparator className="bg-gray-700 my-2" />}
+                    {category !== "Status" && (
+                      <DropdownMenuSeparator className="bg-gray-700 my-2" />
+                    )}
                   </div>
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="bg-blue-900/50 border-blue-700 text-white hover:bg-blue-800/60 px-6 py-2 rounded-lg"
                 >
                   <ArrowUpDown className="h-4 w-4 mr-2" />
@@ -268,7 +314,9 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 bg-gray-800 border-gray-700 z-50">
                 <div className="flex items-center justify-between p-2">
-                  <DropdownMenuLabel className="text-white">Sort Options</DropdownMenuLabel>
+                  <DropdownMenuLabel className="text-white">
+                    Sort Options
+                  </DropdownMenuLabel>
                   <Button
                     variant="default"
                     size="sm"
@@ -284,7 +332,9 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
                     key={option}
                     onClick={() => handleSortChange(option)}
                     className={`cursor-pointer text-gray-300 hover:bg-gray-700 hover:text-white ${
-                      selectedSort === option ? 'bg-red-600/20 text-red-400' : ''
+                      selectedSort === option
+                        ? "bg-red-600/20 text-red-400"
+                        : ""
                     }`}
                   >
                     {option}
@@ -298,7 +348,6 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
           </div>
         </div>
 
-
         {/* Category Filter Buttons */}
         <div className="flex flex-wrap gap-2">
           {categories.map((category) => (
@@ -307,10 +356,10 @@ const ShopFilters = ({ viewMode, setViewMode, onFiltersApply, onSortChange, onSe
               onClick={() => handleCategoryClick(category)}
               className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
                 activeCategory === category
-                  ? 'bg-red-600 text-white hover:bg-red-700 border-0'
-                  : 'bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600'
+                  ? "bg-red-600 text-white hover:bg-red-700 border-0"
+                  : "bg-gray-800 text-gray-300 hover:bg-gray-700 border border-gray-600"
               }`}
-              variant={activeCategory === category ? 'default' : 'outline'}
+              variant={activeCategory === category ? "default" : "outline"}
             >
               {category}
             </Button>
