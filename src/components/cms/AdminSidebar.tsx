@@ -13,7 +13,9 @@ import {
   BarChart3,
   Cog,
   Coins,
-  Database
+  Database,
+  Calendar,
+  Sparkles
 } from 'lucide-react';
 import {
   Sidebar,
@@ -58,6 +60,18 @@ const adminPages: AdminPage[] = [
     title: 'About Us', 
     icon: Info,
     description: 'Manage about page content'
+  },
+  { 
+    id: 'our-journey', 
+    title: 'Our Journey', 
+    icon: Calendar,
+    description: 'Manage timeline and journey content'
+  },
+  { 
+    id: 'creative-snippets', 
+    title: 'Creative Snippets', 
+    icon: Sparkles,
+    description: 'Manage creative snippets and behind-the-scenes content'
   },
   { 
     id: 'digital-reader', 
