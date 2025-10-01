@@ -19,6 +19,7 @@ import { DigitalReaderManager } from './DigitalReaderManager';
 import { ShopAllManager } from './ShopAllManager';
 import { FeaturedSeriesManager } from './FeaturedSeriesManager';
 import PrintBookManager from './PrintBookManager';
+import { OurJourneyManager } from './OurJourneyManager';
 import { useCMS } from '@/hooks/useCMS';
 import { useToast } from '@/hooks/use-toast';
 import { AdminPage } from './AdminSidebar';
@@ -245,6 +246,18 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
       );
     case 'about-us':
       return renderGenericPage('about-us', 'About Us');
+    case 'our-journey':
+      return (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Our Journey Management</h2>
+            <p className="text-muted-foreground mb-6">
+              Manage the timeline and journey content that appears in the "Our Journey" section
+            </p>
+          </div>
+          <OurJourneyManager />
+        </div>
+      );
     case 'digital-reader':
       return (
         <div className="space-y-6">
