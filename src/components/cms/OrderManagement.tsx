@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AdminService, type AdminOrder, type AdminStats } from '@/services/adminService';
+import { supabase } from '@/integrations/supabase/client';
 
 // Use AdminOrder type from service
 type Order = AdminOrder;
@@ -95,6 +96,40 @@ export const OrderManagement = () => {
 
   useEffect(() => {
     loadOrders();
+    // Realtime: auto-refresh when orders change, plus lightweight notifications
+    const channel = supabase
+      .channel('admin-orders-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders' },
+        (payload: any) => {
+          if (payload?.eventType === 'INSERT') {
+            const orderNo = payload?.new?.order_number || payload?.new?.id;
+            toast({ title: 'New order received', description: `Order ${orderNo}` });
+          } else if (payload?.eventType === 'UPDATE') {
+            const orderNo = payload?.new?.order_number || payload?.new?.id;
+            toast({ title: 'Order updated', description: `Order ${orderNo}` });
+          } else if (payload?.eventType === 'DELETE') {
+            const orderNo = payload?.old?.order_number || payload?.old?.id;
+            toast({ title: 'Order removed', description: `Order ${orderNo}` });
+          }
+          // Refresh to pull joined data (profiles, items)
+          loadOrders(true);
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'order_items' },
+        () => {
+          // Items changed within an order; refresh listing so totals/items reflect
+          loadOrders(true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try { supabase.removeChannel(channel); } catch (_e) {}
+    };
   }, [toast]);
 
   const filteredOrders = orders.filter(order => {

@@ -1,42 +1,107 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Heart, Share2, BookOpen, Clock, User, Tag, Lock, Coins } from 'lucide-react';
+import { Heart, Share2, BookOpen, Clock, User, Tag, Lock, Coins, Trash2, BookMarked } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { useLibrary } from '@/hooks/useLibrary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DigitalReaderService } from '@/services/digitalReaderService';
 
 const ComicDetail = () => {
   const { id } = useParams();
   const [isInLibrary, setIsInLibrary] = useState(false);
+  const [comic, setComic] = useState<any>(null);
+  const [episodes, setEpisodes] = useState<any[]>([]);
+  const [subscriberCount, setSubscriberCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const { isAuthenticated } = useSupabaseAuth();
+  const { followSeries, unfollowSeries, isInLibrary: isSeriesInLibrary } = useLibrary();
 
-  // Mock comic data
-  const comic = {
-    id: 1,
-    title: "Shadow Hunter Chronicles",
-    author: "Alex Chen",
-    coverImage: "/lovable-uploads/4e6b2521-dc40-43e9-aed0-53fef670570b.png",
-    description: "In a world where shadows hold ancient secrets and supernatural beings lurk in every corner, young Kai discovers he has the rare ability to hunt and control shadow creatures. Join him on an epic journey as he uncovers the truth about his past and battles against the forces of darkness threatening to consume his world.",
-    genre: ["Action", "Fantasy", "Supernatural"],
+  // Load comic data from admin panel
+  useEffect(() => {
+    const loadComic = async () => {
+      if (!id) return;
+      
+      try {
+        setIsLoading(true);
+        const spec = await DigitalReaderService.getSpecById(id);
+        if (!spec) return;
+        
+        const [eps, subs] = await Promise.all([
+          DigitalReaderService.getEpisodes(id),
+          DigitalReaderService.getSubscriberCount(id)
+        ]);
+        
+        setComic({
+          id: spec.id,
+          title: spec.title,
+          author: spec.artist || spec.creator,
+          coverImage: spec.cover_image_url || '/placeholder.svg',
+          description: spec.description || 'No description available.',
+          genre: (() => {
+            let normalizedTags: string[] = [];
+            if (Array.isArray(spec.genre)) {
+              normalizedTags = spec.genre as string[];
+            } else if (typeof spec.genre === 'string') {
+              try {
+                const parsed = JSON.parse(spec.genre);
+                if (Array.isArray(parsed)) normalizedTags = parsed.filter(Boolean);
+                else if (typeof parsed === 'string') normalizedTags = parsed.split(',').map((g: string) => g.trim()).filter(Boolean);
+              } catch {
+                normalizedTags = spec.genre.split(',').map((g: string) => g.trim()).filter(Boolean);
+              }
+            }
+            return normalizedTags;
+          })(),
+          status: (spec as any).status || 'Ongoing',
+          totalEpisodes: eps.length,
+          lastUpdate: eps.length > 0 ? getRelativeTime(eps[eps.length - 1].updated_at) : '—',
+          // views removed
+          likes: '0',
+          subscribers: subs.toString()
+        });
+        
+        setEpisodes(eps.map((ep: any, index: number) => ({
+          id: ep.id,
+          title: `Episode ${ep.chapter_number || index + 1}: ${ep.title}`,
+          thumbnail: ep.cover_image_url || spec.cover_image_url || '/placeholder.svg',
+          isLocked: ep.coin_cost > 0 || (!ep.is_free && index >= ((spec as any).free_chapters_count || 0)),
+          coins: ep.coin_cost || (spec as any).coin_per_locked || 0,
+          releaseDate: new Date(ep.created_at).toLocaleDateString(),
+          // views removed
+        })));
+        
+        setSubscriberCount(subs);
+      } catch (error) {
+        console.error('Failed to load comic:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadComic();
+  }, [id]);
 
-    status: "Ongoing",
-    totalEpisodes: 45,
-    lastUpdate: "2 hours ago",
-    views: "2.3M",
-    likes: "89.2K",
-    subscribers: "156K"
+  // Helper function for relative time
+  const getRelativeTime = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'today';
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 14) return '1 week ago';
+    if (diffDays < 21) return '2 weeks ago';
+    if (diffDays < 28) return '3 weeks ago';
+    if (diffDays < 60) return '1 month ago';
+    return `${Math.floor(diffDays / 30)} months ago`;
   };
-
-  // Mock episodes data
-  const episodes = [
-    { id: 1, title: "The Awakening", thumbnail: "/lovable-uploads/6ce223e4-a7e8-4282-a3a6-0f55f5341a03.png", isLocked: false, coins: 0, releaseDate: "2024-01-15", views: "234K" },
-    { id: 2, title: "First Hunt", thumbnail: "/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png", isLocked: false, coins: 0, releaseDate: "2024-01-22", views: "198K" },
-    { id: 3, title: "Shadow Realm", thumbnail: "/lovable-uploads/97f88fee-e070-4d97-a73a-c747112fa093.png", isLocked: true, coins: 3, releaseDate: "2024-01-29", views: "156K" },
-    { id: 4, title: "The Master's Secret", thumbnail: "/lovable-uploads/9c2bfe8c-6585-45b0-bc73-7b72048725ee.png", isLocked: true, coins: 3, releaseDate: "2024-02-05", views: "134K" },
-    { id: 5, title: "Dark Alliance", thumbnail: "/lovable-uploads/a0c88e05-5aba-4550-8ee0-7644ad456776.png", isLocked: true, coins: 3, releaseDate: "2024-02-12", views: "112K" }
-  ];
 
   const EpisodeCard = ({ episode }: { episode: any }) => (
     <Card className="bg-gray-800 border-gray-700 hover:border-red-500/50 transition-all duration-300 group">
@@ -58,7 +123,7 @@ const ComicDetail = () => {
           <div className="flex-1">
             <div className="flex justify-between items-start mb-2">
               <h3 className="text-white font-semibold group-hover:text-red-400 transition-colors">
-                Episode {episode.id}: {episode.title}
+                {episode.title}
               </h3>
               {episode.isLocked && (
                 <div className="flex items-center gap-1 bg-yellow-600 px-2 py-1 rounded text-xs">
@@ -70,15 +135,14 @@ const ComicDetail = () => {
             
             <div className="flex items-center gap-4 text-sm text-gray-400 mb-3">
               <span>{episode.releaseDate}</span>
-              <span>{episode.views} views</span>
             </div>
             
             <div className="flex gap-2">
               {episode.isLocked ? (
-                <Link to={`/episode/${episode.id}/preview`}>
+                <Link to={`/episode/${episode.id}/read`}>
                   <Button size="sm" variant="outline" className="border-yellow-600 text-yellow-400 hover:bg-yellow-600/10">
                     <Lock className="w-4 h-4 mr-2" />
-                    Unlock
+                    Unlock ({episode.coins} coins)
                   </Button>
                 </Link>
               ) : (
@@ -95,6 +159,32 @@ const ComicDetail = () => {
       </CardContent>
     </Card>
   );
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-950">
+        <Header />
+        <div className="container mx-auto px-4 py-8 text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-600 mx-auto mb-4"></div>
+          <p className="text-gray-400">Loading comic...</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (!comic) {
+    return (
+      <div className="min-h-screen bg-gray-950">
+        <Header />
+        <div className="container mx-auto px-4 py-8 text-center">
+          <h1 className="text-2xl font-bold text-white mb-4">Comic not found</h1>
+          <p className="text-gray-400">The requested comic could not be found.</p>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-950">
@@ -146,13 +236,27 @@ const ComicDetail = () => {
             </div>
 
             <div className="flex gap-4 mb-6">
-              <Button 
-                onClick={() => setIsInLibrary(!isInLibrary)}
-                className={`${isInLibrary ? 'bg-green-600 hover:bg-green-700' : 'bg-red-600 hover:bg-red-700'}`}
-              >
-                <Heart className={`w-4 h-4 mr-2 ${isInLibrary ? 'fill-current' : ''}`} />
-                {isInLibrary ? 'In Library' : 'Add to Library'}
-              </Button>
+              {isAuthenticated ? (
+                isSeriesInLibrary(String(comic.id)) ? (
+                  <Button onClick={() => unfollowSeries(String(comic.id))} variant="outline" className="border-red-600 text-red-400 hover:bg-red-600/10">
+                    <Trash2 className="w-4 h-4 mr-2" />
+                    Remove from Library
+                  </Button>
+                ) : (
+                  <Button onClick={() => followSeries(String(comic.id))} className="bg-blue-600 hover:bg-blue-700">
+                    <BookOpen className="w-4 h-4 mr-2" />
+                    Add to Library
+                  </Button>
+                )
+              ) : (
+                <Button 
+                  onClick={() => window.location.href = '/auth'}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  <BookOpen className="w-4 h-4 mr-2" />
+                  Sign in to add to Library
+                </Button>
+              )}
               <Button variant="outline" className="border-gray-700 text-gray-300">
                 <Share2 className="w-4 h-4 mr-2" />
                 Share
@@ -165,7 +269,6 @@ const ComicDetail = () => {
                   <Clock className="w-4 h-4" />
                   Last updated: {comic.lastUpdate}
                 </span>
-                <span>{comic.views} total views</span>
                 <span>{comic.likes} likes</span>
               </div>
             </div>
@@ -220,10 +323,6 @@ const ComicDetail = () => {
                   <div>
                     <h3 className="font-semibold text-white mb-2">Stats</h3>
                     <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-gray-400">Views:</span>
-                        <span className="text-white">{comic.views}</span>
-                      </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Likes:</span>
                         <span className="text-white">{comic.likes}</span>

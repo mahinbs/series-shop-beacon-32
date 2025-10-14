@@ -227,6 +227,22 @@ const ProductDetails = () => {
     loadProduct();
   }, [productId, location.state]);
 
+  // Record last viewed product for the current user (local-only, privacy-safe)
+  useEffect(() => {
+    try {
+      if (product) {
+        const entry = {
+          id: String(product.id || productId),
+          title: product.title,
+          author: product.author || product.creators || '—',
+          imageUrl: product.image_url || product.imageUrl || '/placeholder.svg',
+          viewedAt: new Date().toISOString(),
+        };
+        localStorage.setItem('last_viewed_product', JSON.stringify(entry));
+      }
+    } catch (_e) {}
+  }, [product, productId]);
+
   // Function to search in comic series
   const searchInComicSeries = async () => {
     try {

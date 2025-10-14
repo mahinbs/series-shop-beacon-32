@@ -13,15 +13,18 @@ import {
   Search, 
   Star, 
   Grid,
-  List
+  List,
+  Trash2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useWishlist } from '@/hooks/useWishlist';
 
 const LibraryPage = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('recent');
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const { removeFromWishlist } = useWishlist();
 
   // Mock library data
   const libraryItems = [
@@ -294,7 +297,10 @@ const LibraryPage = () => {
                       </div>
 
                       <div className="flex justify-between items-center mt-3">
-                        <div></div>
+                        <Button size="sm" variant="outline" onClick={() => removeFromWishlist(String(item.id))}>
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          Remove
+                        </Button>
                         <Button size="sm" variant="destructive">
                           <BookOpen className="w-4 h-4 mr-1" />
                           {item.status === 'Completed' ? 'Re-read' : 'Continue'}

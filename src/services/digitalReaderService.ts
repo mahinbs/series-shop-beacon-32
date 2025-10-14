@@ -332,4 +332,98 @@ export class DigitalReaderService {
       throw error;
     }
   }
+
+  // Get a spec by slug
+  static async getSpecBySlug(slugOrId: string) {
+    // Try slug first
+    try {
+      const { data, error } = await (supabase as any)
+        .from('digital_reader_specs')
+        .select('*')
+        .eq('slug', slugOrId)
+        .eq('is_active', true)
+        .single();
+      if (!error && data) return data;
+    } catch (_) {}
+    // Fallback to id
+    const { data } = await (supabase as any)
+      .from('digital_reader_specs')
+      .select('*')
+      .eq('id', slugOrId)
+      .eq('is_active', true)
+      .single();
+    return data;
+  }
+
+  // Episodes for a spec
+  static async getEpisodes(specId: string) {
+    const { data, error } = await (supabase as any)
+      .from('digital_reader_episodes')
+      .select('*')
+      .eq('spec_id', specId)
+      .eq('is_published', true)
+      .order('chapter_number', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  }
+
+  static async getEpisodesCount(specId: string): Promise<number> {
+    const { count, error } = await (supabase as any)
+      .from('digital_reader_episodes')
+      .select('*', { count: 'exact', head: true })
+      .eq('spec_id', specId)
+      .eq('is_published', true);
+    if (error) return 0;
+    return Number(count || 0);
+  }
+
+  static async getLatestEpisodeUpdate(specId: string): Promise<string | null> {
+    const { data, error } = await (supabase as any)
+      .from('digital_reader_episodes')
+      .select('updated_at')
+      .eq('spec_id', specId)
+      .eq('is_published', true)
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) return null;
+    return data.updated_at as string;
+  }
+
+  // Get pages for an episode
+  static async getEpisodePages(episodeId: string): Promise<Array<{ page_number: number; image_url: string }>> {
+    const { data, error } = await (supabase as any)
+      .from('digital_reader_pages')
+      .select('page_number, image_url')
+      .eq('episode_id', episodeId)
+      .order('page_number');
+    if (error) throw error;
+    return (data || []).map((p: any) => ({ page_number: p.page_number, image_url: p.image_url }));
+  }
+  // Subscriber count via view
+  static async getSubscriberCount(specId: string): Promise<number> {
+    const { data, error } = await (supabase as any)
+      .from('digital_reader_subscriber_counts')
+      .select('subscriber_count')
+      .eq('spec_id', specId)
+      .single();
+    if (error) return 0;
+    return Number(data?.subscriber_count || 0);
+  }
+
+  static async subscribe(specId: string, userId: string) {
+    const { error } = await (supabase as any)
+      .from('digital_reader_subscriptions')
+      .insert({ spec_id: specId, user_id: userId });
+    if (error && !String(error.message).includes('duplicate')) throw error;
+  }
+
+  static async unsubscribe(specId: string, userId: string) {
+    const { error } = await (supabase as any)
+      .from('digital_reader_subscriptions')
+      .delete()
+      .eq('spec_id', specId)
+      .eq('user_id', userId);
+    if (error) throw error;
+  }
 }

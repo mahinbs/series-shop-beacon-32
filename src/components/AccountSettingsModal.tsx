@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, Lock, Bell, Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 const AccountSettingsModal = () => {
@@ -78,8 +79,26 @@ const AccountSettingsModal = () => {
     setIsSubmitting(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      // Re-authenticate user with current password before allowing change
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: user?.email || '',
+        password: securitySettings.currentPassword
+      });
+
+      if (signInError) {
+        toast.error('Current password is incorrect');
+        setIsSubmitting(false);
+        return;
+      }
+
+      // Update password using Supabase Auth
+      const { error } = await supabase.auth.updateUser({
+        password: securitySettings.newPassword
+      });
+
+      if (error) {
+        throw error;
+      }
       
       toast.success('Password updated successfully!');
       setSecuritySettings({
@@ -88,8 +107,9 @@ const AccountSettingsModal = () => {
         confirmPassword: '',
         twoFactorEnabled: securitySettings.twoFactorEnabled,
       });
-    } catch (error) {
-      toast.error('Failed to update password');
+    } catch (error: any) {
+      console.error('Password update error:', error);
+      toast.error(error.message || 'Failed to update password');
     } finally {
       setIsSubmitting(false);
     }
@@ -127,10 +147,8 @@ const AccountSettingsModal = () => {
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3 mb-6">
+          <TabsList className="grid w-full grid-cols-1 mb-6">
             <TabsTrigger value="security" className="text-xs">Security</TabsTrigger>
-            <TabsTrigger value="notifications" className="text-xs">Notifications</TabsTrigger>
-            <TabsTrigger value="privacy" className="text-xs">Privacy</TabsTrigger>
           </TabsList>
 
           {/* Security Tab */}
@@ -216,7 +234,8 @@ const AccountSettingsModal = () => {
                 </Button>
               </form>
 
-              <Separator className="my-6" />
+              {/* 2FA section commented out as requested */}
+              {/* <Separator className="my-6" />
 
               <div className="space-y-4">
                 <h4 className="text-md font-medium text-white">Two-Factor Authentication</h4>
@@ -230,162 +249,11 @@ const AccountSettingsModal = () => {
                     onCheckedChange={(checked) => handleSecurityChange('twoFactorEnabled', checked)}
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
           </TabsContent>
 
-          {/* Notifications Tab */}
-          <TabsContent value="notifications" className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Bell className="w-4 h-4" />
-                Notification Preferences
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Email Notifications</p>
-                    <p className="text-gray-500 text-xs">Receive notifications via email</p>
-                  </div>
-                  <Switch
-                    checked={notificationSettings.emailNotifications}
-                    onCheckedChange={(checked) => handleNotificationChange('emailNotifications', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Push Notifications</p>
-                    <p className="text-gray-500 text-xs">Receive push notifications in browser</p>
-                  </div>
-                  <Switch
-                    checked={notificationSettings.pushNotifications}
-                    onCheckedChange={(checked) => handleNotificationChange('pushNotifications', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Marketing Emails</p>
-                    <p className="text-gray-500 text-xs">Receive promotional content and offers</p>
-                  </div>
-                  <Switch
-                    checked={notificationSettings.marketingEmails}
-                    onCheckedChange={(checked) => handleNotificationChange('marketingEmails', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Order Updates</p>
-                    <p className="text-gray-500 text-xs">Get notified about order status changes</p>
-                  </div>
-                  <Switch
-                    checked={notificationSettings.orderUpdates}
-                    onCheckedChange={(checked) => handleNotificationChange('orderUpdates', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">New Releases</p>
-                    <p className="text-gray-500 text-xs">Be notified of new manga releases</p>
-                  </div>
-                  <Switch
-                    checked={notificationSettings.newReleases}
-                    onCheckedChange={(checked) => handleNotificationChange('newReleases', checked)}
-                  />
-                </div>
-              </div>
-
-              <Button 
-                onClick={() => handleSaveSettings('Notification')}
-                disabled={isSubmitting}
-                className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save Notification Settings'
-                )}
-              </Button>
-            </div>
-          </TabsContent>
-
-          {/* Privacy Tab */}
-          <TabsContent value="privacy" className="space-y-6">
-            <div>
-              <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                Privacy Settings
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Public Profile</p>
-                    <p className="text-gray-500 text-xs">Make your profile visible to other users</p>
-                  </div>
-                  <Switch
-                    checked={privacySettings.profileVisibility}
-                    onCheckedChange={(checked) => handlePrivacyChange('profileVisibility', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Show Activity</p>
-                    <p className="text-gray-500 text-xs">Display your reading activity publicly</p>
-                  </div>
-                  <Switch
-                    checked={privacySettings.showActivity}
-                    onCheckedChange={(checked) => handlePrivacyChange('showActivity', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Show Wishlist</p>
-                    <p className="text-gray-500 text-xs">Make your wishlist visible to others</p>
-                  </div>
-                  <Switch
-                    checked={privacySettings.showWishlist}
-                    onCheckedChange={(checked) => handlePrivacyChange('showWishlist', checked)}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-300 text-sm">Allow Messages</p>
-                    <p className="text-gray-500 text-xs">Let other users send you messages</p>
-                  </div>
-                  <Switch
-                    checked={privacySettings.allowMessages}
-                    onCheckedChange={(checked) => handlePrivacyChange('allowMessages', checked)}
-                  />
-                </div>
-              </div>
-
-              <Button 
-                onClick={() => handleSaveSettings('Privacy')}
-                disabled={isSubmitting}
-                className="w-full mt-6 bg-red-600 hover:bg-red-700 text-white"
-              >
-                {isSubmitting ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving...
-                  </>
-                ) : (
-                  'Save Privacy Settings'
-                )}
-              </Button>
-            </div>
-          </TabsContent>
+          {/* Notifications and Privacy tabs commented out as requested */}
         </Tabs>
       </DialogContent>
     </Dialog>

@@ -269,25 +269,35 @@ useEffect(() => {
         setProfile(data);
         console.log('✅ Profile loaded successfully');
       } else {
-        // Create profile if it doesn't exist
+        // Create profile if it doesn't exist using UPSERT to avoid duplicates
         console.log('🆕 Creating new profile...');
+        
+        // Get display name from user metadata or email
+        const displayName = user?.user_metadata?.full_name || 
+                           user?.user_metadata?.name || 
+                           user?.user_metadata?.display_name || 
+                           (user?.email ? user.email.split('@')[0] : 'User');
+        
         const newProfile = {
           user_id: userId,
           email: user?.email || null,
-          full_name: user?.user_metadata?.full_name || null,
+          full_name: displayName,
+          updated_at: new Date().toISOString()
         };
 
         const { data: createdProfile, error: createError } = await supabase
           .from('profiles')
-          .insert([newProfile])
+          .upsert(newProfile, {
+            onConflict: 'user_id'
+          })
           .select()
           .single();
 
         if (createError) {
-          console.error('Error creating profile:', createError);
+          console.error('Error upserting profile:', createError);
         } else {
           setProfile(createdProfile);
-          console.log('✅ Profile created successfully');
+          console.log('✅ Profile upserted successfully');
         }
       }
     } catch (error) {
@@ -348,17 +358,22 @@ useEffect(() => {
       if (data.user) {
         console.log('✅ Supabase signup successful:', data.user.id);
         
-        // Create profile
+        // Create profile using UPSERT to avoid duplicates
         const { error: profileError } = await supabase
           .from('profiles')
-          .insert([{
+          .upsert({
             user_id: data.user.id,
             email: email.trim().toLowerCase(),
             full_name: fullName || 'User',
-          }]);
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'user_id'
+          });
 
         if (profileError) {
-          console.error('Profile creation error:', profileError);
+          console.error('Profile upsert error:', profileError);
+        } else {
+          console.log('✅ Profile created/updated during signup');
         }
 
         // Set admin role if admin email

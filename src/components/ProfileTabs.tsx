@@ -11,7 +11,7 @@ import AccountSettingsModal from './AccountSettingsModal';
 const ProfileTabs = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
-  const activeTab = searchParams.get('tab') || 'overview';
+  const activeTab = searchParams.get('tab') || 'orders';
 
   const handleTabChange = (value: string) => {
     if (value === 'wishlist') {
@@ -19,20 +19,13 @@ const ProfileTabs = () => {
       return;
     }
     
-    if (value === 'overview') {
-      searchParams.delete('tab');
-    } else {
-      searchParams.set('tab', value);
-    }
+    searchParams.set('tab', value);
     setSearchParams(searchParams);
   };
 
   return (
     <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
-      <TabsList className="grid w-full grid-cols-4 bg-gray-900 border border-gray-800">
-        <TabsTrigger value="overview" className="text-gray-300 data-[state=active]:text-white data-[state=active]:bg-gray-800">
-          Overview
-        </TabsTrigger>
+      <TabsList className="grid w-full grid-cols-3 bg-gray-900 border border-gray-800">
         <TabsTrigger value="orders" className="text-gray-300 data-[state=active]:text-white data-[state=active]:bg-gray-800">
           Orders
         </TabsTrigger>
@@ -44,22 +37,25 @@ const ProfileTabs = () => {
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="overview" className="mt-8">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-8">
-            <ProfileActivity />
-            <ProfileLastViewed />
-          </div>
-          <div className="space-y-8">
-            <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
-              <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
-              <div className="space-y-3">
-                <AccountSettingsModal />
+      {/* Overview tab commented out as requested */}
+      {false && (
+        <TabsContent value="overview" className="mt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-8">
+              <ProfileActivity />
+              <ProfileLastViewed />
+            </div>
+            <div className="space-y-8">
+              <div className="bg-gray-800 rounded-xl p-6 border border-gray-700">
+                <h3 className="text-lg font-semibold text-white mb-4">Quick Actions</h3>
+                <div className="space-y-3">
+                  <AccountSettingsModal />
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </TabsContent>
+        </TabsContent>
+      )}
 
       <TabsContent value="orders" className="mt-8">
         <ProfileOrderHistory />

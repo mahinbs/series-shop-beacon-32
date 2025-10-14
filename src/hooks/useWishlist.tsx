@@ -155,6 +155,17 @@ export const useWishlist = () => {
       return;
     }
 
+    // Require authentication for adding to wishlist
+    if (!isAuthenticated || !user) {
+      toast({
+        title: "Login required",
+        description: "Please sign in to add items to your wishlist.",
+        duration: 3000,
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (isAuthenticated && user) {
       try {
         // Add to database
@@ -187,14 +198,6 @@ export const useWishlist = () => {
         });
         return;
       }
-    } else {
-      // Add to localStorage for non-authenticated users
-      const wishlistItem: WishlistItem = {
-        id: crypto.randomUUID(),
-        ...item,
-        addedDate: new Date().toISOString()
-      };
-      setWishlist(prev => [...prev, wishlistItem]);
     }
 
     toast({

@@ -1,7 +1,9 @@
 
 import { useState, useEffect } from 'react';
-import { ShoppingBag, Heart, Trophy, Target, Loader2, Activity } from 'lucide-react';
+import { ShoppingBag, Heart, Loader2, Activity, BookOpen } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { AuthService } from '@/services/auth';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProfileActivity = () => {
   const { user, isAuthenticated } = useSupabaseAuth();
@@ -18,9 +20,83 @@ const ProfileActivity = () => {
 
       try {
         setLoading(true);
-        // Note: You'll need to create an activity tracking system in your database
-        // For now, this shows an empty state
-        setActivities([]);
+        
+        // Fetch recent activities from various sources
+        const activitiesList: any[] = [];
+
+        // 1) Recent orders
+        try {
+          const orders = await AuthService.getOrders(user.id);
+          const recentOrders = orders.slice(0, 3).map((order: any) => ({
+            id: `order-${order.id}`,
+            type: 'order',
+            title: `Order #${order.order_number} placed`,
+            date: order.created_at,
+            icon: ShoppingBag,
+            bgColor: 'bg-blue-500/20',
+            iconColor: 'text-blue-400'
+          }));
+          activitiesList.push(...recentOrders);
+        } catch (err) {
+          console.error('Error fetching orders for activity:', err);
+        }
+
+        // 2) Recent wishlist additions
+        try {
+          const { data: wishlist, error: wishlistError } = await supabase
+            .from('wishlist')
+            .select('id, created_at, product:books(id, title)')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(3);
+          if (!wishlistError && wishlist) {
+            const mapped = wishlist.map((w: any) => ({
+              id: `wish-${w.id}`,
+              type: 'wishlist',
+              title: `Added to wishlist: ${w.product?.title ?? 'Item'}`,
+              date: w.created_at,
+              icon: Heart,
+              bgColor: 'bg-pink-500/20',
+              iconColor: 'text-pink-400'
+            }));
+            activitiesList.push(...mapped);
+          }
+        } catch (err) {
+          console.error('Error fetching wishlist for activity:', err);
+        }
+
+        // 3) Recent cart activity
+        try {
+          const { data: cartItems, error: cartError } = await supabase
+            .from('cart_items')
+            .select('id, created_at, product:books(id, title)')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(3);
+          if (!cartError && cartItems) {
+            const mapped = cartItems.map((c: any) => ({
+              id: `cart-${c.id}`,
+              type: 'cart',
+              title: `Added to cart: ${c.product?.title ?? 'Item'}`,
+              date: c.created_at,
+              icon: BookOpen,
+              bgColor: 'bg-amber-500/20',
+              iconColor: 'text-amber-400'
+            }));
+            activitiesList.push(...mapped);
+          }
+        } catch (err) {
+          console.error('Error fetching cart items for activity:', err);
+        }
+
+        // Do not inject any static placeholder items. Only show real data when available.
+
+        // Sort by date (most recent first) and take only 3
+        const sortedActivities = activitiesList
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 5);
+
+        setActivities(sortedActivities);
         setError(null);
       } catch (err) {
         console.error('Error fetching activities:', err);
@@ -95,9 +171,7 @@ const ProfileActivity = () => {
     <div className="bg-gray-900 rounded-xl p-6 border border-gray-800">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-xl font-semibold text-white">Recent Activity</h3>
-        <button className="text-red-400 hover:text-red-300 text-sm font-medium">
-          View All Activity
-        </button>
+        {/* View All Activity hidden as requested */}
       </div>
       
       <div className="space-y-4">

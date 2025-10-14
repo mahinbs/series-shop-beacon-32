@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Eye, Clock, Loader2, BookOpen } from 'lucide-react';
 import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 const ProfileLastViewed = () => {
   const { user, isAuthenticated } = useSupabaseAuth();
@@ -19,9 +20,86 @@ const ProfileLastViewed = () => {
 
       try {
         setLoading(true);
-        // Note: You'll need to create a last viewed tracking system in your database
-        // For now, this shows an empty state
-        setLastViewed([]);
+        
+        // Show last interacted items: prefer recently added to cart and wishlist, then recent orders
+        const results: any[] = [];
+
+        // 1) Recently added to cart
+        const { data: cartItems } = await supabase
+          .from('cart_items')
+          .select('created_at, product:books(id, title, author, image_url)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(4);
+        if (cartItems) {
+          results.push(...cartItems.map((c: any) => ({
+            id: `cart-${c.product?.id ?? ''}-${c.created_at}`,
+            title: c.product?.title ?? 'Item',
+            author: c.product?.author ?? '—',
+            imageUrl: c.product?.image_url || '/placeholder.svg',
+            viewedAt: new Date(c.created_at).toLocaleDateString(),
+            progress: 0
+          })));
+        }
+
+        // 2) Recently wishlisted
+        const { data: wishlist } = await supabase
+          .from('wishlist')
+          .select('created_at, product:books(id, title, author, image_url)')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(4);
+        if (wishlist) {
+          results.push(...wishlist.map((w: any) => ({
+            id: `wish-${w.product?.id ?? ''}-${w.created_at}`,
+            title: w.product?.title ?? 'Item',
+            author: w.product?.author ?? '—',
+            imageUrl: w.product?.image_url || '/placeholder.svg',
+            viewedAt: new Date(w.created_at).toLocaleDateString(),
+            progress: 0
+          })));
+        }
+
+        // 3) Recent orders as fallback
+        const { data: orders } = await supabase
+          .from('orders')
+          .select('id, order_number, created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(2);
+        if (orders) {
+          results.push(...orders.map((o: any) => ({
+            id: o.id,
+            title: `Order #${o.order_number}`,
+            author: 'Your Purchase',
+            imageUrl: '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png',
+            viewedAt: new Date(o.created_at).toLocaleDateString(),
+            progress: 100
+          })));
+        }
+
+        // Prefer the truly last opened product if present (stored by ProductDetails)
+        try {
+          const lastOpenedRaw = localStorage.getItem('last_viewed_product');
+          if (lastOpenedRaw) {
+            const lastOpened = JSON.parse(lastOpenedRaw);
+            results.unshift({
+              id: lastOpened.id,
+              title: lastOpened.title,
+              author: lastOpened.author,
+              imageUrl: lastOpened.imageUrl,
+              viewedAt: new Date(lastOpened.viewedAt).toLocaleDateString(),
+              progress: 0
+            });
+          }
+        } catch (_e) {}
+
+        // Only keep one most recent item as "Last Viewed"
+        const sorted = results
+          .sort((a, b) => new Date(b.viewedAt).getTime() - new Date(a.viewedAt).getTime())
+          .slice(0, 1);
+
+        setLastViewed(sorted);
         setError(null);
       } catch (err) {
         console.error('Error fetching last viewed:', err);
@@ -111,12 +189,7 @@ const ProfileLastViewed = () => {
           <Eye className="w-5 h-5 text-blue-400" />
           Last Viewed
         </h3>
-        <button 
-          onClick={() => window.location.href = '/shop-all'}
-          className="text-red-400 hover:text-red-300 text-sm font-medium transition-colors duration-200"
-        >
-          View All
-        </button>
+        {/* View All hidden as requested */}
       </div>
       
       <div className="space-y-4">

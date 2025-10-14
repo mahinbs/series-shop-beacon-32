@@ -9,6 +9,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useForm } from 'react-hook-form';
 import { ArrowLeft, CreditCard, Lock, ShoppingCart, MapPin, Mail, Plus, Clock, Star } from 'lucide-react';
 import { removeVolumeFromTitle } from '@/lib/utils';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
+import { AuthService } from '@/services/auth';
+import { useToast } from '@/hooks/use-toast';
 
 interface CheckoutFormData {
   email: string;
@@ -33,6 +36,8 @@ const Checkout = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   
   const { product, quantity, totalPrice } = location.state || {};
+  const { user, isAuthenticated } = useSupabaseAuth();
+  const { toast } = useToast();
   
   console.log('🔍 Checkout page loaded');
   console.log('📍 Current productId from params:', productId);
@@ -141,20 +146,80 @@ const Checkout = () => {
     
     // Simulate payment processing
     await new Promise(resolve => setTimeout(resolve, 3000));
-    
-    navigate('/payment-success', {
-      state: {
-        orderData: {
-          ...data,
-          product,
-          quantity,
-          subtotal,
-          tax,
-          total,
-          orderNumber: 'ORD-' + Math.random().toString(36).substr(2, 9).toUpperCase()
-        }
+
+    try {
+      if (!isAuthenticated || !user) {
+        toast({ title: 'Login required', description: 'Please sign in to place the order.', variant: 'destructive' });
+        setIsProcessing(false);
+        return;
       }
-    });
+
+      // Persist order
+      const order = await AuthService.createOrder(user.id, {
+        subtotal: Number(subtotal.toFixed(2)),
+        tax: Number(tax.toFixed(2)),
+        shipping: Number(shipping.toFixed(2)),
+        discount: 0,
+        total: Number(total.toFixed(2)),
+        payment_method: 'card',
+        shipping_address: {
+          name: `${data.firstName} ${data.lastName}`.trim(),
+          street: data.address,
+          city: data.city,
+          state: data.state,
+          zip: data.zipCode,
+          country: data.country,
+          email: data.email
+        },
+        billing_address: {
+          name: `${data.firstName} ${data.lastName}`.trim(),
+          street: data.address,
+          city: data.city,
+          state: data.state,
+          zip: data.zipCode,
+          country: data.country,
+          email: data.email
+        },
+        notes: undefined
+      });
+
+      // Persist order items (single product checkout)
+      const unitPrice = Number(product?.price ?? 0);
+      const qty = Number(quantity ?? 1);
+      await AuthService.addOrderItems(order.id, [
+        {
+          product_id: String(product?.id),
+          product_title: String(product?.title || 'Product'),
+          product_author: product?.author || null,
+          product_image_url: product?.imageUrl || product?.images?.[0] || null,
+          quantity: qty,
+          unit_price: unitPrice,
+          total_price: Number((unitPrice * qty).toFixed(2))
+        }
+      ]);
+
+      toast({ title: 'Order placed', description: 'Thank you! Your order has been placed.' });
+
+      navigate('/payment-success', {
+        state: {
+          orderData: {
+            ...data,
+            product,
+            quantity,
+            subtotal,
+            tax,
+            total,
+            orderNumber: order.order_number,
+            orderId: order.id
+          }
+        }
+      });
+    } catch (err) {
+      console.error('Failed to place order:', err);
+      toast({ title: 'Order failed', description: 'Could not create order. Please try again.', variant: 'destructive' });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (!product) {
