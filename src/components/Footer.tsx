@@ -87,11 +87,11 @@ const Footer = () => {
             >
               <h3 className="text-red-500 font-semibold mb-3 sm:mb-4 text-base sm:text-lg">{section.title}</h3>
               {index === 3 ? (
-                <div className="flex flex-col space-y-3 items-center sm:items-start">
+                <div className="flex flex-col space-y-5 items-center sm:items-start">
                   <Popover>
                     <PopoverTrigger asChild>
                       <img 
-                        src="/lovable-uploads/c63bffdb-4754-4d64-8063-6ac8bba72106.png" 
+                        src="/assets/our-imprints/1.png" 
                         alt="GLAM POP!" 
                         className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
                       />
@@ -114,7 +114,7 @@ const Footer = () => {
                   <Popover>
                     <PopoverTrigger asChild>
                       <img 
-                        src="/lovable-uploads/298cc90c-2dff-4daf-b31b-2ebe77649735.png" 
+                        src="/assets/our-imprints/2.png" 
                         alt="ONE & DONE" 
                         className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
                       />
@@ -137,7 +137,7 @@ const Footer = () => {
                   <Popover>
                     <PopoverTrigger asChild>
                       <img 
-                        src="/lovable-uploads/0eb9fe03-348b-4a44-a643-6c8dfbba66a9.png" 
+                        src="/assets/our-imprints/3.png" 
                         alt="BLUSH CLUB" 
                         className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
                       />
@@ -160,9 +160,9 @@ const Footer = () => {
                   <Popover>
                     <PopoverTrigger asChild>
                       <img 
-                        src="/lovable-uploads/9c2bfe8c-6585-45b0-bc73-7b72048725ee.png" 
+                        src="/assets/our-imprints/4.png" 
                         alt="E-NOVEL PRESS" 
-                        className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                        className="h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
                       />
                     </PopoverTrigger>
                     <PopoverContent 
