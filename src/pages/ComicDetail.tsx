@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Heart, Share2, BookOpen, Clock, User, Tag, Lock, Coins, Trash2, BookMarked } from 'lucide-react';
 import Header from '@/components/Header';
@@ -12,6 +12,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DigitalReaderService } from '@/services/digitalReaderService';
 import { ReviewSection } from '@/components/ReviewSection';
 import { ComicLikeService } from '@/services/comicLikeService';
+import { CircleService } from '@/services/circleService';
 
 const ComicDetail = () => {
   const { id } = useParams();
@@ -22,7 +23,12 @@ const ComicDetail = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [subscriberCount, setSubscriberCount] = useState<number>(0);
+  const [circle, setCircle] = useState<any>(null);
+  const [isCircleMember, setIsCircleMember] = useState(false);
+  const [joinEmail, setJoinEmail] = useState('');
+  const [isJoining, setIsJoining] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const joinFormRef = useRef<HTMLDivElement>(null);
   const { isAuthenticated, user } = useSupabaseAuth();
   const { followSeries, unfollowSeries, isInLibrary: isSeriesInLibrary } = useLibrary();
 
@@ -75,7 +81,9 @@ const ComicDetail = () => {
           title: `Episode ${ep.chapter_number || index + 1}: ${ep.title}`,
           thumbnail: ep.cover_image_url || spec.cover_image_url || '/placeholder.svg',
           isLocked: ep.coin_cost > 0 || (!ep.is_free && index >= ((spec as any).free_chapters_count || 0)),
-          coins: ep.coin_cost || (spec as any).coin_per_locked || 0,
+          coins: (ep.coin_cost !== undefined && ep.coin_cost !== null)
+            ? ep.coin_cost
+            : ((spec as any).coin_per_locked ?? 10),
           releaseDate: new Date(ep.created_at).toLocaleDateString(),
           // views removed
         })));
@@ -96,6 +104,24 @@ const ComicDetail = () => {
           const count = await ComicLikeService.getComicLikeCount(id);
           setLikeCount(count);
         }
+
+          // Load global circle data
+          const globalCircle = await CircleService.getGlobalCircle();
+          setCircle(globalCircle);
+          
+          if (globalCircle) {
+            let member = false;
+            if (user?.id) {
+              member = await CircleService.isUserMemberOfGlobalCircle(user.id);
+            }
+            if (!member) {
+              const userEmail = user?.email || user?.user_metadata?.email || null;
+              if (userEmail) {
+                member = await CircleService.isEmailMemberOfGlobalCircle(userEmail);
+              }
+            }
+            setIsCircleMember(!!member);
+          }
       } catch (error) {
         console.error('Failed to load comic:', error);
       } finally {
@@ -105,6 +131,32 @@ const ComicDetail = () => {
     
     loadComic();
   }, [id]);
+
+  // Re-check circle membership whenever the authenticated user changes
+  useEffect(() => {
+    (async () => {
+      try {
+        const globalCircle = await CircleService.getGlobalCircle();
+        setCircle(globalCircle);
+        if (!globalCircle) {
+          setIsCircleMember(false);
+          return;
+        }
+
+        let member = false;
+        if (user?.id) {
+          member = await CircleService.isUserMemberOfGlobalCircle(user.id);
+        }
+        if (!member) {
+          const userEmail = user?.email || user?.user_metadata?.email || null;
+          if (userEmail) {
+            member = await CircleService.isEmailMemberOfGlobalCircle(userEmail);
+          }
+        }
+        setIsCircleMember(!!member);
+      } catch {}
+    })();
+  }, [user?.id, user?.email]);
 
   // Helper function for relative time
   const getRelativeTime = (dateString: string) => {
@@ -152,6 +204,37 @@ const ComicDetail = () => {
     }
   };
 
+  // Handle join circle
+  const handleJoinCircle = async () => {
+    if (!joinEmail.trim() || !circle) {
+      alert('Please enter a valid email address');
+      return;
+    }
+
+    try {
+      setIsJoining(true);
+      await CircleService.joinCircleWithEmail(circle.id, joinEmail);
+      alert('Successfully joined the circle!');
+      setJoinEmail('');
+      
+      // If user is logged in with this email, update membership status
+      if (user?.id) {
+        const isMember = await CircleService.isUserMemberOfCircle(circle.id, user.id);
+        setIsCircleMember(isMember);
+      }
+    } catch (error) {
+      console.error('Failed to join circle:', error);
+      alert('Failed to join circle');
+    } finally {
+      setIsJoining(false);
+    }
+  };
+
+  // Redirect to join circle page
+  const redirectToJoinCircle = () => {
+    window.location.href = '/join-circle';
+  };
+
   // Helper function to generate dynamic pricing message
   const getPricingMessage = (freeChaptersCount: number, episodes: any[]) => {
     // Count actual free episodes (considering both free_chapters_count and individual episode coin_cost)
@@ -178,7 +261,7 @@ const ComicDetail = () => {
     }
   };
 
-  const EpisodeCard = ({ episode }: { episode: any }) => (
+  const EpisodeCard = ({ episode, isCircleMember, circle }: { episode: any; isCircleMember: boolean; circle: any }) => (
     <Card className="bg-gray-800 border-gray-700 hover:border-red-500/50 transition-all duration-300 group">
       <CardContent className="p-4">
         <div className="flex gap-4">
@@ -214,12 +297,20 @@ const ComicDetail = () => {
             
             <div className="flex gap-2">
               {episode.isLocked ? (
+              // Show different buttons based on circle membership
+              isCircleMember ? (
                 <Link to={`/episode/${episode.id}/read`}>
                   <Button size="sm" variant="outline" className="border-yellow-600 text-yellow-400 hover:bg-yellow-600/10">
                     <Lock className="w-4 h-4 mr-2" />
                     Unlock ({episode.coins} coins)
                   </Button>
                 </Link>
+                     ) : (
+                       <Button size="sm" variant="outline" className="border-yellow-600 text-yellow-400 hover:bg-yellow-600/10" onClick={redirectToJoinCircle}>
+                         <Lock className="w-4 h-4 mr-2" />
+                         Unlock ({episode.coins} coins)
+                       </Button>
+                     )
               ) : (
                 <Link to={`/episode/${episode.id}/read`}>
                   <Button size="sm" className="bg-green-600 hover:bg-green-700">
@@ -359,6 +450,21 @@ const ComicDetail = () => {
                 </span>
               </div>
             </div>
+
+
+            {/* Circle Member Status */}
+            {circle && isCircleMember && (
+              <Card className="bg-green-900/20 border-green-600/30 mb-6">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-green-400 text-sm">
+                      You're a member of {circle.name}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
 
@@ -379,7 +485,7 @@ const ComicDetail = () => {
             </div>
             
             {episodes.map(episode => (
-              <EpisodeCard key={episode.id} episode={episode} />
+              <EpisodeCard key={episode.id} episode={episode} isCircleMember={isCircleMember} circle={circle} />
             ))}
           </TabsContent>
           

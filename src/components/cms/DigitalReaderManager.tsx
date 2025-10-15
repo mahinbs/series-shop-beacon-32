@@ -57,6 +57,7 @@ export const DigitalReaderManager = () => {
     setSpecs(data || []);
   };
 
+
   const addTag = () => {
     const t = specForm.tagsInput.trim();
     if (!t) return;
