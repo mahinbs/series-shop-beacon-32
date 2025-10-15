@@ -7,6 +7,7 @@ import { useBooksOnly, useMerchandiseOnly } from '@/hooks/useBooks';
 import { type Book } from '@/services/database';
 import { useCart } from '@/hooks/useCart';
 import { useToast } from '@/hooks/use-toast';
+import { fuzzySearchItems } from '@/utils/fuzzySearch';
 
 interface SeriesGridProps {
   appliedFilters?: string[];
@@ -88,20 +89,16 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
     console.log('🎯 Applied filters:', appliedFilters);
     console.log('📋 Raw series data:', seriesData.map(s => ({ title: s.title, genre: s.genre, tags: s.tags })));
 
-    // Apply search filter
+    // Apply search filter with fuzzy matching
     if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(series => {
-        const titleMatch = series.title.toLowerCase().includes(searchLower);
-        const descMatch = series.description?.toLowerCase().includes(searchLower) || false;
-        const genreMatch = series.genre?.some(g => g.toLowerCase().includes(searchLower)) || false;
-        const tagsMatch = series.tags?.some(t => t.toLowerCase().includes(searchLower)) || false;
-        
-        const matches = titleMatch || descMatch || genreMatch || tagsMatch;
-        console.log(`🔍 "${series.title}" search match:`, { titleMatch, descMatch, genreMatch, tagsMatch, matches });
-        return matches;
-      });
-      console.log('🔍 After search filter:', filtered.length, 'series remain');
+      // Use fuzzy search for better typo tolerance
+      filtered = fuzzySearchItems(
+        filtered,
+        searchTerm,
+        ['title', 'description'],
+        0.6 // 60% similarity threshold
+      );
+      console.log('🔍 After fuzzy search filter:', filtered.length, 'series remain');
     }
 
     // Apply category/genre filters
@@ -160,19 +157,16 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
     console.log('🔍 Search term:', searchTerm);
     console.log('🎯 Applied filters:', appliedFilters);
 
-    // Apply search filter
+    // Apply search filter with fuzzy matching
     if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(book => {
-        const titleMatch = book.title.toLowerCase().includes(searchLower);
-        const descMatch = book.description?.toLowerCase().includes(searchLower) || false;
-        const authorMatch = book.author?.toLowerCase().includes(searchLower) || false;
-        
-        const matches = titleMatch || descMatch || authorMatch;
-        console.log(`🔍 "${book.title}" search match:`, { titleMatch, descMatch, authorMatch, matches });
-        return matches;
-      });
-      console.log('🔍 After search filter:', filtered.length, 'books remain');
+      // Use fuzzy search for better typo tolerance
+      filtered = fuzzySearchItems(
+        filtered,
+        searchTerm,
+        ['title', 'author', 'description', 'category'],
+        0.6 // 60% similarity threshold
+      );
+      console.log('🔍 After fuzzy search filter:', filtered.length, 'books remain');
     }
 
     // Apply category/genre filters
@@ -233,19 +227,16 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
     console.log('🔍 Search term:', searchTerm);
     console.log('🎯 Applied filters:', appliedFilters);
 
-    // Apply search filter
+    // Apply search filter with fuzzy matching
     if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(item => {
-        const titleMatch = item.title.toLowerCase().includes(searchLower);
-        const descMatch = item.description?.toLowerCase().includes(searchLower) || false;
-        const categoryMatch = item.category?.toLowerCase().includes(searchLower) || false;
-        
-        const matches = titleMatch || descMatch || categoryMatch;
-        console.log(`🔍 "${item.title}" search match:`, { titleMatch, descMatch, categoryMatch, matches });
-        return matches;
-      });
-      console.log('🔍 After search filter:', filtered.length, 'merchandise remain');
+      // Use fuzzy search for better typo tolerance
+      filtered = fuzzySearchItems(
+        filtered,
+        searchTerm,
+        ['title', 'description', 'category'],
+        0.6 // 60% similarity threshold
+      );
+      console.log('🔍 After fuzzy search filter:', filtered.length, 'merchandise remain');
     }
 
     // Apply category/genre filters

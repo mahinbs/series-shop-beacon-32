@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { BookOpen, RefreshCw } from 'lucide-react';
 import { ComicService, type ComicSeries } from '@/services/comicService';
 import { FeaturedSeriesService, type FeaturedSeriesConfig, type FeaturedSeriesBadge } from '@/services/featuredSeriesService';
+import { fuzzySearchItems } from '@/utils/fuzzySearch';
 
 interface FeaturedSeriesSlideshowProps {
   appliedFilters?: string[];
@@ -99,20 +100,16 @@ const FeaturedSeriesSlideshow = ({ appliedFilters = [], searchTerm = '', sortBy 
     console.log('🔍 Search term:', searchTerm);
     console.log('🎯 Applied filters:', appliedFilters);
 
-    // Apply search filter
+    // Apply search filter with fuzzy matching
     if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(series => {
-        const titleMatch = series.title.toLowerCase().includes(searchLower);
-        const descMatch = series.description?.toLowerCase().includes(searchLower) || false;
-        const genreMatch = series.genre?.some(g => g.toLowerCase().includes(searchLower)) || false;
-        const tagsMatch = series.tags?.some(t => t.toLowerCase().includes(searchLower)) || false;
-        
-        const matches = titleMatch || descMatch || genreMatch || tagsMatch;
-        console.log(`🔍 "${series.title}" search match:`, { titleMatch, descMatch, genreMatch, tagsMatch, matches });
-        return matches;
-      });
-      console.log('🔍 After search filter:', filtered.length, 'series remain');
+      // Use fuzzy search for better typo tolerance
+      filtered = fuzzySearchItems(
+        filtered,
+        searchTerm,
+        ['title', 'description'],
+        0.6 // 60% similarity threshold
+      );
+      console.log('🔍 After fuzzy search filter:', filtered.length, 'series remain');
     }
 
     // Apply category/genre filters

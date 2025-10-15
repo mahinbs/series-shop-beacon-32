@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
 import { useBooks } from '@/hooks/useBooks';
+import { fuzzySearchItems } from '@/utils/fuzzySearch';
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -26,7 +27,7 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
   const { addToCart } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
 
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<typeof books>([]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -46,13 +47,18 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
     const timer = setTimeout(() => {
       let filtered = [...books];
 
-      // Filter by search query
+      // Filter by search query with fuzzy matching
       if (searchQuery.trim()) {
-        filtered = filtered.filter(item =>
-          item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.author?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.category?.toLowerCase().includes(searchQuery.toLowerCase())
+        // Use fuzzy search with a threshold of 0.6 (60% similarity)
+        // This allows for typos and misspellings
+        filtered = fuzzySearchItems(
+          filtered,
+          searchQuery,
+          ['title', 'author', 'category', 'description'],
+          0.6 // 60% similarity threshold - adjust if needed
         );
+        
+        console.log(`🔍 Fuzzy search for "${searchQuery}" found ${filtered.length} results`);
       }
 
       // Filter by category
@@ -78,7 +84,7 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
       // Sort results
       switch (sortBy) {
         case 'relevance':
-          // Keep original order for relevance
+          // Fuzzy search already sorts by relevance
           break;
         case 'price-low':
           filtered.sort((a, b) => a.price - b.price);
@@ -101,11 +107,11 @@ const SearchModal = ({ isOpen, onClose }: SearchModalProps) => {
     return () => clearTimeout(timer);
   }, [searchQuery, category, sortBy, priceRange, books]);
 
-  const handleAddToCart = (item: any) => {
+  const handleAddToCart = (item: typeof books[number]) => {
     addToCart(item);
   };
 
-  const handleWishlistToggle = (item: any) => {
+  const handleWishlistToggle = (item: typeof books[number]) => {
     if (isInWishlist(item.id)) {
       removeFromWishlist(item.id);
     } else {
