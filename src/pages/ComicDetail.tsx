@@ -10,6 +10,8 @@ import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 import { useLibrary } from '@/hooks/useLibrary';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DigitalReaderService } from '@/services/digitalReaderService';
+import { ReviewSection } from '@/components/ReviewSection';
+import { ComicLikeService } from '@/services/comicLikeService';
 
 const ComicDetail = () => {
   const { id } = useParams();
@@ -17,9 +19,11 @@ const ComicDetail = () => {
   const [comic, setComic] = useState<any>(null);
   const [episodes, setEpisodes] = useState<any[]>([]);
   const [originalEpisodes, setOriginalEpisodes] = useState<any[]>([]); // Store original episode data
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
   const [subscriberCount, setSubscriberCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated } = useSupabaseAuth();
+  const { isAuthenticated, user } = useSupabaseAuth();
   const { followSeries, unfollowSeries, isInLibrary: isSeriesInLibrary } = useLibrary();
 
   // Load comic data from admin panel
@@ -62,7 +66,6 @@ const ComicDetail = () => {
           totalEpisodes: eps.length,
           lastUpdate: eps.length > 0 ? getRelativeTime(eps[eps.length - 1].updated_at) : '—',
           // views removed
-          likes: '0',
           subscribers: subs.toString(),
           freeChaptersCount: (spec as any).free_chapters_count || 0
         });
@@ -80,6 +83,19 @@ const ComicDetail = () => {
         setOriginalEpisodes(eps); // Store original episode data for pricing calculation
         
         setSubscriberCount(subs);
+        
+        // Load like status and count
+        if (user?.id) {
+          const [liked, count] = await Promise.all([
+            ComicLikeService.hasUserLikedComic(id, user.id),
+            ComicLikeService.getComicLikeCount(id)
+          ]);
+          setIsLiked(liked);
+          setLikeCount(count);
+        } else {
+          const count = await ComicLikeService.getComicLikeCount(id);
+          setLikeCount(count);
+        }
       } catch (error) {
         console.error('Failed to load comic:', error);
       } finally {
@@ -105,6 +121,35 @@ const ComicDetail = () => {
     if (diffDays < 28) return '3 weeks ago';
     if (diffDays < 60) return '1 month ago';
     return `${Math.floor(diffDays / 30)} months ago`;
+  };
+
+  // Handle comic like/unlike
+  const handleLikeComic = async () => {
+    if (!isAuthenticated || !user?.id || !id) {
+      alert('Please sign in to like comics');
+      return;
+    }
+
+    try {
+      const newLikedState = await ComicLikeService.toggleComicLike(id, user.id);
+      setIsLiked(newLikedState);
+      setLikeCount(prev => newLikedState ? prev + 1 : prev - 1);
+    } catch (error) {
+      console.error('Failed to toggle like:', error);
+      alert('Failed to update like status');
+    }
+  };
+
+  // Handle share comic link
+  const handleShare = async () => {
+    try {
+      const comicUrl = window.location.href;
+      await navigator.clipboard.writeText(comicUrl);
+      alert('Comic link copied to clipboard!');
+    } catch (error) {
+      console.error('Failed to copy link:', error);
+      alert('Failed to copy link');
+    }
   };
 
   // Helper function to generate dynamic pricing message
@@ -263,9 +308,22 @@ const ComicDetail = () => {
                 <BookOpen className="w-4 h-4" />
                 <span>{comic.totalEpisodes} episodes</span>
               </div>
+              <div className="flex items-center gap-2 text-gray-400">
+                <Heart className={`w-4 h-4 ${isLiked ? 'text-red-500 fill-red-500' : ''}`} />
+                <span>{likeCount} likes</span>
+              </div>
             </div>
 
             <div className="flex gap-4 mb-6">
+              <Button 
+                onClick={handleLikeComic}
+                variant="outline" 
+                className={`border-gray-600 hover:bg-gray-700 ${isLiked ? 'bg-red-600 border-red-600 text-white' : 'text-gray-300'}`}
+              >
+                <Heart className={`w-4 h-4 mr-2 ${isLiked ? 'fill-current' : ''}`} />
+                {isLiked ? 'Liked' : 'Like'}
+              </Button>
+              
               {isAuthenticated ? (
                 isSeriesInLibrary(String(comic.id)) ? (
                   <Button onClick={() => unfollowSeries(String(comic.id))} variant="outline" className="border-red-600 text-red-400 hover:bg-red-600/10">
@@ -287,7 +345,7 @@ const ComicDetail = () => {
                   Sign in to add to Library
                 </Button>
               )}
-              <Button variant="outline" className="border-gray-700 text-gray-300">
+              <Button onClick={handleShare} variant="outline" className="border-gray-700 text-gray-300">
                 <Share2 className="w-4 h-4 mr-2" />
                 Share
               </Button>
@@ -299,7 +357,6 @@ const ComicDetail = () => {
                   <Clock className="w-4 h-4" />
                   Last updated: {comic.lastUpdate}
                 </span>
-                <span>{comic.likes} likes</span>
               </div>
             </div>
           </div>
@@ -355,7 +412,7 @@ const ComicDetail = () => {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span className="text-gray-400">Likes:</span>
-                        <span className="text-white">{comic.likes}</span>
+                        <span className="text-white">{likeCount}</span>
                       </div>
                       <div className="flex justify-between">
                         <span className="text-gray-400">Subscribers:</span>
@@ -369,12 +426,7 @@ const ComicDetail = () => {
           </TabsContent>
           
           <TabsContent value="reviews">
-            <Card className="bg-gray-800 border-gray-700">
-              <CardContent className="p-6">
-                <h2 className="text-xl font-semibold text-white mb-4">Reviews</h2>
-                <p className="text-gray-400">Reviews will be displayed here once backend is integrated.</p>
-              </CardContent>
-            </Card>
+            {comic && <ReviewSection comicId={comic.id} />}
           </TabsContent>
         </Tabs>
       </div>
