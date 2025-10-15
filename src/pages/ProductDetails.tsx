@@ -535,7 +535,6 @@ const ProductDetails = () => {
                           : "bg-red-600 hover:bg-red-700 text-white"
                       }`}
                     >
-                      <ShoppingCart className="w-4 h-4 mr-2 inline" />
                       {!(
                         (product?.available_digital && (product?.digital_stock || 0) > 0) ||
                         (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
@@ -583,34 +582,6 @@ const ProductDetails = () => {
                         }`}
                       />
                       {isInWishlist(product.id) ? "WISHLISTED" : "WISH TO BUY"}
-                    </Button>
-                    <Button
-                      onClick={handleCheckout}
-                      disabled={
-                        // Check if any format is available and in stock
-                        !(
-                          (product?.available_digital && (product?.digital_stock || 0) > 0) ||
-                          (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
-                          (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
-                        )
-                      }
-                      className={`px-8 py-3 font-bold uppercase transition-all duration-200 ${
-                        !(
-                          (product?.available_digital && (product?.digital_stock || 0) > 0) ||
-                          (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
-                          (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
-                        )
-                          ? "bg-gray-500 text-gray-300 cursor-not-allowed hover:bg-gray-500"
-                          : "bg-red-600 hover:bg-red-700 text-white"
-                      }`}
-                    >
-                      {!(
-                        (product?.available_digital && (product?.digital_stock || 0) > 0) ||
-                        (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
-                        (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
-                      )
-                        ? "OUT OF STOCK"
-                        : `CHECKOUT - $${totalPrice.toFixed(2)}`}
                     </Button>
                   </div>
                 </div>
@@ -746,6 +717,37 @@ const ProductDetails = () => {
             </div>
           </div>
 
+          {/* Checkout Button */}
+          <div className="mt-8 text-center mb-8">
+            <Button
+              onClick={handleCheckout}
+              disabled={
+                // Check if any format is available and in stock
+                !(
+                  (product?.available_digital && (product?.digital_stock || 0) > 0) ||
+                  (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
+                  (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
+                )
+              }
+              className={`px-12 py-4 text-lg font-bold uppercase transition-all duration-200 ${
+                !(
+                  (product?.available_digital && (product?.digital_stock || 0) > 0) ||
+                  (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
+                  (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
+                )
+                  ? "bg-gray-500 text-gray-300 cursor-not-allowed hover:bg-gray-500"
+                  : "bg-red-600 hover:bg-red-700 text-white"
+              }`}
+            >
+              {!(
+                (product?.available_digital && (product?.digital_stock || 0) > 0) ||
+                (product?.available_paperback && (product?.paperback_stock || 0) > 0) ||
+                (product?.available_hardcover && (product?.hardcover_stock || 0) > 0)
+              )
+                ? "OUT OF STOCK"
+                : `CHECKOUT - $${totalPrice.toFixed(2)}`}
+            </Button>
+          </div>
 
           {/* Where to Buy Section */}
           <div className="mt-8 bg-gray-900 p-6 rounded-lg mb-8">

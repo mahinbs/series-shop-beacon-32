@@ -78,7 +78,6 @@ export default function CirclesAdmin() {
                 <thead className="bg-gray-900/70">
                   <tr className="text-left text-gray-400">
                     <th className="py-3 px-4">Email</th>
-                    <th className="py-3 px-4">Name</th>
                     <th className="py-3 px-4">Joined Date</th>
                   </tr>
                 </thead>
@@ -86,7 +85,6 @@ export default function CirclesAdmin() {
                   {members.map((m) => (
                     <tr key={m.id} className="border-t border-gray-800 text-gray-200 hover:bg-gray-800/50">
                       <td className="py-3 px-4 font-medium">{m.email}</td>
-                      <td className="py-3 px-4">{m.user_full_name || '—'}</td>
                       <td className="py-3 px-4 text-gray-400">
                         {new Date(m.joined_at).toLocaleDateString('en-US', {
                           year: 'numeric',
