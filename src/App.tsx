@@ -26,6 +26,7 @@ import DigitalReader from "./pages/DigitalReader";
 import DigitalReaderSpecs from "./pages/DigitalReaderSpecs";
 import ComicSeries from "./pages/ComicSeries";
 import Coins from "./pages/Coins";
+import JoinCircle from "./pages/JoinCircle";
 import AdminPanel from "./pages/AdminPanel";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
@@ -96,6 +97,7 @@ const App = () => (
               <Route path="/readers/:seriesTitle" element={<ReadersMode />} />
               <Route path="/print-reader/:bookId" element={<PrintReader />} />
               <Route path="/coins" element={<Coins />} />
+              <Route path="/join-circle" element={<JoinCircle />} />
               <Route path="/admin" element={<AdminPanel />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/faq" element={<FAQ />} />

@@ -4,6 +4,7 @@ import { Input } from '@/components/ui/input';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useState } from 'react';
 import { toast } from '@/hooks/use-toast';
+import { CircleService } from '@/services/circleService';
 
 const Newsletter = () => {
   const { elementRef, isVisible } = useScrollAnimation(0.3);
@@ -25,19 +26,25 @@ const Newsletter = () => {
     setIsSubmitting(true);
     
     try {
-      // Send email to hello@thecrossedhearts.com
-      const mailtoLink = `mailto:hello@thecrossedhearts.com?subject=New Collector's Circle Signup&body=New email signup for Collector's Circle: ${email}`;
-      window.open(mailtoLink);
+      // Create a global circle if it doesn't exist
+      let globalCircle = await CircleService.getGlobalCircle();
+      if (!globalCircle) {
+        globalCircle = await CircleService.createGlobalCircle();
+      }
+
+      // Join the global circle - this saves to database, NOT email
+      await CircleService.joinCircleWithEmail(globalCircle.id, email.trim());
       
       // Show success message
       toast({
         title: "Welcome to the Circle!",
-        description: "Thank you for joining our Collector's Circle. We'll be in touch soon!",
+        description: "You've successfully joined our collector's circle.",
       });
       
       // Reset form
       setEmail('');
     } catch (error) {
+      console.error('Failed to join circle:', error);
       toast({
         title: "Something went wrong",
         description: "Please try again or contact us directly.",

@@ -4,9 +4,12 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
   BookOpen, 
-  Lock
+  Lock,
+  Coins
 } from 'lucide-react';
 import { ChapterService, BookChapter } from '@/services/chapterService';
+import { CircleService } from '@/services/circleService';
+import { useSupabaseAuth } from '@/hooks/useSupabaseAuth';
 
 interface ChapterPreviewProps {
   bookId: string;
@@ -17,10 +20,42 @@ const ChapterPreview = ({ bookId, variant = 'default' }: ChapterPreviewProps) =>
   const [chapters, setChapters] = useState<BookChapter[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedFormat, setSelectedFormat] = useState<'digital' | 'paperback' | 'hardcover'>('digital');
+  const [isCircleMember, setIsCircleMember] = useState(false);
+  const { user } = useSupabaseAuth();
 
   useEffect(() => {
     loadChapters();
   }, [bookId]);
+
+  // Check circle membership when user changes
+  useEffect(() => {
+    checkCircleMembership();
+  }, [user?.id, user?.email]);
+
+  const checkCircleMembership = async () => {
+    try {
+      const globalCircle = await CircleService.getGlobalCircle();
+      if (!globalCircle) {
+        setIsCircleMember(false);
+        return;
+      }
+
+      let member = false;
+      if (user?.id) {
+        member = await CircleService.isUserMemberOfGlobalCircle(user.id);
+      }
+      if (!member) {
+        const userEmail = user?.email || user?.user_metadata?.email || null;
+        if (userEmail) {
+          member = await CircleService.isEmailMemberOfGlobalCircle(userEmail);
+        }
+      }
+      setIsCircleMember(!!member);
+    } catch (error) {
+      console.error('Error checking circle membership:', error);
+      setIsCircleMember(false);
+    }
+  };
 
   const loadChapters = async () => {
     try {
@@ -38,9 +73,12 @@ const ChapterPreview = ({ bookId, variant = 'default' }: ChapterPreviewProps) =>
     if (chapter.is_preview) {
       // Navigate to chapter reader
       window.location.href = `/chapter/${chapter.id}`;
+    } else if (isCircleMember) {
+      // Member can access paid chapters
+      window.location.href = `/chapter/${chapter.id}`;
     } else {
-      // Show join/login prompt
-      console.log('Chapter requires subscription');
+      // Redirect to join circle page
+      window.location.href = '/join-circle';
     }
   };
 
@@ -80,11 +118,10 @@ const ChapterPreview = ({ bookId, variant = 'default' }: ChapterPreviewProps) =>
               className={`px-4 py-1 rounded text-sm font-bold ${
                 chapter.is_preview
                   ? 'bg-red-600 hover:bg-red-700 text-white'
-                  : 'bg-gray-800 hover:bg-gray-900 text-white'
+                  : 'bg-yellow-600 hover:bg-yellow-700 text-white'
               }`}
-              disabled={!chapter.is_preview}
             >
-              {chapter.is_preview ? '📖 READ NOW' : '🔒 JOIN TO CONTINUE'}
+              {chapter.is_preview ? '📖 READ NOW' : '🔒 Unlock (10 coins)'}
             </button>
           </div>
         ))}
@@ -117,8 +154,9 @@ const ChapterPreview = ({ bookId, variant = 'default' }: ChapterPreviewProps) =>
                       </Badge>
                     )}
                     {!chapter.is_preview && (
-                      <Badge variant="destructive" className="bg-blue-600 text-white">
-                        JOIN TO CONTINUE
+                      <Badge variant="destructive" className="bg-yellow-600 text-white">
+                        <Coins className="w-3 h-3 mr-1" />
+                        10 coins
                       </Badge>
                     )}
                   </div>
@@ -152,8 +190,8 @@ const ChapterPreview = ({ bookId, variant = 'default' }: ChapterPreviewProps) =>
                       </>
                     ) : (
                       <>
-                        <Lock className="h-4 w-4 mr-2" />
-                        JOIN TO CONTINUE
+                        <Coins className="h-4 w-4 mr-2" />
+                        Unlock (10 coins)
                       </>
                     )}
                   </Button>

@@ -80,6 +80,12 @@ const adminPages: AdminPage[] = [
     description: 'Manage reading experience settings'
   },
   { 
+    id: 'circles-management', 
+    title: 'Circles Management', 
+    icon: Users,
+    description: 'Manage circles, memberships, and community features'
+  },
+  { 
     id: 'comic-series-management', 
     title: 'All Series', 
     icon: BookOpen,

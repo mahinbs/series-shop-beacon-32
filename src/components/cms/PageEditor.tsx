@@ -22,6 +22,7 @@ import PrintBookManager from './PrintBookManager';
 import { OurJourneyManager } from './OurJourneyManager';
 import CreativeSnippetsManager from './CreativeSnippetsManager';
 import { useCMS } from '@/hooks/useCMS';
+import CirclesAdmin from './CirclesAdmin';
 import { useToast } from '@/hooks/use-toast';
 import { AdminPage } from './AdminSidebar';
 import { Construction, Settings, Image, Plus } from 'lucide-react';
@@ -281,6 +282,12 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
             </p>
           </div>
           <DigitalReaderManager />
+        </div>
+      );
+    case 'circles-management':
+      return (
+        <div className="space-y-6">
+          <CirclesAdmin />
         </div>
       );
     case 'announcement-page':
