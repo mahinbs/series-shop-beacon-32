@@ -1,4 +1,4 @@
-import { Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
+import { Facebook, Instagram, Twitter, Linkedin } from 'lucide-react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { useCMS } from '@/hooks/useCMS';
 import { Link } from 'react-router-dom';
@@ -252,17 +252,17 @@ const Footer = () => {
         }`}>
           <div className="flex justify-center items-center mb-4">
             <div className="flex space-x-6 items-center">
-              <a href="https://x.com/crossedheartsus" className="text-gray-400 hover:text-white transition-all duration-200 transform hover:scale-110">
-                <Twitter className="w-5 h-5" />
-              </a>
-              <a href="https://www.instagram.com/crossedheartsglobal?igsh=NWt4NGFiY214d3Np" className="text-gray-400 hover:text-white transition-all duration-200 transform hover:scale-110">
+              <a href="https://www.instagram.com/thecrossedhearts?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-all duration-200 transform hover:scale-110">
                 <Instagram className="w-5 h-5" />
               </a>
-              <a href="https://www.facebook.com/share/1Ao3eMJana/" className="text-gray-400 hover:text-white transition-all duration-200 transform hover:scale-110">
+              <a href="https://www.facebook.com/share/171zMQpoWZ/" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-all duration-200 transform hover:scale-110">
                 <Facebook className="w-5 h-5" />
               </a>
-              <a href="https://www.youtube.com/channel/UCml272d_SV3kHboiO_taiaQ" className="text-gray-400 hover:text-white transition-all duration-200 transform hover:scale-110">
-                <Youtube className="w-5 h-5" />
+              <a href="https://x.com/CrossedHearts_X" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-all duration-200 transform hover:scale-110">
+                <Twitter className="w-5 h-5" />
+              </a>
+              <a href="https://www.linkedin.com/company/crossed-hearts" target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-all duration-200 transform hover:scale-110">
+                <Linkedin className="w-5 h-5" />
               </a>
             </div>
           </div>

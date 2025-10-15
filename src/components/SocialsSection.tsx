@@ -5,6 +5,7 @@ import {
   Youtube, 
   Twitter, 
   Facebook,
+  Linkedin,
   MessageCircle,
   UserPlus
 } from 'lucide-react';
@@ -14,10 +15,10 @@ const SocialsSection = () => {
   const { elementRef, isVisible } = useScrollAnimation(0.1);
 
   const socialLinks = [
-    { name: 'Instagram', icon: Instagram, url: 'https://www.instagram.com/crossedheartsglobal?igsh=NWt4NGFiY214d3Np', color: 'from-pink-500 to-purple-500' },
-    { name: 'YouTube', icon: Youtube, url: 'https://www.youtube.com/channel/UCml272d_SV3kHboiO_taiaQ', color: 'from-red-500 to-red-600' },
-    { name: 'Twitter/X', icon: Twitter, url: 'https://x.com/crossedheartsus', color: 'from-gray-800 to-black' },
-    { name: 'Facebook', icon: Facebook, url: 'https://www.facebook.com/share/1Ao3eMJana/', color: 'from-blue-600 to-blue-700' }
+    { name: 'Instagram', icon: Instagram, url: 'https://www.instagram.com/thecrossedhearts?utm_source=ig_web_button_share_sheet&igsh=ZDNlZDc0MzIxNw==', color: 'from-pink-500 to-purple-500' },
+    { name: 'Facebook', icon: Facebook, url: 'https://www.facebook.com/share/171zMQpoWZ/', color: 'from-blue-600 to-blue-700' },
+    { name: 'Twitter/X', icon: Twitter, url: 'https://x.com/CrossedHearts_X', color: 'from-gray-800 to-black' },
+    { name: 'LinkedIn', icon: Linkedin, url: 'https://www.linkedin.com/company/crossed-hearts', color: 'from-blue-700 to-blue-800' }
   ];
 
   return (
