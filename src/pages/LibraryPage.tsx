@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -14,116 +14,152 @@ import {
   Star, 
   Grid,
   List,
-  Trash2
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { useWishlist } from '@/hooks/useWishlist';
+import { useLibrary } from '@/hooks/useLibrary';
+import { DigitalReaderService } from '@/services/digitalReaderService';
+import { supabase } from '@/integrations/supabase/client';
+
+interface LibraryComic {
+  id: string;
+  title: string;
+  artist: string;
+  cover_image_url: string;
+  status: string;
+  genre: string[];
+  description: string;
+  created_at: string;
+  // last_read_at?: string;
+  // current_episode?: number;
+  total_episodes: number;
+  // reading_progress: number;
+}
 
 const LibraryPage = () => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [sortBy, setSortBy] = useState('recent');
   const [filterCategory, setFilterCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const { removeFromWishlist } = useWishlist();
+  const [libraryComics, setLibraryComics] = useState<LibraryComic[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { items: libraryItems, unfollowSeries } = useLibrary();
 
-  // Mock library data
-  const libraryItems = [
-    {
-      id: 1,
-      title: "Demon Slayer: Kimetsu no Yaiba",
-      author: "Koyoharu Gotouge",
-      image: "/lovable-uploads/26efc76c-fa83-4369-8d8d-354eab1433e6.png",
-      type: "Manga",
-      volumes: 23,
-      ownedVolumes: 23,
-      currentVolume: 15,
-      currentChapter: 128,
-      totalChapters: 205,
-      readingProgress: 62,
-      lastRead: "2 hours ago",
-      status: "Reading",
-      downloadStatus: "Downloaded",
-      purchaseDate: "2024-12-15",
-      totalReadTime: "48h 32m"
-    },
-    {
-      id: 2,
-      title: "One Piece",
-      author: "Eiichiro Oda",
-      image: "/lovable-uploads/503cc23b-a28f-4564-86f9-53896fa75f10.png",
-      type: "Manga",
-      volumes: 105,
-      ownedVolumes: 78,
-      currentVolume: 45,
-      currentChapter: 890,
-      totalChapters: 1100,
-      readingProgress: 81,
-      lastRead: "1 day ago",
-      status: "Reading",
-      downloadStatus: "Partial",
-      purchaseDate: "2024-10-20",
-      totalReadTime: "156h 45m"
-    },
-    {
-      id: 3,
-      title: "Attack on Titan",
-      author: "Hajime Isayama",
-      image: "/lovable-uploads/781ea40e-866e-4ee8-9bf7-862a42bb8716.png",
-      type: "Manga",
-      volumes: 34,
-      ownedVolumes: 34,
-      currentVolume: 34,
-      currentChapter: 139,
-      totalChapters: 139,
-      readingProgress: 100,
-      lastRead: "1 week ago",
-      status: "Completed",
-      downloadStatus: "Downloaded",
-      purchaseDate: "2024-08-10",
-      totalReadTime: "67h 20m"
-    },
-    {
-      id: 4,
-      title: "My Hero Academia",
-      author: "Kohei Horikoshi",
-      image: "/lovable-uploads/97f88fee-e070-4d97-a73a-c747112fa093.png",
-      type: "Manga",
-      volumes: 38,
-      ownedVolumes: 25,
-      currentVolume: 18,
-      currentChapter: 156,
-      totalChapters: 400,
-      readingProgress: 39,
-      lastRead: "3 days ago",
-      status: "Reading",
-      downloadStatus: "Not Downloaded",
-      purchaseDate: "2024-11-05",
-      totalReadTime: "32h 15m"
-    }
-  ];
+  // Load library comics from digital_reader_specs
+  useEffect(() => {
+    const loadLibraryComics = async () => {
+      if (libraryItems.length === 0) {
+        setLibraryComics([]);
+        setIsLoading(false);
+        return;
+      }
 
-  const filteredItems = libraryItems.filter(item => {
+      try {
+        setIsLoading(true);
+        
+        // Get all digital reader specs that are in the user's library
+        const specIds = libraryItems.map(item => item.series_id);
+        const specs = await DigitalReaderService.getSpecs();
+        
+        const librarySpecs = specs.filter(spec => specIds.includes(spec.id));
+        
+        // Transform specs to library comics
+        const comicsWithProgress = await Promise.all(
+          librarySpecs.map(async (spec) => {
+            const episodes = await DigitalReaderService.getEpisodes(spec.id);
+            const totalEpisodes = episodes.length;
+            
+            return {
+              id: spec.id,
+              title: spec.title,
+              artist: spec.artist || spec.creator || 'Unknown',
+              cover_image_url: spec.cover_image_url || '/placeholder.svg',
+              status: (spec as any).status || 'Ongoing',
+              genre: (() => {
+                let normalizedTags: string[] = [];
+                if (Array.isArray(spec.genre)) {
+                  normalizedTags = spec.genre as string[];
+                } else if (typeof spec.genre === 'string') {
+                  try {
+                    const parsed = JSON.parse(spec.genre);
+                    if (Array.isArray(parsed)) normalizedTags = parsed.filter(Boolean);
+                    else if (typeof parsed === 'string') normalizedTags = parsed.split(',').map((g: string) => g.trim()).filter(Boolean);
+                  } catch {
+                    normalizedTags = spec.genre.split(',').map((g: string) => g.trim()).filter(Boolean);
+                  }
+                }
+                return normalizedTags;
+              })(),
+              description: spec.description || 'No description available.',
+              created_at: spec.created_at,
+              // last_read_at: null, // Will be implemented later
+              // current_episode: 1, // Default to episode 1
+              total_episodes: totalEpisodes,
+              // reading_progress: 0 // Default to 0% - will be implemented later
+            };
+          })
+        );
+        
+        setLibraryComics(comicsWithProgress);
+      } catch (error) {
+        console.error('Failed to load library comics:', error);
+        setLibraryComics([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadLibraryComics();
+  }, [libraryItems]);
+
+  const filteredItems = libraryComics.filter(item => {
     const matchesSearch = item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         item.author.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = filterCategory === 'all' || 
-                           (filterCategory === 'reading' && item.status === 'Reading') ||
-                           (filterCategory === 'completed' && item.status === 'Completed') ||
-                           (filterCategory === 'downloaded' && item.downloadStatus === 'Downloaded');
+                         item.artist.toLowerCase().includes(searchQuery.toLowerCase());
+    // const matchesCategory = filterCategory === 'all' || 
+    //                        (filterCategory === 'reading' && item.reading_progress < 100) ||
+    //                        (filterCategory === 'completed' && item.reading_progress === 100);
+    const matchesCategory = filterCategory === 'all'; // Simplified for now
     return matchesSearch && matchesCategory;
   });
 
   const sortedItems = [...filteredItems].sort((a, b) => {
     switch (sortBy) {
       case 'recent':
-        return new Date(b.purchaseDate).getTime() - new Date(a.purchaseDate).getTime();
-      case 'progress':
-        return b.readingProgress - a.readingProgress;
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      // case 'progress':
+      //   return b.reading_progress - a.reading_progress;
       case 'title':
         return a.title.localeCompare(b.title);
       default:
         return 0;
     }
   });
+
+  const getRelativeTime = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    const diffMs = now.getTime() - date.getTime();
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return 'today';
+    if (diffDays === 1) return 'yesterday';
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 14) return '1 week ago';
+    if (diffDays < 21) return '2 weeks ago';
+    if (diffDays < 28) return '3 weeks ago';
+    if (diffDays < 60) return '1 month ago';
+    return `${Math.floor(diffDays / 30)} months ago`;
+  };
+
+  const handleRemoveFromLibrary = async (seriesId: string) => {
+    await unfollowSeries(seriesId);
+  };
+
+  const handleContinueReading = (comic: LibraryComic) => {
+    // Navigate to the comic detail page
+    window.location.href = `/comic/${comic.id}`;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -191,128 +227,170 @@ const LibraryPage = () => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="recent">Recently Added</SelectItem>
-              <SelectItem value="progress">Reading Progress</SelectItem>
+              {/* <SelectItem value="progress">Reading Progress</SelectItem> */}
               <SelectItem value="title">Title A-Z</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         {/* Library Items */}
-        <div className={
-          viewMode === 'grid' 
-            ? 'grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
-            : 'space-y-4'
-        }>
-          {sortedItems.map((item) => (
-            <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-              {viewMode === 'grid' ? (
-                <div>
-                  <div className="relative">
-                    <img 
-                      src={item.image} 
-                      alt={item.title}
-                      className="w-full h-48 object-cover"
-                    />
-                    <Badge
-                      className={`absolute top-3 left-3 ${
-                        item.status === 'Completed' ? 'bg-green-500' : 
-                        item.status === 'Reading' ? 'bg-blue-500' : 'bg-orange-500'
-                      }`}
-                    >
-                      {item.status}
-                    </Badge>
-                    <Badge 
-                      variant="secondary"
-                      className="absolute top-3 right-3"
-                    >
-                      {item.ownedVolumes}/{item.volumes}
-                    </Badge>
-                  </div>
-                  <CardContent className="p-4">
-                    <h3 className="font-semibold text-foreground mb-1 line-clamp-2">{item.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-3">{item.author}</p>
-                    
-                    <div className="space-y-2 mb-4">
-                      <div className="flex justify-between text-sm">
-                        <span>Progress</span>
-                        <span>{item.readingProgress}%</span>
-                      </div>
-                      <Progress value={item.readingProgress} className="h-2" />
-                      <p className="text-xs text-muted-foreground">
-                        Chapter {item.currentChapter} of {item.totalChapters}
-                      </p>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-4 text-muted-foreground" />
+              <p className="text-muted-foreground">Loading your library...</p>
+            </div>
+          </div>
+        ) : sortedItems.length === 0 ? (
+          <div className="text-center py-12">
+            <Building2 className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-xl font-semibold text-foreground mb-2">Your library is empty</h3>
+            <p className="text-muted-foreground mb-6">
+              {libraryItems.length === 0 
+                ? "Add comics to your library to start tracking your reading progress."
+                : "No comics match your current filters."
+              }
+            </p>
+            {libraryItems.length === 0 && (
+              <Button asChild>
+                <Link to="/comics">Browse Comics</Link>
+              </Button>
+            )}
+          </div>
+        ) : (
+          <div className={
+            viewMode === 'grid' 
+              ? 'grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6'
+              : 'space-y-4'
+          }>
+            {sortedItems.map((item) => (
+              <Card key={item.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                {viewMode === 'grid' ? (
+                  <div>
+                    <div className="relative">
+                      <img 
+                        src={item.cover_image_url} 
+                        alt={item.title}
+                        className="w-full h-48 object-cover"
+                      />
+                      <Badge className="absolute top-3 left-3 bg-blue-500">
+                        In Library
+                      </Badge>
+                      <Badge 
+                        variant="secondary"
+                        className="absolute top-3 right-3"
+                      >
+                        {item.total_episodes} episodes
+                      </Badge>
                     </div>
-
-                    <div className="flex items-center justify-between">
-                      <div></div>
-                      <Button size="sm" variant="destructive">
-                        <BookOpen className="w-4 h-4 mr-1" />
-                        {item.status === 'Completed' ? 'Re-read' : 'Continue'}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </div>
-              ) : (
-                <CardContent className="p-4">
-                  <div className="flex gap-4">
-                    <img 
-                      src={item.image} 
-                      alt={item.title}
-                      className="w-16 h-20 object-cover rounded"
-                    />
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-semibold text-foreground">{item.title}</h3>
-                          <p className="text-sm text-muted-foreground">{item.author}</p>
-                        </div>
-                        <Badge className={
-                          item.status === 'Completed' ? 'bg-green-500' : 
-                          item.status === 'Reading' ? 'bg-blue-500' : 'bg-orange-500'
-                        }>
-                          {item.status}
-                        </Badge>
-                      </div>
+                    <CardContent className="p-4">
+                      <h3 className="font-semibold text-foreground mb-1 line-clamp-2">{item.title}</h3>
+                      <p className="text-sm text-muted-foreground mb-3">by {item.artist}</p>
                       
-                      <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="text-muted-foreground">Progress:</span>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Progress value={item.readingProgress} className="h-2 flex-1" />
-                            <span>{item.readingProgress}%</span>
-                          </div>
+                      {/* Progress tracking commented out for now */}
+                      {/* <div className="space-y-2 mb-4">
+                        <div className="flex justify-between text-sm">
+                          <span>Progress</span>
+                          <span>{item.reading_progress}%</span>
                         </div>
-                        <div>
-                          <span className="text-muted-foreground">Last Read:</span>
-                          <p>{item.lastRead}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Volumes:</span>
-                          <p>{item.ownedVolumes}/{item.volumes}</p>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground">Total Time:</span>
-                          <p>{item.totalReadTime}</p>
-                        </div>
-                      </div>
+                        <Progress value={item.reading_progress} className="h-2" />
+                        <p className="text-xs text-muted-foreground">
+                          Episode {item.current_episode || 0} of {item.total_episodes}
+                        </p>
+                      </div> */}
 
-                      <div className="flex justify-between items-center mt-3">
-                        <Button size="sm" variant="outline" onClick={() => removeFromWishlist(String(item.id))}>
+                      <div className="flex items-center justify-between">
+                        <Button 
+                          size="sm" 
+                          variant="outline" 
+                          onClick={() => handleRemoveFromLibrary(item.id)}
+                        >
                           <Trash2 className="w-4 h-4 mr-1" />
                           Remove
                         </Button>
-                        <Button size="sm" variant="destructive">
+                        <Button 
+                          size="sm" 
+                          variant="destructive"
+                          onClick={() => handleContinueReading(item)}
+                        >
                           <BookOpen className="w-4 h-4 mr-1" />
-                          {item.status === 'Completed' ? 'Re-read' : 'Continue'}
+                          Read
                         </Button>
                       </div>
-                    </div>
+                    </CardContent>
                   </div>
-                </CardContent>
-              )}
-            </Card>
-          ))}
-        </div>
+                ) : (
+                  <CardContent className="p-4">
+                    <div className="flex gap-4">
+                      <img 
+                        src={item.cover_image_url} 
+                        alt={item.title}
+                        className="w-16 h-20 object-cover rounded"
+                      />
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-semibold text-foreground">{item.title}</h3>
+                            <p className="text-sm text-muted-foreground">by {item.artist}</p>
+                          </div>
+                          <Badge className="bg-blue-500">
+                            In Library
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          {/* Progress tracking commented out for now */}
+                          {/* <div>
+                            <span className="text-muted-foreground">Progress:</span>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Progress value={item.reading_progress} className="h-2 flex-1" />
+                              <span>{item.reading_progress}%</span>
+                            </div>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Last Read:</span>
+                            <p>{item.last_read_at ? getRelativeTime(item.last_read_at) : 'Never'}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Episodes:</span>
+                            <p>{item.current_episode || 0}/{item.total_episodes}</p>
+                          </div> */}
+                          <div>
+                            <span className="text-muted-foreground">Total Episodes:</span>
+                            <p>{item.total_episodes}</p>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground">Status:</span>
+                            <p>{item.status}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center mt-3">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleRemoveFromLibrary(item.id)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Remove
+                          </Button>
+                          <Button 
+                            size="sm" 
+                            variant="destructive"
+                            onClick={() => handleContinueReading(item)}
+                          >
+                            <BookOpen className="w-4 h-4 mr-1" />
+                            Read
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                )}
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
       
       <Footer />

@@ -16,6 +16,7 @@ const ComicDetail = () => {
   const [isInLibrary, setIsInLibrary] = useState(false);
   const [comic, setComic] = useState<any>(null);
   const [episodes, setEpisodes] = useState<any[]>([]);
+  const [originalEpisodes, setOriginalEpisodes] = useState<any[]>([]); // Store original episode data
   const [subscriberCount, setSubscriberCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated } = useSupabaseAuth();
@@ -62,7 +63,8 @@ const ComicDetail = () => {
           lastUpdate: eps.length > 0 ? getRelativeTime(eps[eps.length - 1].updated_at) : '—',
           // views removed
           likes: '0',
-          subscribers: subs.toString()
+          subscribers: subs.toString(),
+          freeChaptersCount: (spec as any).free_chapters_count || 0
         });
         
         setEpisodes(eps.map((ep: any, index: number) => ({
@@ -74,6 +76,8 @@ const ComicDetail = () => {
           releaseDate: new Date(ep.created_at).toLocaleDateString(),
           // views removed
         })));
+        
+        setOriginalEpisodes(eps); // Store original episode data for pricing calculation
         
         setSubscriberCount(subs);
       } catch (error) {
@@ -101,6 +105,32 @@ const ComicDetail = () => {
     if (diffDays < 28) return '3 weeks ago';
     if (diffDays < 60) return '1 month ago';
     return `${Math.floor(diffDays / 30)} months ago`;
+  };
+
+  // Helper function to generate dynamic pricing message
+  const getPricingMessage = (freeChaptersCount: number, episodes: any[]) => {
+    // Count actual free episodes (considering both free_chapters_count and individual episode coin_cost)
+    let freeEpisodes = 0;
+    let paidEpisodes = 0;
+    
+    episodes.forEach((ep, index) => {
+      const isFree = ep.is_free || (ep.coin_cost === 0 && index < freeChaptersCount);
+      if (isFree) {
+        freeEpisodes++;
+      } else {
+        paidEpisodes++;
+      }
+    });
+    
+    if (freeEpisodes === 0) {
+      return 'All episodes require coins';
+    } else if (paidEpisodes === 0) {
+      return 'All episodes are free';
+    } else if (freeEpisodes === 1) {
+      return 'First episode free • Next episodes require coins';
+    } else {
+      return `First ${freeEpisodes} episodes free • Next episodes require coins`;
+    }
   };
 
   const EpisodeCard = ({ episode }: { episode: any }) => (
@@ -287,7 +317,7 @@ const ComicDetail = () => {
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-white">All Episodes ({episodes.length})</h2>
               <div className="text-sm text-gray-400">
-                First 2 episodes free • Next episodes require coins
+                {comic && originalEpisodes.length > 0 ? getPricingMessage(comic.freeChaptersCount, originalEpisodes) : 'Loading...'}
               </div>
             </div>
             

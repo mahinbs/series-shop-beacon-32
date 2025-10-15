@@ -10,3 +10,4 @@ VALUES ('avatars','avatars', true, 5242880, array['image/jpeg','image/png','imag
 ON CONFLICT (id) DO NOTHING;
 
 
+
