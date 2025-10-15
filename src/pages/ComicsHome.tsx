@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, Grid, List, Star, Clock, Users, TrendingUp, Eye, Heart, Bookmark, ArrowRight } from 'lucide-react';
+import { Search, Filter, Grid, List, Star, Clock, Users, TrendingUp, Eye, ArrowRight } from 'lucide-react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { Button } from '@/components/ui/button';
@@ -238,15 +238,6 @@ const ComicsHome = () => {
                       </div>
 
 
-                      {/* Quick Actions */}
-                      <div className="absolute bottom-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex gap-1">
-                        <Button size="sm" variant="secondary" className="w-8 h-8 p-0">
-                          <Heart className="w-4 h-4" />
-                        </Button>
-                        <Button size="sm" variant="secondary" className="w-8 h-8 p-0">
-                          <Bookmark className="w-4 h-4" />
-                        </Button>
-                      </div>
                     </div>
 
                     <div className={`p-4 ${viewMode === 'list' ? 'flex-1' : ''}`}>

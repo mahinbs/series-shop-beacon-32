@@ -24,7 +24,7 @@ export const useLibrary = () => {
         return;
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await (supabase as any)
         .from('user_library')
         .select('id, series_id, created_at')
         .eq('user_id', user.id);
@@ -43,6 +43,7 @@ export const useLibrary = () => {
       toast({ title: 'Login required', description: 'Sign in to add to your library', variant: 'destructive' });
       return;
     }
+    
     // Validate UUID format to prevent 400 errors from Supabase
     const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(seriesId);
     if (!isUuid) {
@@ -50,23 +51,39 @@ export const useLibrary = () => {
       toast({ title: 'Unavailable', description: 'This series cannot be added (demo content).', variant: 'destructive' });
       return;
     }
-    const { data, error } = await supabase
-      .from('user_library')
-      .insert({ user_id: user.id, series_id: seriesId })
-      .select('id, series_id, created_at')
+
+    // Check if this is a digital comic (exists in digital_reader_specs)
+    const { data: digitalSpec } = await (supabase as any)
+      .from('digital_reader_specs')
+      .select('id')
+      .eq('id', seriesId)
       .single();
-    if (error) {
-      console.error('Failed to follow series', error);
-      toast({ title: 'Error', description: 'Could not add to library', variant: 'destructive' });
-      return;
+
+    if (digitalSpec) {
+      // This is a digital comic, add it to user_library
+      const { data, error } = await (supabase as any)
+        .from('user_library')
+        .insert({ user_id: user.id, series_id: seriesId })
+        .select('id, series_id, created_at')
+        .single();
+      
+      if (error) {
+        console.error('Failed to follow digital series', error);
+        toast({ title: 'Error', description: 'Could not add to library', variant: 'destructive' });
+        return;
+      }
+      
+      setItems(prev => [...prev, data as any]);
+      toast({ title: 'Added', description: 'Comic added to your library' });
+    } else {
+      // This is not a digital comic, show error
+      toast({ title: 'Error', description: 'This comic cannot be added to library', variant: 'destructive' });
     }
-    setItems(prev => [...prev, data as any]);
-    toast({ title: 'Added', description: 'Series added to your library' });
   };
 
   const unfollowSeries = async (seriesId: string) => {
     if (!isAuthenticated || !user) return;
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_library')
       .delete()
       .eq('user_id', user.id)
