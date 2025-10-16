@@ -45,45 +45,53 @@ const AffiliationPrograms = () => {
       title: "COLLECTOR'S CIRCLE",
       icon: BookOpen,
       description: "Step into the Collector's Circle, an exclusive membership designed for readers and collectors who love being first in line for something truly special. Think of it as your all-access pass to the world of Crossed Hearts — where stories, surprises, and community meet.",
-      features: [
-        "Early Access & Exclusive Goodies – Enjoy a 48-hour head start on every new release",
-        "Pre-Order with Confidence – Secure your editions without the fear of missing out",
-        "Members-Only Collectibles – Unlock limited pre-order bonuses available only on our website",
-        "Get sneak peeks of upcoming volumes in our private Discord",
-        "Take part in virtual Q&As with authors and the Crossed Hearts team",
-        "Beta-read upcoming chapters and help shape future stories and licenses",
-        "Stay ahead with our members-only newsletter, featuring the latest licensing, pre-order, and release updates",
-        "Receive chances to win limited signed copies of your favourite series",
-        "Join in on exclusive giveaways and seasonal surprises",
-        "20% off all pre-orders (discounts apply only during the pre-order period)",
-        "Birthday month perks (up to 10% off on all orders) and priority customer support"
-      ],
+      sections: {
+        whyJoin: "If you're a reader who treasures limited editions, thrives on being part of a vibrant community, and loves getting closer to the stories and creators you adore, then the Collector's Circle was made for you.",
+        perksOfMembership: [
+          "Early Access & Exclusive Goodies – Enjoy a 48-hour head start on every new release",
+          "Pre-Order with Confidence – Secure your editions without the fear of missing out",
+          "Members-Only Collectibles – Unlock limited pre-order bonuses available only on our website - from photo cards and pop-up cards to other exclusive keepsakes. Once they're gone, they're gone."
+        ],
+        communityInsiderAccess: [
+          "Get sneak peeks of upcoming volumes in our private Discord",
+          "Take part in virtual Q&As with authors and the Crossed Hearts team",
+          "Beta-read upcoming chapters and help shape future stories and licenses",
+          "Stay ahead with our members-only newsletter, featuring the latest licensing, pre-order, and release updates",
+          "Receive chances to win limited signed copies of your favourite series",
+          "Join in on exclusive giveaways and seasonal surprises"
+        ],
+        sweetExtras: [
+          "20% off all pre-orders (discounts apply only during the pre-order period)",
+          "Birthday month perks (up to 10% off on all orders) and priority customer support"
+        ]
+      },
       requirements: "Join the Circle - and always be one step ahead in the story"
     },
     {
       title: "AMBASSADOR'S PROGRAM FOR CONTENT CREATORS",
       icon: Heart,
       description: "Share Your Love for Stories. Earn Rewards. At Crossed Hearts, we believe that every great story deserves to be shared - and we want to celebrate the creators who help us bring books closer to readers around the world.",
-      features: [
-        "Our Ambassador Program is open to book bloggers, reviewers, and content creators of all kinds",
-        "As an ambassador, you'll earn commissions by promoting our titles to your audience",
-        "Enjoy early access to new releases",
-        "Exclusive PR kits",
-        "Invitations to launch events",
-        "Special opportunities to collaborate"
-      ],
+      sections: {
+        programDetails: [
+          "Our Ambassador Program is open to book bloggers, reviewers, and content creators of all kinds",
+          "As an ambassador, you'll earn commissions by promoting our titles to your audience, while enjoying early access to new releases, exclusive PR kits, invitations to launch events, and special opportunities to collaborate"
+        ]
+      },
       requirements: "Interested? Reach out to us at hello@thecrossedhearts.com to learn more and join our circle of storytellers"
     },
     {
       title: "RETAILER PARTNERSHIPS",
       icon: Star,
       description: "Our Retailer Program is designed to give bookstores, comic shops, and retailers direct access to exclusive inventory and premium support from Crossed Hearts.",
-      features: [
-        "Direct Supply – Inventory shipped directly from us to your store",
-        "Exclusive Editions & Pre-Order Bonuses – Early access to limited print editions, standees, promotional freebies, and special pre-order incentives",
-        "Marketing Partnership – Co-branded campaigns, priority promotional materials, and support tailored to boost visibility and sales",
-        "In-Store Experiences – Opportunities to host Crossed Hearts author signing events and other promotional activities at your premises"
-      ],
+      sections: {
+        benefits: [
+          "Direct Supply – Inventory shipped directly from us to your store",
+          "Exclusive Editions & Pre-Order Bonuses – Early access to limited print editions, standees, promotional freebies, and special pre-order incentives",
+          "Marketing Partnership – Co-branded campaigns, priority promotional materials, and support tailored to boost visibility and sales",
+          "In-Store Experiences – Opportunities to host Crossed Hearts author signing events and other promotional activities at your premises"
+        ],
+        additionalInfo: "If you would like to purchase our stock without joining the program, you may also reach out to the same email. Please note that in this case, inventory will be supplied directly from our distributor without access to the exclusive promotional offers and benefits outlined in this program."
+      },
       requirements: "Interested in partnering with us? Join the Crossed Hearts Retailer Program by contacting us at sales@thecrossedhearts.com"
     }
   ];
@@ -203,19 +211,29 @@ const AffiliationPrograms = () => {
                 </CardHeader>
                 <CardContent className="flex-1 flex flex-col p-6 pt-0">
                   <div className="flex-1">
-                    <h4 className="text-white font-semibold mb-3">Key Features:</h4>
+                    <h4 className="text-white font-semibold mb-3">Key Highlights:</h4>
                     <ul className="space-y-2">
-                      {program.features.slice(0, 3).map((feature, idx) => (
+                      {program.title === "COLLECTOR'S CIRCLE" && program.sections.perksOfMembership.slice(0, 2).map((feature, idx) => (
                         <li key={idx} className="flex items-start text-gray-300 text-xs">
                           <CheckCircle className="w-3 h-3 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                          <span className="line-clamp-1">{feature}</span>
+                          <span className="line-clamp-2">{feature}</span>
                         </li>
                       ))}
-                      {program.features.length > 3 && (
-                        <li className="text-gray-400 text-xs">
-                          +{program.features.length - 3} more features
+                      {program.title === "AMBASSADOR'S PROGRAM FOR CONTENT CREATORS" && program.sections.programDetails.slice(0, 1).map((feature, idx) => (
+                        <li key={idx} className="flex items-start text-gray-300 text-xs">
+                          <CheckCircle className="w-3 h-3 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span className="line-clamp-2">{feature}</span>
                         </li>
-                      )}
+                      ))}
+                      {program.title === "RETAILER PARTNERSHIPS" && program.sections.benefits.slice(0, 2).map((feature, idx) => (
+                        <li key={idx} className="flex items-start text-gray-300 text-xs">
+                          <CheckCircle className="w-3 h-3 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
+                          <span className="line-clamp-2">{feature}</span>
+                        </li>
+                      ))}
+                      <li className="text-gray-400 text-xs">
+                        +More details inside
+                      </li>
                     </ul>
                   </div>
                   <div className="mt-auto pt-4 border-t border-gray-700">
@@ -372,17 +390,88 @@ const AffiliationPrograms = () => {
                   </p>
                 </div>
                 
-                <div>
-                  <h3 className="text-white text-xl font-semibold mb-4">Features:</h3>
-                  <ul className="space-y-3">
-                    {selectedProgram.features.map((feature, idx) => (
-                      <li key={idx} className="flex items-start text-gray-300">
-                        <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
+                {selectedProgram.title === "COLLECTOR'S CIRCLE" && (
+                  <>
+                    <div>
+                      <h3 className="text-white text-xl font-semibold mb-4">Why Join?</h3>
+                      <p className="text-gray-300 leading-relaxed">
+                        {selectedProgram.sections.whyJoin}
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-white text-xl font-semibold mb-4">Perks of Membership:</h3>
+                      <ul className="space-y-3">
+                        {selectedProgram.sections.perksOfMembership.map((perk, idx) => (
+                          <li key={idx} className="flex items-start text-gray-300">
+                            <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                            <span>{perk}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-white text-xl font-semibold mb-4">Community & Insider Access:</h3>
+                      <ul className="space-y-3">
+                        {selectedProgram.sections.communityInsiderAccess.map((access, idx) => (
+                          <li key={idx} className="flex items-start text-gray-300">
+                            <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                            <span>{access}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-white text-xl font-semibold mb-4">Sweet Extras:</h3>
+                      <ul className="space-y-3">
+                        {selectedProgram.sections.sweetExtras.map((extra, idx) => (
+                          <li key={idx} className="flex items-start text-gray-300">
+                            <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                            <span>{extra}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </>
+                )}
+                
+                {selectedProgram.title === "AMBASSADOR'S PROGRAM FOR CONTENT CREATORS" && (
+                  <div>
+                    <h3 className="text-white text-xl font-semibold mb-4">Program Details:</h3>
+                    <ul className="space-y-3">
+                      {selectedProgram.sections.programDetails.map((detail, idx) => (
+                        <li key={idx} className="flex items-start text-gray-300">
+                          <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                          <span>{detail}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                
+                {selectedProgram.title === "RETAILER PARTNERSHIPS" && (
+                  <>
+                    <div>
+                      <h3 className="text-white text-xl font-semibold mb-4">By joining, retailers will receive:</h3>
+                      <ul className="space-y-3">
+                        {selectedProgram.sections.benefits.map((benefit, idx) => (
+                          <li key={idx} className="flex items-start text-gray-300">
+                            <CheckCircle className="w-5 h-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                            <span>{benefit}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <p className="text-gray-300 leading-relaxed">
+                        {selectedProgram.sections.additionalInfo}
+                      </p>
+                    </div>
+                  </>
+                )}
                 
                 <div className="pt-6 border-t border-gray-700">
                   <div className="bg-red-600 text-white p-4 rounded-lg text-center">
