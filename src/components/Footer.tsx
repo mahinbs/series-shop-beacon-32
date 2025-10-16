@@ -93,7 +93,7 @@ const Footer = () => {
                       <img 
                         src="/assets/our-imprints/1.png" 
                         alt="GLAM POP!" 
-                        className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                        className="h-5 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
                       />
                     </PopoverTrigger>
                     <PopoverContent 
@@ -116,7 +116,7 @@ const Footer = () => {
                       <img 
                         src="/assets/our-imprints/2.png" 
                         alt="ONE & DONE" 
-                        className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                        className="h-5 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
                       />
                     </PopoverTrigger>
                     <PopoverContent 
@@ -139,7 +139,7 @@ const Footer = () => {
                       <img 
                         src="/assets/our-imprints/3.png" 
                         alt="BLUSH CLUB" 
-                        className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                        className="h-5 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
                       />
                     </PopoverTrigger>
                     <PopoverContent 
@@ -162,7 +162,7 @@ const Footer = () => {
                       <img 
                         src="/assets/our-imprints/4.png" 
                         alt="E-NOVEL PRESS" 
-                        className="h-16 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
+                        className="h-11 w-auto cursor-pointer hover:opacity-80 transition-opacity duration-200"
                       />
                     </PopoverTrigger>
                     <PopoverContent 
