@@ -15,6 +15,31 @@
   animation: scroll 20s linear infinite;
 }
 
+/* Custom scrollbar styling for dark theme */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: #dc2626 #2d3748; /* Red thumb, dark track */
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px; /* Thinner scrollbar */
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #2d3748;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #dc2626; /* Red thumb */
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #ef4444; /* Lighter red on hover */
+}
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */

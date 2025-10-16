@@ -751,15 +751,15 @@ const ProductDetails = () => {
 
           {/* Where to Buy Section */}
           <div className="mt-8 bg-gray-900 p-6 rounded-lg mb-8">
-            <h2 className="text-white text-xl font-bold mb-6 uppercase">
+            <h2 className="text-white text-2xl font-bold mb-6 uppercase text-center">
               Where to Buy
             </h2>
 
             {/* Format Tabs - Only show available formats */}
-            <div className="flex space-x-1 mb-6">
+            <div className="flex space-x-1 mb-6 justify-center">
               {product?.available_digital && (
                 <button 
-                  className={`px-6 py-2 font-bold text-sm uppercase transition-colors ${
+                  className={`px-8 py-3 font-bold text-base uppercase transition-colors ${
                     selectedFormat === 'digital' 
                       ? 'bg-white text-black' 
                       : 'bg-transparent text-red-400 border-b-2 border-red-400'
@@ -771,56 +771,74 @@ const ProductDetails = () => {
               )}
               {product?.available_paperback && (
                 <button 
-                  className={`px-6 py-2 font-bold text-sm uppercase transition-colors ${
+                  className={`px-8 py-3 font-bold text-base uppercase transition-colors ${
                     selectedFormat === 'paperback' 
                       ? 'bg-white text-black' 
                       : 'bg-transparent text-red-400 border-b-2 border-red-400'
                   }`}
                   onClick={() => setSelectedFormat('paperback')}
                 >
-                  Paperback
+                  Regular Edition
                 </button>
               )}
               {product?.available_hardcover && (
                 <button 
-                  className={`px-6 py-2 font-bold text-sm uppercase transition-colors ${
+                  className={`px-8 py-3 font-bold text-base uppercase transition-colors ${
                     selectedFormat === 'hardcover' 
                       ? 'bg-white text-black' 
                       : 'bg-transparent text-red-400 border-b-2 border-red-400'
                   }`}
                   onClick={() => setSelectedFormat('hardcover')}
                 >
-                  Hardcover
+                  Limited Edition
                 </button>
               )}
             </div>
 
-            {/* Dynamic Retailer Buttons */}
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3">
-              {retailers
-                .filter(retailer => retailer.format_type === selectedFormat)
-                .map((bookRetailer) => (
-                  <button
-                    key={bookRetailer.id}
-                    className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded font-bold text-sm uppercase"
-                    onClick={() => {
-                      if (bookRetailer.url) {
-                        window.open(bookRetailer.url, '_blank', 'noopener,noreferrer');
-                      } else if (bookRetailer.retailer?.website_url) {
-                        window.open(bookRetailer.retailer.website_url, '_blank', 'noopener,noreferrer');
-                      }
-                    }}
-                  >
-                    {bookRetailer.retailer?.name}
-                  </button>
-                ))}
-              {retailers.filter(retailer => retailer.format_type === selectedFormat).length === 0 && (
-                <div className="col-span-full text-center text-gray-400 py-8">
-                  <p>No retailers available for {selectedFormat} format</p>
-                  <p className="text-sm">Contact admin to add retailers for this format</p>
-                </div>
-              )}
-            </div>
+            {/* Dynamic Retailer Display */}
+            {selectedFormat === 'digital' ? (
+              <div className="text-center text-gray-400 py-8">
+                <p className="text-lg font-semibold">Coming Soon</p>
+              </div>
+            ) : (
+              <div className="max-h-16 overflow-y-auto space-y-2 flex flex-col items-center custom-scrollbar">
+                {retailers
+                  .filter(retailer => retailer.format_type === selectedFormat)
+                  .map((bookRetailer) => {
+                    const retailerUrl = bookRetailer.url || bookRetailer.retailer?.website_url;
+                    return (
+                      <div key={bookRetailer.id} className="group bg-gray-800/50 border border-gray-700/50 rounded-lg px-6 py-3 hover:bg-gray-800/70 hover:border-gray-600/50 transition-all duration-200 w-full max-w-4xl">
+                        <div className="flex items-center justify-between gap-6">
+                          <span className="text-white font-semibold text-base whitespace-nowrap">
+                            {bookRetailer.retailer?.name}
+                          </span>
+                          {retailerUrl ? (
+                            <a
+                              href={retailerUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-blue-400 hover:text-blue-300 text-sm truncate max-w-96 transition-colors duration-200"
+                              title={retailerUrl}
+                            >
+                              {retailerUrl}
+                            </a>
+                          ) : (
+                            <span className="text-gray-500 text-sm italic">No link</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                {retailers.filter(retailer => retailer.format_type === selectedFormat).length === 0 && (
+                  <div className="text-center text-gray-400 py-8">
+                    <div className="bg-gray-800/30 border border-gray-700/30 rounded-lg p-6">
+                      <p className="text-base font-medium mb-2">No retailers available</p>
+                      <p className="text-sm text-gray-500">Contact admin to add retailers for this format</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Chapter Preview Section - REMOVED (now handled above) */}

@@ -1941,7 +1941,7 @@ export const BooksManager = () => {
                         }
                         disabled={submitting}
                       />
-                      <Label htmlFor="available_paperback">Paperback Available</Label>
+                      <Label htmlFor="available_paperback">Regular Edition Available</Label>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Switch
@@ -1952,7 +1952,7 @@ export const BooksManager = () => {
                         }
                         disabled={submitting}
                       />
-                      <Label htmlFor="available_hardcover">Hardcover Available</Label>
+                      <Label htmlFor="available_hardcover">Limited Edition Available</Label>
                     </div>
                   </div>
                 </div>
@@ -1979,7 +1979,7 @@ export const BooksManager = () => {
                       </p>
                     </div>
                     <div>
-                      <Label htmlFor="paperback_stock">Paperback Stock</Label>
+                      <Label htmlFor="paperback_stock">Regular Edition Stock</Label>
                       <Input
                         id="paperback_stock"
                         type="number"
@@ -1989,11 +1989,11 @@ export const BooksManager = () => {
                           setFormData({ ...formData, paperback_stock: parseInt(e.target.value) || 0 })
                         }
                         disabled={submitting || !formData.available_paperback}
-                        placeholder="Paperback stock quantity"
+                        placeholder="Regular Edition stock quantity"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="hardcover_stock">Hardcover Stock</Label>
+                      <Label htmlFor="hardcover_stock">Limited Edition Stock</Label>
                       <Input
                         id="hardcover_stock"
                         type="number"
@@ -2003,7 +2003,7 @@ export const BooksManager = () => {
                           setFormData({ ...formData, hardcover_stock: parseInt(e.target.value) || 0 })
                         }
                         disabled={submitting || !formData.available_hardcover}
-                        placeholder="Hardcover stock quantity"
+                        placeholder="Limited Edition stock quantity"
                       />
                     </div>
                   </div>
@@ -2020,13 +2020,13 @@ export const BooksManager = () => {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Paperback:</span>
+                      <span>Regular Edition:</span>
                       <span className={formData.available_paperback && formData.paperback_stock > 0 ? "text-green-600" : "text-red-600"}>
                         {formData.available_paperback ? (formData.paperback_stock > 0 ? "In Stock" : "Out of Stock") : "Not Available"}
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Hardcover:</span>
+                      <span>Limited Edition:</span>
                       <span className={formData.available_hardcover && formData.hardcover_stock > 0 ? "text-green-600" : "text-red-600"}>
                         {formData.available_hardcover ? (formData.hardcover_stock > 0 ? "In Stock" : "Out of Stock") : "Not Available"}
                       </span>
@@ -2043,7 +2043,7 @@ export const BooksManager = () => {
                 <div className="space-y-4">
                   <h4 className="text-md font-medium">Select Format to Manage Retailers</h4>
                   <div className="flex space-x-2">
-                    {['digital', 'paperback', 'hardcover'].map((format) => (
+                    {/* {['digital', 'paperback', 'hardcover'].map((format) => (
                       <Button
                         key={format}
                         type="button"
@@ -2053,28 +2053,39 @@ export const BooksManager = () => {
                       >
                         {format}
                       </Button>
+                    ))} */}
+                    {['paperback', 'hardcover'].map((format) => (
+                      <Button
+                        key={format}
+                        type="button"
+                        variant={selectedFormat === format ? "default" : "outline"}
+                        onClick={() => setSelectedFormat(format as 'paperback' | 'hardcover')}
+                        className="capitalize"
+                      >
+                        {format === 'paperback' ? 'Regular Edition' : 'Limited Edition'}
+                      </Button>
                     ))}
                   </div>
                 </div>
 
                 {/* Current Retailers for Selected Format */}
                 <div className="space-y-4">
-                  <h4 className="text-md font-medium">Current Retailers for {selectedFormat.charAt(0).toUpperCase() + selectedFormat.slice(1)}</h4>
+                  <h4 className="text-md font-medium">Current Retailers for {selectedFormat === 'paperback' ? 'Regular Edition' : selectedFormat === 'hardcover' ? 'Limited Edition' : selectedFormat.charAt(0).toUpperCase() + selectedFormat.slice(1)}</h4>
                   <div className="space-y-2">
                     {bookRetailers
                       .filter(br => br.format_type === selectedFormat)
                       .map((bookRetailer) => (
                         <div key={bookRetailer.id} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
+                          <div className="flex flex-col gap-2">
                             <span className="font-medium">{bookRetailer.retailer?.name}</span>
                             {bookRetailer.url && (
                               <a 
                                 href={bookRetailer.url} 
                                 target="_blank" 
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-800 text-sm"
+                                className="text-blue-600 hover:text-blue-800 text-sm break-all"
                               >
-                                View Link
+                                {bookRetailer.url}
                               </a>
                             )}
                           </div>
@@ -2097,7 +2108,7 @@ export const BooksManager = () => {
                 {/* Add New Retailer */}
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <h4 className="text-md font-medium">Add Retailer for {selectedFormat.charAt(0).toUpperCase() + selectedFormat.slice(1)}</h4>
+                    <h4 className="text-md font-medium">Add Retailer for {selectedFormat === 'paperback' ? 'Regular Edition' : selectedFormat === 'hardcover' ? 'Limited Edition' : selectedFormat.charAt(0).toUpperCase() + selectedFormat.slice(1)}</h4>
                     <Button
                       type="button"
                       variant="outline"
@@ -2172,8 +2183,8 @@ export const BooksManager = () => {
                       <Label>Select Retailer</Label>
                       <Select onValueChange={(value) => {
                         const retailer = retailers.find(r => r.id === value);
-                        if (retailer) {
-                          addRetailerToBook(retailer.id, selectedFormat, newRetailerUrl || undefined);
+                        if (retailer && newRetailerUrl.trim()) {
+                          addRetailerToBook(retailer.id, selectedFormat, newRetailerUrl);
                           setNewRetailerUrl('');
                         }
                       }}>
@@ -2196,12 +2207,13 @@ export const BooksManager = () => {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="retailer_url">Custom URL (Optional)</Label>
+                      <Label htmlFor="retailer_url">Custom URL *</Label>
                       <Input
                         id="retailer_url"
                         value={newRetailerUrl}
                         onChange={(e) => setNewRetailerUrl(e.target.value)}
                         placeholder="Enter custom URL for this retailer"
+                        required
                       />
                     </div>
                   </div>
@@ -2211,10 +2223,10 @@ export const BooksManager = () => {
                 <div className="p-4 bg-muted rounded-lg">
                   <h4 className="text-md font-medium mb-2">Retailer Management Info</h4>
                   <div className="space-y-2 text-sm text-muted-foreground">
-                    <p>• Add retailers for each format (Digital, Paperback, Hardcover)</p>
+                    <p>• Add retailers for each format (Regular Edition, Limited Edition)</p>
                     <p>• Each format can have different retailers</p>
                     <p>• Create custom retailers using the "Create Custom Retailer" button</p>
-                    <p>• Custom URLs can be set for specific book-retailer combinations</p>
+                    <p>• Custom URLs are required for all book-retailer combinations</p>
                     <p>• Retailers will appear in the "Where to Buy" section on the product page</p>
                     <p>• Custom retailers are available for all books once created</p>
                   </div>
