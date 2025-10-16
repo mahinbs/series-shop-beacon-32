@@ -672,17 +672,17 @@ const ProductDetails = () => {
                 </span>
               </div>
 
-              <div className="text-sm">
+              {/* <div className="text-sm">
                 <span className="text-red-400 font-bold uppercase">
                   Category:{" "}
                 </span>
                 <span className="text-white font-bold">
                   {product?.category || "Category"}
                 </span>
-              </div>
+              </div> */}
 
               <div className="text-sm">
-                <span className="text-red-400 font-bold uppercase">Age Rating: </span>
+                <span className="text-red-400 font-bold uppercase">Rated As: </span>
                 <span className="text-white font-bold">
                   {product?.age_rating || "All Ages"}
                 </span>
