@@ -149,42 +149,16 @@ const ShopGrid: React.FC<ShopGridProps> = ({ category, sectionType, searchTerm, 
           {currentBooks.map((product, index) => (
           <div 
             key={product.id} 
-            className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[560px] transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 hover:-translate-y-2 cursor-pointer"
+            className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[560px] transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:scale-105 cursor-pointer"
             onClick={() => navigate(`/product/${product.id}`)}
-            style={{ 
-              transitionDelay: `${index * 100}ms`,
-              opacity: 1,
-              transform: 'translateY(0)'
-            }}
           >
             <div className="relative overflow-hidden">
               <img
                 src={product.image_url || '/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png'}
                 alt={product.title}
-                className="w-full h-96 object-cover transition-all duration-700 ease-in-out group-hover:scale-110"
+                className="w-full h-96 object-cover transition-all duration-500 ease-in-out group-hover:scale-105"
               />
               
-              {/* Badges */}
-              <div className="absolute top-3 left-3 space-y-2 z-10">
-                {product.is_new && (
-                  <span className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
-                    NEW
-                  </span>
-                )}
-                {product.is_on_sale && (
-                  <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
-                    SALE
-                  </span>
-                )}
-              </div>
-
-              {/* Label */}
-              {product.label && (
-                <div className="absolute top-3 right-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg max-w-[120px] text-center">
-                  {product.label}
-                </div>
-              )}
-
               {/* Subtle hover overlay to indicate clickability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               
@@ -207,6 +181,27 @@ const ShopGrid: React.FC<ShopGridProps> = ({ category, sectionType, searchTerm, 
                   )}
                 </div>
               </div>
+
+              {/* Badges */}
+              <div className="absolute top-3 left-3 space-y-2 z-10">
+                {product.is_new && (
+                  <span className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                    NEW
+                  </span>
+                )}
+                {product.is_on_sale && (
+                  <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                    SALE
+                  </span>
+                )}
+              </div>
+
+              {/* Label */}
+              {product.label && (
+                <div className="absolute top-3 right-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg max-w-[120px] text-center z-10">
+                  {product.label}
+                </div>
+              )}
             </div>
             
             <div className="p-5 space-y-3">

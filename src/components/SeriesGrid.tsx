@@ -466,7 +466,7 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
         {activeTab === 'books' && (
           <>
             {booksLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="bg-gray-800 rounded-xl overflow-hidden animate-pulse">
                     <div className="w-full h-80 bg-gray-700"></div>
@@ -490,60 +490,58 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                 </p>
               </div>
             ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {filteredBooks.map((bookItem, index) => (
               <div
                 key={bookItem.id}
-                className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
+                className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[560px] transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:scale-105 cursor-pointer"
                     onMouseEnter={() => setHoveredSeries(index)}
                 onMouseLeave={() => setHoveredSeries(null)}
                 onClick={() => handleBookClick(bookItem.id)}
-                style={{ 
-                  transitionDelay: `${index * 100}ms`,
-                  opacity: 1,
-                  transform: 'translateY(0)'
-                }}
               >
                 <div className="relative overflow-hidden">
                   <img 
                         src={bookItem.image_url || bookItem.cover_page_url || "/placeholder.svg"} 
                     alt={bookItem.title}
-                    className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
+                    className="w-full h-96 object-cover transition-all duration-500 ease-in-out group-hover:scale-105"
                   />
                   
-                  {/* Status Badge */}
-                  <div className="absolute top-3 left-3">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
-                          bookItem.is_active 
-                        ? 'bg-gradient-to-r from-green-600 to-green-700 text-white' 
-                        : 'bg-gradient-to-r from-blue-600 to-blue-700 text-white'
-                    }`}>
-                      {bookItem.is_active ? 'Available' : 'Unavailable'}
-                    </span>
-                  </div>
-
-                      {/* Price Badge */}
-                  <div className="absolute top-3 right-3">
-                    <span className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                          ${bookItem.price || '0.00'}
-                    </span>
-                  </div>
-
-                  {/* Hover overlay with stats */}
-                      {hoveredSeries === index && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="space-y-2">
-                        <div className="flex items-center text-white text-sm">
-                          <BookOpen className="w-4 h-4 mr-2" />
-                              ${bookItem.price || '0.00'}
-                        </div>
-                        <div className="flex items-center text-white text-sm">
-                          <Users className="w-4 h-4 mr-2" />
-                              {bookItem.author || 'Unknown Author'}
-                        </div>
+                  {/* Subtle hover overlay to indicate clickability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  {/* Enhanced hover overlay with book details */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                    <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                      <h3 className="text-lg font-bold text-red-300">{bookItem.title}</h3>
+                      {bookItem.author && (
+                        <p className="text-sm text-gray-300">by {bookItem.author}</p>
+                      )}
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">{bookItem.category || 'General'}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl font-bold text-white">${bookItem.price || '0.00'}</span>
+                        {bookItem.original_price && (
+                          <span className="text-sm text-gray-400 line-through">${bookItem.original_price}</span>
+                        )}
                       </div>
+                      {bookItem.description && (
+                        <p className="text-xs text-gray-300 line-clamp-2 mt-2">{bookItem.description}</p>
+                      )}
                     </div>
-                  )}
+                  </div>
+
+                  {/* Badges */}
+                  <div className="absolute top-3 left-3 space-y-2 z-10">
+                    {bookItem.is_new && (
+                      <span className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                        NEW
+                      </span>
+                    )}
+                    {bookItem.is_on_sale && (
+                      <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                        SALE
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="p-5 space-y-3">
@@ -597,7 +595,7 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
         {activeTab === 'merchandise' && (
           <>
             {merchandiseLoading ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {[1, 2, 3, 4, 5, 6].map((i) => (
                   <div key={i} className="bg-gray-800 rounded-xl overflow-hidden animate-pulse">
                     <div className="w-full h-80 bg-gray-700"></div>
@@ -621,60 +619,56 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
                 {filteredMerchandise.map((item, index) => (
               <div
                 key={item.id}
-                className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 cursor-pointer"
+                className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[560px] transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:scale-105 cursor-pointer"
                 onMouseEnter={() => setHoveredSeries(item.id)}
                 onMouseLeave={() => setHoveredSeries(null)}
                 onClick={() => handleMerchandiseClick(item.id)}
-                style={{ 
-                  transitionDelay: `${index * 100}ms`,
-                  opacity: 1,
-                  transform: 'translateY(0)'
-                }}
               >
                 <div className="relative overflow-hidden">
                   <img 
                     src={item.image_url || item.hover_image_url || "/placeholder.svg"} 
                     alt={item.title}
-                    className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-700"
+                    className="w-full h-96 object-cover transition-all duration-500 ease-in-out group-hover:scale-105"
                   />
                   
-                  {/* Stock Status Badge */}
-                  <div className="absolute top-3 left-3">
-                    <span className={`text-xs font-bold px-3 py-1 rounded-full shadow-lg ${
-                      item.stock_quantity > 0 
-                        ? 'bg-gradient-to-r from-green-600 to-green-700 text-white' 
-                        : 'bg-gradient-to-r from-red-600 to-red-700 text-white animate-pulse'
-                    }`}>
-                      {item.stock_quantity > 0 ? 'In Stock' : 'Out of Stock'}
-                    </span>
-                  </div>
-
-                  {/* Price Badge */}
-                  <div className="absolute top-3 right-3">
-                    <span className="bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
-                      ${item.price || '0.00'}
-                    </span>
-                  </div>
-
-                  {/* Hover overlay with stats */}
-                  {hoveredSeries === item.id && (
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-4 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <div className="space-y-2">
-                        <div className="flex items-center text-white text-sm">
-                          <Package className="w-4 h-4 mr-2" />
-                          ${item.price || '0.00'}
-                        </div>
-                        <div className="flex items-center text-white text-sm">
-                          <Users className="w-4 h-4 mr-2" />
-                          Stock: {item.stock_quantity || 0}
-                        </div>
+                  {/* Subtle hover overlay to indicate clickability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  
+                  {/* Enhanced hover overlay with merchandise details */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                    <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                      <h3 className="text-lg font-bold text-red-300">{item.title}</h3>
+                      <p className="text-xs text-gray-400 uppercase tracking-wide">{item.category || 'Merchandise'}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl font-bold text-white">${item.price || '0.00'}</span>
+                        {item.original_price && (
+                          <span className="text-sm text-gray-400 line-through">${item.original_price}</span>
+                        )}
                       </div>
+                      {item.description && (
+                        <p className="text-xs text-gray-300 line-clamp-2 mt-2">{item.description}</p>
+                      )}
+                      <p className="text-xs text-gray-400">Stock: {item.stock_quantity || 0}</p>
                     </div>
-                  )}
+                  </div>
+
+                  {/* Badges */}
+                  <div className="absolute top-3 left-3 space-y-2 z-10">
+                    {item.is_new && (
+                      <span className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                        NEW
+                      </span>
+                    )}
+                    {item.is_on_sale && (
+                      <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                        SALE
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
                 <div className="p-5 space-y-3">

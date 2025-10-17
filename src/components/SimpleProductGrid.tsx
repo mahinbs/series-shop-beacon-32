@@ -221,42 +221,6 @@ const SimpleProductGrid = () => {
           </button>
         </div>
 
-        {/* Product Type Tabs */}
-        {/* <div className="flex justify-center mb-8">
-          <div className="flex space-x-1 bg-gray-800 p-1 rounded-lg">
-            <button
-              onClick={() => setActiveTab('books')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                activeTab === 'books'
-                  ? 'bg-red-600 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              Books
-            </button>
-            <button
-              onClick={() => setActiveTab('print')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                activeTab === 'print'
-                  ? 'bg-red-600 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              Print
-            </button>
-            <button
-              onClick={() => setActiveTab('merchandise')}
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-all duration-200 ${
-                activeTab === 'merchandise'
-                  ? 'bg-red-600 text-white shadow-lg'
-                  : 'text-gray-400 hover:text-white hover:bg-gray-700'
-              }`}
-            >
-              Merchandise
-            </button>
-          </div>
-        </div> */}
-
         {/* Products Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {filteredProducts.length > 0 ? (

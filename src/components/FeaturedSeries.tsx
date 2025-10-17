@@ -200,7 +200,7 @@ const FeaturedSeries = ({ filters }: FeaturedSeriesProps) => {
     <section className="bg-gray-900 py-16">
       <div className="container mx-auto px-4">
         <h2 className="text-3xl font-bold text-white mb-12">Featured Series</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[1, 2, 3].map((i) => (
               <div key={i} className="bg-gray-800 rounded-lg overflow-hidden animate-pulse">
                 <div className="w-full h-64 bg-gray-700"></div>
@@ -255,39 +255,45 @@ const FeaturedSeries = ({ filters }: FeaturedSeriesProps) => {
             </p>
           </div>
         ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {filteredAndSortedSeries.map((series, index) => {
               const badgeInfo = getBadgeInfo(series, index);
               return (
             <div
               key={series.id}
-              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:scale-105 transition-all duration-300 border border-gray-700 hover:border-red-500/50 cursor-pointer group"
+              className="bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[560px] transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:scale-105 cursor-pointer group"
               onClick={() => navigate(`/readers/${series.slug}`)}
             >
-              <div className="relative">
+              <div className="relative overflow-hidden">
                 <img
                   src={series.cover_image_url || "/placeholder.svg"}
                   alt={series.title}
-                  className="w-full h-80 object-cover group-hover:scale-110 transition-transform duration-300"
+                  className="w-full h-96 object-cover transition-all duration-500 ease-in-out group-hover:scale-105"
                 />
                 
-                {/* Badge */}
-                <div className={`absolute top-4 right-4 ${badgeInfo.color} text-white px-3 py-1 rounded-full text-sm font-medium`}>
-                  {badgeInfo.text}
-                </div>
+                {/* Subtle hover overlay to indicate clickability */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                 
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center pb-8">
-                  <Button 
-                    className="bg-red-600 hover:bg-red-700 text-white"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      navigate(`/readers/${series.slug}`);
-                    }}
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    Watch Now
-                  </Button>
+                {/* Enhanced hover overlay with series details */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+                  <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+                    <h3 className="text-lg font-bold text-red-300">{series.title}</h3>
+                    <p className="text-xs text-gray-400 uppercase tracking-wide">{series.genre?.join(', ') || 'General'}</p>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-300">{series.total_episodes} Episodes</span>
+                      <span className="text-sm text-gray-300 capitalize">{series.status}</span>
+                    </div>
+                    {series.description && (
+                      <p className="text-xs text-gray-300 line-clamp-2 mt-2">{series.description}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Badges */}
+                <div className="absolute top-3 left-3 space-y-2 z-10">
+                  <span className={`${badgeInfo.color} text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg`}>
+                    {badgeInfo.text}
+                  </span>
                 </div>
               </div>
               

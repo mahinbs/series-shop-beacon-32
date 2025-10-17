@@ -140,7 +140,7 @@ const ProductCard = ({
 
   return (
     <div 
-      className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden hover:from-gray-750 hover:to-gray-850 transition-all duration-500 transform hover:scale-105 hover:shadow-2xl hover:shadow-red-500/20 border border-gray-700/50 hover:border-red-500/30 min-h-[560px] max-w-[350px] w-full flex flex-col cursor-pointer"
+      className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[560px] max-w-[350px] w-full flex flex-col transition-all duration-300 hover:shadow-2xl hover:shadow-red-500/10 hover:scale-105 cursor-pointer"
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleViewProduct}
@@ -149,72 +149,70 @@ const ProductCard = ({
         <img 
           src={isHovered && hoverImageUrl ? hoverImageUrl : imageUrl} 
           alt={title}
-          className="w-full h-96 object-cover group-hover:scale-110 transition-all duration-700"
+          className="w-full h-96 object-cover transition-all duration-500 ease-in-out group-hover:scale-105"
         />
         
-        {/* Enhanced badges with longer labels */}
-        <div className="absolute top-3 left-3 space-y-2">
-          {isNew && (
-            <span className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
-              NEW
-            </span>
-          )}
-          {isOnSale && (
-            <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg animate-pulse">
-              SALE
-            </span>
-          )}
-        </div>
-
-        {/* Enhanced label in top right */}
-        {label && (
-          <div className="absolute top-3 right-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg max-w-[120px] text-center">
-            {label}
-          </div>
-        )}
-
         {/* Subtle hover overlay to indicate clickability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
         
-        {/* Enhanced hover overlay with book details */}
+        {/* Enhanced hover overlay with product details */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
           <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
-            <h3 className="text-lg font-bold text-red-300">{removeVolumeFromTitle(title)}</h3>
+            <h3 className="text-lg font-bold text-red-300">{title}</h3>
             {author && (
               <p className="text-sm text-gray-300">by {author}</p>
             )}
-            <p className="text-xs text-gray-400 uppercase tracking-wide">{category}</p>
+            <p className="text-xs text-gray-400 uppercase tracking-wide">{category || volume || 'General'}</p>
             <div className="flex items-center justify-between">
-              <span className="text-xl font-bold text-white">${price}</span>
+              <span className="text-xl font-bold text-white">{price}</span>
               {originalPrice && (
-                <span className="text-sm text-gray-400 line-through">${originalPrice}</span>
+                <span className="text-sm text-gray-400 line-through">{originalPrice}</span>
               )}
             </div>
             {description && (
               <p className="text-xs text-gray-300 line-clamp-2 mt-2">{description}</p>
             )}
-            <div className="flex space-x-2 mt-3">
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleViewProduct();
-                }}
-                className="bg-white/20 hover:bg-white/30 text-white p-2 rounded-full backdrop-blur-sm transition-all duration-300 hover:scale-110"
-                title="View Details"
-              >
-                <Eye className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleAddToCart();
-                }}
-                className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-300 hover:scale-110"
-                title="Add to Cart"
-              >
-                <ShoppingCart className="w-4 h-4" />
-              </button>
+          </div>
+        </div>
+
+        {/* Badges */}
+        <div className="absolute top-3 left-3 space-y-2 z-10">
+          {isNew && (
+            <span className="bg-gradient-to-r from-red-600 to-red-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+              NEW
+            </span>
+          )}
+          {isOnSale && (
+            <span className="bg-gradient-to-r from-orange-500 to-orange-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+              SALE
+            </span>
+          )}
+        </div>
+
+        {/* Label */}
+        {label && (
+          <div className="absolute top-3 right-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg max-w-[120px] text-center z-10">
+            {label}
+          </div>
+        )}
+
+        {/* Enhanced hover overlay with product details */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-500 flex flex-col justify-end p-4">
+          <div className="text-white space-y-2 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500">
+            <h3 className="text-lg font-bold text-red-300">{title}</h3>
+            {author && (
+              <p className="text-sm text-gray-300">by {author}</p>
+            )}
+            <p className="text-xs text-gray-400 uppercase tracking-wide">{category || volume || 'General'}</p>
+            <div className="flex items-center justify-between">
+              <span className="text-xl font-bold text-white">{price}</span>
+              {originalPrice && (
+                <span className="text-sm text-gray-400 line-through">{originalPrice}</span>
+              )}
             </div>
+            {description && (
+              <p className="text-xs text-gray-300 line-clamp-2 mt-2">{description}</p>
+            )}
           </div>
         </div>
       </div>
