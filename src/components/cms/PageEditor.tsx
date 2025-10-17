@@ -21,6 +21,7 @@ import { FeaturedSeriesManager } from './FeaturedSeriesManager';
 import PrintBookManager from './PrintBookManager';
 import { OurJourneyManager } from './OurJourneyManager';
 import CreativeSnippetsManager from './CreativeSnippetsManager';
+import { AnnouncementSectionsManager } from './AnnouncementSectionsManager';
 import { useCMS } from '@/hooks/useCMS';
 import CirclesAdmin from './CirclesAdmin';
 import { useToast } from '@/hooks/use-toast';
@@ -302,6 +303,18 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
             </p>
           </div>
           <AnnouncementsManager />
+        </div>
+      );
+    case 'announcement-sections':
+      return (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">Announcement Sections Management</h2>
+            <p className="text-muted-foreground mb-6">
+              Manage Event Calendar, Release Schedule, and FAQ sections that appear on the announcements page
+            </p>
+          </div>
+          <AnnouncementSectionsManager />
         </div>
       );
     case 'user-management':

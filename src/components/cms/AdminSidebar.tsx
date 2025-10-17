@@ -283,6 +283,27 @@ export function AdminSidebar({ selectedPage, onPageSelect }: AdminSidebarProps) 
                     )}
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => onPageSelect('announcement-sections')}
+                    className={`
+                      w-full h-10 px-2 flex items-center gap-3 rounded-md
+                      transition-colors duration-200
+                      ${getNavClass('announcement-sections')}
+                      ${collapsed ? "justify-center" : "justify-start"}
+                      overflow-hidden
+                    `}
+                    title={collapsed ? "Announcement Sections" : undefined}
+                  >
+                    <Calendar className="h-4 w-4 flex-shrink-0" />
+                    {!collapsed && (
+                      <span className="text-sm font-medium truncate min-w-0 flex-1">
+                        Announcement Sections
+                      </span>
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
