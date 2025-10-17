@@ -6,6 +6,7 @@ import { Heart, ShoppingCart, Eye, Diamond, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { removeVolumeFromTitle } from '@/lib/utils';
+import { ChapterService } from '@/services/chapterService';
 
 const SimpleProductGrid = () => {
   const { books, isLoading, error } = useBooks();
@@ -356,9 +357,32 @@ const SimpleProductGrid = () => {
                     {/* Digital books: Show Read Now button */}
                     {product.product_type !== 'print' && product.product_type !== 'merchandise' ? (
                       <button 
-                        onClick={(e) => { 
-                          e.stopPropagation(); 
-                          navigate(`/product/${product.id}`);
+                        onClick={async (e) => { 
+                          e.stopPropagation();
+                          try {
+                            // Fetch chapters for this book
+                            const chapters = await ChapterService.getBookChapters(product.id);
+                            
+                            if (chapters && chapters.length > 0) {
+                              // Navigate to first chapter
+                              const firstChapter = chapters[0];
+                              navigate(`/chapter/${firstChapter.id}`);
+                            } else {
+                              // Show toast if no chapters available
+                              toast({
+                                title: "No Chapters Available",
+                                description: "This book doesn't have any chapters yet. Please check back later.",
+                                variant: "destructive",
+                              });
+                            }
+                          } catch (error) {
+                            console.error('Error fetching chapters:', error);
+                            toast({
+                              title: "Error",
+                              description: "Failed to load chapters. Please try again.",
+                              variant: "destructive",
+                            });
+                          }
                         }}
                         className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold py-2 rounded transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
                       >

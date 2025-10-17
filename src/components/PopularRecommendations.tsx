@@ -10,6 +10,7 @@ import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { removeVolumeFromTitle } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ChapterService } from "@/services/chapterService";
 
 const PopularRecommendations = () => {
   const [books, setBooks] = useState<BookType[]>([]);
@@ -935,7 +936,30 @@ const PopularRecommendations = () => {
                         <button
                           onClick={async (e) => {
                             e.stopPropagation();
-                            navigate(`/product/${book.id}`);
+                            try {
+                              // Fetch chapters for this book
+                              const chapters = await ChapterService.getBookChapters(book.id);
+                              
+                              if (chapters && chapters.length > 0) {
+                                // Navigate to first chapter
+                                const firstChapter = chapters[0];
+                                navigate(`/chapter/${firstChapter.id}`);
+                              } else {
+                                // Show toast if no chapters available
+                                toast({
+                                  title: "No Chapters Available",
+                                  description: "This book doesn't have any chapters yet. Please check back later.",
+                                  variant: "destructive",
+                                });
+                              }
+                            } catch (error) {
+                              console.error('Error fetching chapters:', error);
+                              toast({
+                                title: "Error",
+                                description: "Failed to load chapters. Please try again.",
+                                variant: "destructive",
+                              });
+                            }
                           }}
                           className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30 transform hover:scale-105"
                         >
@@ -1035,7 +1059,20 @@ const PopularRecommendations = () => {
                             <div className="flex flex-col space-y-2">
                               {book.type === 'digital' ? (
                                 <button
-                                  onClick={() => navigate(`/product/${book.id}`)}
+                                  onClick={async () => {
+                                    try {
+                                      // Note: Genre books are sample data, may not have real IDs
+                                      // For now, navigate to product page as fallback
+                                      navigate(`/product/${book.title.toLowerCase().replace(/\s+/g, '-')}`);
+                                    } catch (error) {
+                                      console.error('Error:', error);
+                                      toast({
+                                        title: "Error",
+                                        description: "Failed to open book. Please try again.",
+                                        variant: "destructive",
+                                      });
+                                    }
+                                  }}
                                   className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
                                 >
                                   <BookOpen className="w-4 h-4 inline mr-2" />
