@@ -250,12 +250,15 @@ const SimpleProductGrid = () => {
                         <p className="text-sm text-gray-300">by {product.author}</p>
                       )}
                       <p className="text-xs text-gray-400 uppercase tracking-wide">{product.category}</p>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-white">${product.price}</span>
-                        {product.original_price && (
-                          <span className="text-sm text-gray-400 line-through">${product.original_price}</span>
-                        )}
-                      </div>
+                      {/* Only show price for print products */}
+                      {product.product_type === 'print' && (
+                        <div className="flex items-center justify-between">
+                          <span className="text-xl font-bold text-white">${product.price}</span>
+                          {product.original_price && (
+                            <span className="text-sm text-gray-400 line-through">${product.original_price}</span>
+                          )}
+                        </div>
+                      )}
                       {product.description && (
                         <p className="text-xs text-gray-300 line-clamp-2 mt-2">{product.description}</p>
                       )}
@@ -330,19 +333,24 @@ const SimpleProductGrid = () => {
                   )}
                   <p className="text-gray-500 text-xs uppercase tracking-wide">{product.category}</p>
                   
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <span className="text-white font-bold text-lg">${product.price}</span>
-                      {product.original_price && (
-                        <span className="text-gray-500 line-through text-sm">${product.original_price}</span>
-                      )}
+                  {/* Only show price for print products and merchandise */}
+                  {(product.product_type === 'print' || product.product_type === 'merchandise') && (
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <span className="text-white font-bold text-lg">${product.price}</span>
+                        {product.original_price && (
+                          <span className="text-gray-500 line-through text-sm">${product.original_price}</span>
+                        )}
+                      </div>
                     </div>
-                    {product.can_unlock_with_coins && (
-                      <span className="text-gray-400 text-xs">
-                        {product.coins || `${Math.round(product.price * 100)} coins`}
-                      </span>
-                    )}
-                  </div>
+                  )}
+                  
+                  {/* Show coins for digital products that can be unlocked */}
+                  {product.product_type !== 'print' && product.product_type !== 'merchandise' && product.can_unlock_with_coins && (
+                    <div className="text-gray-400 text-xs">
+                      {product.coins || `${Math.round(product.price * 100)} coins`}
+                    </div>
+                  )}
                   
                   <div className="flex flex-col space-y-2 pt-2 mt-auto">
                     {/* Digital books: Show Read Now button */}

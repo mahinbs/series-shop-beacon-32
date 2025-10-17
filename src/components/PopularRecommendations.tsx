@@ -851,16 +851,7 @@ const PopularRecommendations = () => {
                           <p className="text-xs text-gray-400 uppercase tracking-wide">
                             {book.category || "General"}
                           </p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xl font-bold text-white">
-                              ${book.price}
-                            </span>
-                            {book.original_price && (
-                              <span className="text-sm text-gray-400 line-through">
-                                ${book.original_price}
-                              </span>
-                            )}
-                          </div>
+                          {/* Digital products don't show price in hover */}
                           {book.description && (
                             <p className="text-xs text-gray-300 line-clamp-2 mt-2">
                               {book.description}
