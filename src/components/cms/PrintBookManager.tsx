@@ -50,6 +50,15 @@ const PrintBookManager = () => {
     price: 0,
     is_popular_recommendation: false
   });
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [createForm, setCreateForm] = useState({
+    title: '',
+    author: '',
+    description: '',
+    price: 0,
+    image_url: '',
+    is_popular_recommendation: false
+  });
   const { toast } = useToast();
 
   // Load print books
@@ -275,13 +284,159 @@ const PrintBookManager = () => {
     }
   };
 
+  const handleCreateBook = async () => {
+    if (!createForm.title || !createForm.author) {
+      toast({
+        title: "Error",
+        description: "Please fill in title and author",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('books')
+        .insert({
+          title: createForm.title,
+          author: createForm.author,
+          description: createForm.description,
+          price: createForm.price,
+          image_url: createForm.image_url || '/placeholder.svg',
+          product_type: 'print',
+          is_popular_recommendation: createForm.is_popular_recommendation,
+          is_active: true,
+          section_type: 'new-releases',
+          category: 'Print',
+          display_order: 0,
+          is_new: true,
+          is_on_sale: false,
+          stock_quantity: 0
+        });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Print book created successfully",
+      });
+
+      setShowCreateDialog(false);
+      setCreateForm({
+        title: '',
+        author: '',
+        description: '',
+        price: 0,
+        image_url: '',
+        is_popular_recommendation: false
+      });
+      loadPrintBooks();
+    } catch (error) {
+      console.error('Error creating book:', error);
+      toast({
+        title: "Error",
+        description: "Failed to create book",
+        variant: "destructive",
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h2 className="text-2xl font-bold text-white">Print Book Manager</h2>
-        <Button onClick={loadPrintBooks} variant="outline">
-          Refresh
-        </Button>
+        <div className="flex gap-2">
+          <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+            <DialogTrigger asChild>
+              <Button className="bg-red-600 hover:bg-red-700">
+                <Plus className="w-4 h-4 mr-2" />
+                Create New Book
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
+              <DialogHeader>
+                <DialogTitle className="text-white">Create New Print Book</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label htmlFor="createTitle" className="text-white">Title *</Label>
+                  <Input
+                    id="createTitle"
+                    value={createForm.title}
+                    onChange={(e) => setCreateForm({...createForm, title: e.target.value})}
+                    className="bg-gray-700 border-gray-600 text-white"
+                    placeholder="Enter book title"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="createAuthor" className="text-white">Author *</Label>
+                  <Input
+                    id="createAuthor"
+                    value={createForm.author}
+                    onChange={(e) => setCreateForm({...createForm, author: e.target.value})}
+                    className="bg-gray-700 border-gray-600 text-white"
+                    placeholder="Enter author name"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="createDescription" className="text-white">Description</Label>
+                  <Textarea
+                    id="createDescription"
+                    value={createForm.description}
+                    onChange={(e) => setCreateForm({...createForm, description: e.target.value})}
+                    className="bg-gray-700 border-gray-600 text-white"
+                    rows={3}
+                    placeholder="Enter book description"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="createPrice" className="text-white">Price ($)</Label>
+                  <Input
+                    id="createPrice"
+                    type="number"
+                    step="0.01"
+                    value={createForm.price}
+                    onChange={(e) => setCreateForm({...createForm, price: parseFloat(e.target.value) || 0})}
+                    className="bg-gray-700 border-gray-600 text-white"
+                    placeholder="0.00"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="createImageUrl" className="text-white">Image URL</Label>
+                  <Input
+                    id="createImageUrl"
+                    value={createForm.image_url}
+                    onChange={(e) => setCreateForm({...createForm, image_url: e.target.value})}
+                    className="bg-gray-700 border-gray-600 text-white"
+                    placeholder="https://... (optional, will use placeholder if empty)"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="createPopularRecommendation"
+                    checked={createForm.is_popular_recommendation}
+                    onCheckedChange={(checked) => setCreateForm({...createForm, is_popular_recommendation: checked})}
+                  />
+                  <Label htmlFor="createPopularRecommendation" className="text-white">
+                    Mark as Popular Recommendation
+                  </Label>
+                </div>
+                <div className="flex justify-end space-x-2 pt-4">
+                  <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleCreateBook} className="bg-red-600 hover:bg-red-700">
+                    <Save className="w-4 h-4 mr-2" />
+                    Create Book
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button onClick={loadPrintBooks} variant="outline">
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Print Books List */}

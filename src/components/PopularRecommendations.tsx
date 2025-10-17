@@ -56,16 +56,15 @@ const PopularRecommendations = () => {
 
         // Filter by product type based on selected filter
         if (selectedFilter === "digital") {
-          // Show all products except merchandise and print, but only popular recommendations
-          query = query
-            .eq("is_popular_recommendation", true)
-            .not("product_type", "eq", "merchandise")
-            .not("product_type", "eq", "print");
+          // Show all products that are NOT explicitly print or merchandise (everything else is digital)
+          // Only show popular recommendations for digital
+          query = query.eq("is_popular_recommendation", true);
+          // Don't filter further - we'll filter in JavaScript to include null, 'book', 'digital', etc
         } else if (selectedFilter === "print") {
-          // Show print products, check if they're popular recommendations or just print
+          // Show only products explicitly marked as print
           query = query.eq("product_type", "print");
         } else if (selectedFilter === "merchandise") {
-          // Show merchandise products, don't require popular recommendation flag
+          // Show only products explicitly marked as merchandise
           query = query.eq("product_type", "merchandise");
         }
 
@@ -81,15 +80,23 @@ const PopularRecommendations = () => {
         }
 
         if (data) {
-          console.log(`🔍 Fetched ${data.length} products for filter: ${selectedFilter}`);
-          console.log('📦 Products:', data.map(p => ({ id: p.id, title: p.title, product_type: p.product_type })));
+          // For digital filter, exclude print and merchandise products
+          let filteredData = data;
+          if (selectedFilter === "digital") {
+            filteredData = data.filter(book => 
+              book.product_type !== 'print' && book.product_type !== 'merchandise'
+            );
+          }
+          
+          console.log(`🔍 Fetched ${filteredData.length} products for filter: ${selectedFilter}`);
+          console.log('📦 Products:', filteredData.map(p => ({ id: p.id, title: p.title, product_type: p.product_type })));
           
           // For merchandise, show all products without deduplication
           // For other types, deduplicate by removing volume information from titles
-          let processedBooks = data;
+          let processedBooks = filteredData;
           
           if (selectedFilter !== "merchandise") {
-            processedBooks = data.reduce((acc: any[], book: any) => {
+            processedBooks = filteredData.reduce((acc: any[], book: any) => {
               const baseTitle = removeVolumeFromTitle(book.title);
               const existingBook = acc.find(
                 (b) => removeVolumeFromTitle(b.title) === baseTitle
@@ -555,15 +562,14 @@ const PopularRecommendations = () => {
                             {book.description || `An epic adventure following the journey of ${book.author || 'the protagonist'}.`}
                           </p>
                           
-                          {/* Genre Tags */}
+                          {/* Print books: Show category (Novel, Adventure, Drama, etc) */}
                           <div className="flex flex-wrap gap-2 mb-4">
-                            <span className="px-3 py-1 bg-gray-700 text-gray-300 text-xs rounded-full">
-                              {book.category || 'Fantasy'}
-                            </span>
-                            <span className="px-3 py-1 bg-gray-700 text-gray-300 text-xs rounded-full">
-                              Adventure
-                            </span>
-                            <span className="px-3 py-1 bg-gray-700 text-gray-300 text-xs rounded-full">
+                            {book.category && (
+                              <span className="px-3 py-1 bg-gray-700 text-gray-300 text-xs rounded-full uppercase">
+                                {book.category}
+                              </span>
+                            )}
+                            <span className="px-3 py-1 bg-gray-700 text-gray-300 text-xs rounded-full uppercase">
                               Print
                             </span>
                           </div>
@@ -589,25 +595,29 @@ const PopularRecommendations = () => {
                             )}
                           </div>
                           
-                          {/* Read Now Button */}
-                          <Button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (book.product_type === 'print') {
-                                navigate(`/print-reader/${book.id}`, { 
-                                  state: { from: 'popular-recommendations' } 
-                                });
-                              } else {
-                                navigate(`/readers/${book.title.toLowerCase().replace(/\s+/g, '-')}`, { 
-                                  state: { from: 'popular-recommendations' } 
-                                });
-                              }
-                            }}
-                            className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/25"
-                          >
-                            <BookOpen className="w-4 h-4 mr-2" />
-                            Read Now
-                          </Button>
+                          {/* Action Buttons - Print: Add to Cart + Buy Now */}
+                          <div className="flex flex-col gap-2">
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleAddToCart(book);
+                              }}
+                              className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-semibold py-3 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/25"
+                            >
+                              <ShoppingCart className="w-4 h-4 mr-2" />
+                              Add to Cart
+                            </Button>
+                            <Button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleBuyNow(book);
+                              }}
+                              variant="outline"
+                              className="w-full bg-white border-gray-600 text-black hover:bg-gray-100 hover:text-black font-semibold py-3 rounded-lg transition-all duration-300"
+                            >
+                              Buy Now
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -824,16 +834,17 @@ const PopularRecommendations = () => {
                               by {book.author}
                             </p>
                           )}
-                          <p className="text-xs text-gray-400 uppercase tracking-wide">
-                            {book.category || "General"}
-                          </p>
-                          <div className="flex items-center justify-between">
-                            <span className="text-xl font-bold text-white">
-                              ${book.price}
-                            </span>
-                            {book.original_price && (
-                              <span className="text-sm text-gray-400 line-through">
-                                ${book.original_price}
+                          {/* Digital books: Show genre tags from admin */}
+                          <div className="flex flex-wrap gap-1 mb-2">
+                            {book.genre && Array.isArray(book.genre) && book.genre.length > 0 ? (
+                              book.genre.slice(0, 3).map((g: string, i: number) => (
+                                <span key={i} className="px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded-full">
+                                  {g}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded-full">
+                                {book.category || 'Digital'}
                               </span>
                             )}
                           </div>
@@ -885,70 +896,33 @@ const PopularRecommendations = () => {
                           </p>
                         )}
 
-                        <p className="text-orange-400 text-xs font-semibold uppercase tracking-wide">
-                          {book.category || "General"}
-                        </p>
-
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-2">
-                            <span className="text-white font-bold text-xl">
-                              ${book.price}
-                            </span>
-                            {book.original_price && (
-                              <span className="text-gray-500 line-through text-sm">
-                                ${book.original_price}
+                        {/* Digital books: Show genre tags from admin */}
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          {book.genre && Array.isArray(book.genre) && book.genre.length > 0 ? (
+                            book.genre.slice(0, 3).map((g: string, i: number) => (
+                              <span key={i} className="px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded-full">
+                                {g}
                               </span>
-                            )}
-                          </div>
-                          {book.can_unlock_with_coins && (
-                            <span className="text-gray-400 text-xs">
-                              {book.coins ||
-                                `${Math.round(book.price * 100)} coins`}
+                            ))
+                          ) : (
+                            <span className="px-2 py-1 bg-gray-800 text-gray-300 text-xs rounded-full">
+                              {book.category || 'Digital'}
                             </span>
                           )}
                         </div>
                       </div>
 
-                      {/* Button Section - Always at bottom */}
+                      {/* Button Section - Digital: Read Now button only */}
                       <div className="flex flex-col space-y-2 pt-2 mt-auto">
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
-                            handleAddToCart(book);
+                            navigate(`/product/${book.id}`);
                           }}
                           className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30 transform hover:scale-105"
                         >
-                          <ShoppingCart className="w-4 h-4 inline mr-2" />
-                          Add to Cart
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBuyNow(book);
-                          }}
-                          className="w-full bg-white hover:bg-gray-100 text-black text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg transform hover:scale-105"
-                        >
-                          Buy Now
-                        </button>
-
-                        {/* Always render unlock button for consistent height, hide if no coins */}
-                        <button 
-                          className={`w-full text-sm py-2 rounded-lg transition-all duration-300 ${
-                            book.can_unlock_with_coins 
-                              ? 'text-gray-400 hover:text-white border border-gray-600 hover:border-gray-400 hover:bg-gray-800' 
-                              : 'invisible'
-                          }`}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            if (book.can_unlock_with_coins) {
-                              // Handle unlock action
-                            }
-                          }}
-                        >
-                          Unlock with{" "}
-                          {book.coins ||
-                            `${Math.round(book.price * 100)} coins`}
+                          <BookOpen className="w-4 h-4 inline mr-2" />
+                          Read Now
                         </button>
                       </div>
                     </div>
@@ -1041,20 +1015,32 @@ const PopularRecommendations = () => {
                             </div>
 
                             <div className="flex flex-col space-y-2">
-                              <button
-                                onClick={() => handleAddToCart(book as any)}
-                                className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
-                              >
-                                <ShoppingCart className="w-4 h-4 inline mr-2" />
-                                Add to Cart
-                              </button>
+                              {book.type === 'digital' ? (
+                                <button
+                                  onClick={() => navigate(`/product/${book.id}`)}
+                                  className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
+                                >
+                                  <BookOpen className="w-4 h-4 inline mr-2" />
+                                  Read Now
+                                </button>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={() => handleAddToCart(book as any)}
+                                    className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
+                                  >
+                                    <ShoppingCart className="w-4 h-4 inline mr-2" />
+                                    Add to Cart
+                                  </button>
 
-                              <button
-                                onClick={() => handleBuyNow(book as any)}
-                                className="w-full bg-white hover:bg-gray-100 text-black text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg"
-                              >
-                                Buy Now
-                              </button>
+                                  <button
+                                    onClick={() => handleBuyNow(book as any)}
+                                    className="w-full bg-white hover:bg-gray-100 text-black text-sm font-semibold py-2 rounded-lg transition-all duration-300 hover:shadow-lg"
+                                  >
+                                    Buy Now
+                                  </button>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>

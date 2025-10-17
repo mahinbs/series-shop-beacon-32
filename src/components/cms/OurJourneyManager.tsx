@@ -183,7 +183,11 @@ export const OurJourneyManager = ({
   };
 
   const handleUpdateItem = async () => {
+    console.log('🔄 Starting update process...');
+    console.log('📊 Current state:', { editingIndex, formData });
+    
     if (editingIndex === null || !formData.header.trim() || !formData.description.trim()) {
+      console.log('❌ Validation failed');
       toast({
         title: "Validation Error",
         description: "Please fill in all required fields",
@@ -194,29 +198,42 @@ export const OurJourneyManager = ({
 
     try {
       const itemToUpdate = timeline[editingIndex];
-      const updatedItem = await ourJourneyService.updateTimelineItem(itemToUpdate.id, {
+      console.log('📝 Item to update:', itemToUpdate);
+      
+      const updateData = {
         year: formData.year,
         header: formData.header,
         description: formData.description,
         left_image_url: formData.leftImage || null,
         right_image_url: formData.rightImage || null
-      });
+      };
+      
+      console.log('📤 Sending update data:', updateData);
+      
+      const updatedItem = await ourJourneyService.updateTimelineItem(itemToUpdate.id, updateData);
+      console.log('📥 Update response:', updatedItem);
 
       if (updatedItem) {
+        console.log('✅ Update successful, updating local state...');
         setTimeline(prev => {
           const updated = [...prev];
           updated[editingIndex] = updatedItem;
-          return updated.sort((a, b) => a.year - b.year);
+          const sorted = updated.sort((a, b) => a.year - b.year);
+          console.log('📋 New timeline:', sorted);
+          return sorted;
         });
         resetForm();
         toast({
           title: "Success",
           description: "Timeline item updated successfully",
         });
+        console.log('🎉 Update complete!');
       } else {
+        console.log('❌ Update failed - no item returned');
         throw new Error("Failed to update timeline item");
       }
     } catch (error: any) {
+      console.error('💥 Update error:', error);
       toast({
         title: "Error",
         description: error.message || "Failed to update timeline item",

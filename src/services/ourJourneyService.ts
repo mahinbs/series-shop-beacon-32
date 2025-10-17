@@ -131,6 +131,9 @@ class OurJourneyService {
   // Update timeline item
   async updateTimelineItem(id: string, data: UpdateTimelineItemData): Promise<OurJourneyTimelineItem | null> {
     try {
+      console.log('🔧 Service: Updating timeline item with ID:', id);
+      console.log('📤 Service: Update data:', data);
+      
       const { data: result, error } = await supabase
         .from('our_journey_timeline')
         .update(data)
@@ -139,13 +142,14 @@ class OurJourneyService {
         .single();
 
       if (error) {
-        console.error('Error updating timeline item:', error);
+        console.error('❌ Service: Error updating timeline item:', error);
         return null;
       }
 
+      console.log('✅ Service: Update successful, result:', result);
       return result;
     } catch (error) {
-      console.error('Error updating timeline item:', error);
+      console.error('💥 Service: Exception updating timeline item:', error);
       return null;
     }
   }

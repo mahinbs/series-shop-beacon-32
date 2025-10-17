@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useBooks } from '@/hooks/useBooks';
 import { useCart } from '@/hooks/useCart';
 import { useWishlist } from '@/hooks/useWishlist';
-import { Heart, ShoppingCart, Eye, Diamond } from 'lucide-react';
+import { Heart, ShoppingCart, Eye, Diamond, BookOpen } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { removeVolumeFromTitle } from '@/lib/utils';
@@ -303,13 +303,16 @@ const SimpleProductGrid = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
-                          className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-300 hover:scale-110"
-                          title="Add to Cart"
-                        >
-                          <ShoppingCart className="w-4 h-4" />
-                        </button>
+                        {/* Only show Add to Cart for print products */}
+                        {product.product_type === 'print' && (
+                          <button 
+                            onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
+                            className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-300 hover:scale-110"
+                            title="Add to Cart"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -378,19 +381,36 @@ const SimpleProductGrid = () => {
                   </div>
                   
                   <div className="flex flex-col space-y-2 pt-2 mt-auto">
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
-                      className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold py-2 rounded transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
-                    >
-                      <ShoppingCart className="w-3 h-3 inline mr-1" />
-                      Add to Cart
-                    </button>
-                    <button 
-                      onClick={(e) => { e.stopPropagation(); handleBuyNow(product); }}
-                      className="w-full bg-white hover:bg-gray-100 text-black text-xs py-2 rounded transition-all duration-300 hover:shadow-lg"
-                    >
-                      Buy Now
-                    </button>
+                    {/* Digital books: Show Read Now button */}
+                    {product.product_type !== 'print' && product.product_type !== 'merchandise' ? (
+                      <button 
+                        onClick={(e) => { 
+                          e.stopPropagation(); 
+                          navigate(`/product/${product.id}`);
+                        }}
+                        className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold py-2 rounded transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
+                      >
+                        <BookOpen className="w-3 h-3 inline mr-1" />
+                        Read Now
+                      </button>
+                    ) : (
+                      /* Print books: Show Add to Cart + Buy Now */
+                      <>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
+                          className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold py-2 rounded transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
+                        >
+                          <ShoppingCart className="w-3 h-3 inline mr-1" />
+                          Add to Cart
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleBuyNow(product); }}
+                          className="w-full bg-white hover:bg-gray-100 text-black text-xs py-2 rounded transition-all duration-300 hover:shadow-lg"
+                        >
+                          Buy Now
+                        </button>
+                      </>
+                    )}
                     {product.can_unlock_with_coins && (
                       <button className="w-full text-gray-400 hover:text-white text-xs border border-gray-600 hover:border-gray-400 py-2 rounded transition-all duration-300">
                         Unlock with {product.coins || `${Math.round(product.price * 100)} coins`}
