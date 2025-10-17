@@ -11,9 +11,11 @@ import { BookOpen, Calendar, Share2, Bookmark, ChevronLeft, ChevronRight, Bell, 
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAnnouncements } from '@/hooks/useAnnouncements';
+import { EventCalendar } from '@/components/EventCalendar';
+import { ReleaseSchedule } from '@/components/ReleaseSchedule';
+import { FAQ } from '@/components/FAQ';
 
 const Announcements = () => {
-  const [activeTab, setActiveTab] = useState('announcements');
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [contentFilter, setContentFilter] = useState('ALL');
@@ -59,38 +61,6 @@ const Announcements = () => {
       category: announcement.status || 'General'
     }));
 
-  const blogPosts = [
-    {
-      id: 1,
-      title: "The Art of Manga Storytelling: A Deep Dive",
-      description: "Explore the intricate techniques that make manga storytelling so compelling and unique in the world of visual narrative.",
-      image: "/lovable-uploads/97f88fee-e070-4d97-a73a-c747112fa093.png",
-      date: "Jul 10, 2025",
-      category: "Educational",
-      author: "Sarah Chen",
-      readTime: "8 min read"
-    },
-    {
-      id: 2,
-      title: "Top 10 Must-Read Manga Series This Summer",
-      description: "Our curated list of the hottest manga series that should be on every reader's list this summer season.",
-      image: "/lovable-uploads/a0c88e05-5aba-4550-8ee0-7644ad456776.png", 
-      date: "Jul 8, 2025",
-      category: "Reviews",
-      author: "Mike Rodriguez",
-      readTime: "12 min read"
-    },
-    {
-      id: 3,
-      title: "Behind the Scenes: How Manga Gets Translated",
-      description: "Take a look at the complex process of bringing Japanese manga to English-speaking audiences.",
-      image: "/lovable-uploads/b228d232-065b-464f-9ed7-c6fc2545dc27.png",
-      date: "Jul 5, 2025", 
-      category: "Industry",
-      author: "Emma Watson",
-      readTime: "6 min read"
-    }
-  ];
 
   // Filter content based on secondary filter
   const getFilteredContent = (content: any[]) => {
@@ -143,7 +113,6 @@ const Announcements = () => {
 
   const filteredFeaturedAnnouncements = getSortedContent(getSearchedContent(getFilteredContent(featuredAnnouncements)));
   const filteredAllAnnouncements = getSortedContent(getSearchedContent(getFilteredContent(allAnnouncements)));
-  const filteredBlogPosts = getSortedContent(getSearchedContent(getFilteredContent(blogPosts)));
 
   // Enhanced share functionality with multiple options
   const handleShare = (item: any) => {
@@ -270,79 +239,51 @@ const Announcements = () => {
       {/* Page Header */}
       <div className="bg-muted py-8">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold text-foreground mb-2">
-            {activeTab === 'announcements' ? 'Announcements' : 'Blogs'}
-          </h1>
-          <p className="text-muted-foreground">
-            {activeTab === 'announcements' ? 'New Announcement' : 'Latest Articles & Insights'}
-          </p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Announcements</h1>
+          <p className="text-muted-foreground">New Announcement</p>
         </div>
       </div>
 
-      {/* Tab Navigation */}
+      {/* Content Filter */}
       <div className="bg-background border-b">
         <div className="container mx-auto px-4">
-          <div className="flex items-center gap-0">
+          <div className="flex items-center justify-end gap-4 text-sm py-3">
             <button
-              onClick={() => setActiveTab('blogs')}
-              className={`px-6 py-3 text-sm font-semibold border rounded-l-md transition-colors ${
-                activeTab === 'blogs'
-                  ? 'bg-destructive text-destructive-foreground border-destructive'
-                  : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+              onClick={() => setContentFilter('ALL')}
+              className={`transition-colors duration-200 ${
+                contentFilter === 'ALL' 
+                  ? 'text-destructive font-semibold' 
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              BLOGS
+              ALL
             </button>
             <button
-              onClick={() => setActiveTab('announcements')}
-              className={`px-6 py-3 text-sm font-semibold border-l-0 border rounded-r-md transition-colors ${
-                activeTab === 'announcements'
-                  ? 'bg-destructive text-destructive-foreground border-destructive'
-                  : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+              onClick={() => setContentFilter('NEWS')}
+              className={`transition-colors duration-200 ${
+                contentFilter === 'NEWS' 
+                  ? 'text-destructive font-semibold' 
+                  : 'text-muted-foreground hover:text-foreground'
               }`}
             >
-              ANNOUNCEMENT
+              NEWS
             </button>
-            <div className="ml-auto flex items-center gap-4 text-sm">
-              <button
-                onClick={() => setContentFilter('ALL')}
-                className={`transition-colors duration-200 ${
-                  contentFilter === 'ALL' 
-                    ? 'text-destructive font-semibold' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                ALL
-              </button>
-              <button
-                onClick={() => setContentFilter('NEWS')}
-                className={`transition-colors duration-200 ${
-                  contentFilter === 'NEWS' 
-                    ? 'text-destructive font-semibold' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                NEWS
-              </button>
-              <button
-                onClick={() => setContentFilter('ACTIVITIES')}
-                className={`transition-colors duration-200 ${
-                  contentFilter === 'ACTIVITIES' 
-                    ? 'text-destructive font-semibold' 
-                    : 'text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                ACTIVITIES
-              </button>
-            </div>
+            <button
+              onClick={() => setContentFilter('ACTIVITIES')}
+              className={`transition-colors duration-200 ${
+                contentFilter === 'ACTIVITIES' 
+                  ? 'text-destructive font-semibold' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+            >
+              ACTIVITIES
+            </button>
           </div>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-8">
-        {activeTab === 'announcements' ? (
-          <>
-            {/* Featured Updates */}
+        {/* Featured Updates */}
             <section className="mb-12">
               <h2 className="text-2xl font-bold text-foreground mb-6">Featured Updates</h2>
               <div className="grid md:grid-cols-2 gap-6">
@@ -514,125 +455,9 @@ const Announcements = () => {
                 </Button>
               </div>
             </section>
-          </>
-        ) : (
-          <>
-            {/* Blog Posts Grid */}
-            <section className="mb-12">
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-                <h2 className="text-2xl font-bold text-foreground">Latest Blog Posts</h2>
-                <div className="flex items-center gap-4">
-                  <div className="relative">
-                    <Input
-                      type="text"
-                      placeholder="Search blog posts..."
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      className="w-64"
-                    />
-                  </div>
-                  <Button variant="outline" size="sm" onClick={handleSort}>
-                    Sort by Date {sortOrder === 'desc' ? '↓' : '↑'}
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredBlogPosts.length > 0 ? (
-                  filteredBlogPosts.map((post) => (
-                  <Card key={post.id} className="overflow-hidden group hover:shadow-lg transition-shadow">
-                    <div className="relative">
-                      <img 
-                        src={post.image} 
-                        alt={post.title}
-                        className="w-full h-48 object-cover"
-                      />
-                      <Badge className="absolute top-3 left-3" variant="secondary">
-                        {post.category}
-                      </Badge>
-                    </div>
-                    <CardContent className="p-6">
-                      <h3 className="text-xl font-bold text-foreground mb-3 group-hover:text-primary transition-colors">
-                        {post.title}
-                      </h3>
-                      <p className="text-muted-foreground mb-4 line-clamp-3">{post.description}</p>
-                      <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                        <span>By {post.author}</span>
-                        <span>{post.readTime}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          {post.date}
-                        </span>
-                        <Link to={`/announcement/${post.id}`}>
-                          <Button variant="destructive" size="sm">
-                            Read More →
-                          </Button>
-                        </Link>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  ))
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">No announcements found for "{contentFilter}"</p>
-                    <button 
-                      onClick={() => setContentFilter('ALL')}
-                      className="text-destructive text-sm hover:underline mt-2"
-                    >
-                      Show all announcements
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              {/* Pagination for blogs */}
-              <div className="flex justify-center items-center gap-2 mt-8">
-                <Button variant="outline" size="sm" disabled>
-                  <ChevronLeft className="w-4 h-4" />
-                </Button>
-                <Button variant="destructive" size="sm">1</Button>
-                <Button variant="outline" size="sm">2</Button>
-                <Button variant="outline" size="sm">3</Button>
-                <span className="px-2 text-muted-foreground">...</span>
-                <Button variant="outline" size="sm">8</Button>
-                <Button variant="outline" size="sm">
-                  <ChevronRight className="w-4 h-4" />
-                </Button>
-              </div>
-            </section>
-          </>
-        )}
-
-        {/* Stay Updated Newsletter */}
-        <section className="bg-muted rounded-lg p-8 mb-12">
-          <div className="text-center max-w-2xl mx-auto">
-            <div className="w-16 h-16 bg-destructive rounded-full flex items-center justify-center mx-auto mb-6">
-              <Bell className="w-8 h-8 text-destructive-foreground" />
-            </div>
-            <h2 className="text-2xl font-bold text-foreground mb-4">Stay Updated</h2>
-            <p className="text-muted-foreground mb-6">
-              Download some exclusive content and get new update straight from online!
-            </p>
-            <div className="flex gap-3 max-w-md mx-auto">
-              <Input 
-                type="email" 
-                placeholder="Your email address"
-                className="flex-1"
-              />
-              <Button variant="destructive">
-                Subscribe
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mt-3">
-              By subscribing you agree to subscribe to our newsletter. Read our Privacy Policy for more info.
-            </p>
-          </div>
-        </section>
 
         {/* Related Links */}
-        <section>
+        <section className="mb-12">
           <h2 className="text-2xl font-bold text-foreground mb-6">Related Links</h2>
           <div className="grid md:grid-cols-3 gap-6">
             <Dialog>
@@ -656,20 +481,7 @@ const Announcements = () => {
                 </DialogHeader>
                 <div className="space-y-4">
                   <p className="text-muted-foreground">Upcoming manga events and activities:</p>
-                  <div className="space-y-3">
-                    <div className="border-l-4 border-destructive pl-4">
-                      <h4 className="font-semibold">Summer Manga Festival 2025</h4>
-                      <p className="text-sm text-muted-foreground">July 3, 2025 - Tokyo Convention Center</p>
-                    </div>
-                    <div className="border-l-4 border-destructive pl-4">
-                      <h4 className="font-semibold">Manga Creator Meetup</h4>
-                      <p className="text-sm text-muted-foreground">July 15, 2025 - Virtual Event</p>
-                    </div>
-                    <div className="border-l-4 border-destructive pl-4">
-                      <h4 className="font-semibold">Annual Manga Awards</h4>
-                      <p className="text-sm text-muted-foreground">August 10, 2025 - Online Ceremony</p>
-                    </div>
-                  </div>
+                  <EventCalendar limit={3} />
                 </div>
               </DialogContent>
             </Dialog>
@@ -702,20 +514,7 @@ const Announcements = () => {
                 </DialogHeader>
                 <div className="space-y-4">
                   <p className="text-muted-foreground">Upcoming manga releases:</p>
-                  <div className="space-y-3">
-                    <div className="border-l-4 border-destructive pl-4">
-                      <h4 className="font-semibold">Demon Slayer Volume 25</h4>
-                      <p className="text-sm text-muted-foreground">July 5, 2025</p>
-                    </div>
-                    <div className="border-l-4 border-destructive pl-4">
-                      <h4 className="font-semibold">Naruto Anniversary Edition</h4>
-                      <p className="text-sm text-muted-foreground">July 6, 2025</p>
-                    </div>
-                    <div className="border-l-4 border-destructive pl-4">
-                      <h4 className="font-semibold">One Piece Volume 105</h4>
-                      <p className="text-sm text-muted-foreground">July 12, 2025</p>
-                    </div>
-                  </div>
+                  <ReleaseSchedule limit={3} />
                 </div>
               </DialogContent>
             </Dialog>
@@ -742,20 +541,7 @@ const Announcements = () => {
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
-                  <div className="space-y-4">
-                    <div>
-                      <h4 className="font-semibold mb-2">How do I read manga online?</h4>
-                      <p className="text-sm text-muted-foreground">Simply create an account and browse our digital library. You can read on any device.</p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-2">When are new chapters released?</h4>
-                      <p className="text-sm text-muted-foreground">New chapters are typically released weekly. Check our announcements for specific dates.</p>
-                    </div>
-                    <div>
-                      <h4 className="font-semibold mb-2">Can I download manga for offline reading?</h4>
-                      <p className="text-sm text-muted-foreground">Yes, premium subscribers can download up to 10 chapters for offline reading.</p>
-                    </div>
-                  </div>
+                  <FAQ limit={3} />
                   <Link to="/faq">
                     <Button variant="destructive" className="w-full">
                       View All FAQs
@@ -764,6 +550,32 @@ const Announcements = () => {
                 </div>
               </DialogContent>
             </Dialog>
+          </div>
+        </section>
+
+        {/* Stay Updated Newsletter */}
+        <section className="bg-muted rounded-lg p-8 mb-12">
+          <div className="text-center max-w-2xl mx-auto">
+            <div className="w-16 h-16 bg-destructive rounded-full flex items-center justify-center mx-auto mb-6">
+              <Bell className="w-8 h-8 text-destructive-foreground" />
+            </div>
+            <h2 className="text-2xl font-bold text-foreground mb-4">Stay Updated</h2>
+            <p className="text-muted-foreground mb-6">
+              Download some exclusive content and get new update straight from online!
+            </p>
+            <div className="flex gap-3 max-w-md mx-auto">
+              <Input 
+                type="email" 
+                placeholder="Your email address"
+                className="flex-1"
+              />
+              <Button variant="destructive">
+                Subscribe
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-3">
+              By subscribing you agree to subscribe to our newsletter. Read our Privacy Policy for more info.
+            </p>
           </div>
         </section>
       </div>
