@@ -80,7 +80,7 @@ export const DynamicHeroSection = ({
           {title.includes('Crossed Heart') ? (
             <>
               {title.split('Crossed Heart')[0]}
-              <span className="text-orange-400">Crossed Heart</span>
+              <span className="text-red-500">Crossed Heart</span>
               {title.split('Crossed Heart')[1]}
             </>
           ) : (
