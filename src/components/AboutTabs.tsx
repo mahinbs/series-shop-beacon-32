@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useScrollAnimation } from '@/hooks/useScrollAnimation';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AboutUsService, type AboutUsSection } from '@/services/aboutUsService';
 const AboutTabs = () => {
   const {
     elementRef,
     isVisible
   } = useScrollAnimation(0.2);
-  const tabData = {
+  
+  const [tabData, setTabData] = useState({
     about: {
       title: "About Us",
       content: {
@@ -55,7 +57,41 @@ const AboutTabs = () => {
       },
       image: "/lovable-uploads/cf6711d2-4c1f-4104-a0a1-1b856886e610.png"
     }
-  };
+  });
+
+  // Load data from Supabase (managed by admin panel)
+  useEffect(() => {
+    const loadSections = async () => {
+      try {
+        const sections = await AboutUsService.getSections();
+        const formattedData = {};
+        
+        sections.forEach(section => {
+          formattedData[section.section_key] = {
+            title: section.title,
+            content: {
+              heading: section.heading,
+              text: section.main_text,
+              subtext: section.subtext || '',
+              highlights: section.highlights || [],
+              additionalText: section.additional_text || '',
+              closingText: section.closing_text || ''
+            },
+            image: section.image_url
+          };
+        });
+        
+        if (Object.keys(formattedData).length > 0) {
+          setTabData(formattedData);
+          console.log('✅ Loaded About Us sections from Supabase:', formattedData);
+        }
+      } catch (error) {
+        console.error('Error loading about us sections:', error);
+      }
+    };
+    
+    loadSections();
+  }, []);
   return <section ref={elementRef} className={`py-16 bg-black transition-all duration-1000 transform ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
       <div className="container mx-auto px-4">
         <Tabs defaultValue="about" className="w-full">

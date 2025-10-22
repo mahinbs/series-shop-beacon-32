@@ -22,6 +22,7 @@ import PrintBookManager from './PrintBookManager';
 import { OurJourneyManager } from './OurJourneyManager';
 import CreativeSnippetsManager from './CreativeSnippetsManager';
 import { AnnouncementSectionsManager } from './AnnouncementSectionsManager';
+import { AboutUsManager } from './AboutUsManager';
 import { useCMS } from '@/hooks/useCMS';
 import CirclesAdmin from './CirclesAdmin';
 import { useToast } from '@/hooks/use-toast';
@@ -248,7 +249,17 @@ export function PageEditor({ selectedPage }: PageEditorProps) {
         </div>
       );
     case 'about-us':
-      return renderGenericPage('about-us', 'About Us');
+      return (
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-xl font-semibold mb-4">About Us Management</h2>
+            <p className="text-muted-foreground mb-6">
+              Manage content and settings for the about us page
+            </p>
+          </div>
+          <AboutUsManager />
+        </div>
+      );
     case 'our-journey':
       return (
         <div className="space-y-6">
