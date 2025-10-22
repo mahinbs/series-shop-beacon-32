@@ -1003,7 +1003,7 @@ const PopularRecommendations = () => {
                         {genre.books.map((book, bookIndex) => (
                           <div
                             key={`${genre.name}-${bookIndex}`}
-                            className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[400px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30"
+                            className="group bg-gradient-to-br from-gray-800 to-gray-900 rounded-xl overflow-hidden border border-gray-700/50 min-h-[560px] transition-all duration-700 transform hover:scale-105 hover:shadow-2xl hover:shadow-orange-500/20 hover:-translate-y-2 hover:border-orange-500/30"
                             onMouseEnter={() =>
                               setHoveredBook(`${genre.name}-${bookIndex}`)
                             }
@@ -1013,7 +1013,7 @@ const PopularRecommendations = () => {
                               <img
                                 src={book.imageUrl}
                                 alt={book.title}
-                                className="w-full h-64 object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:brightness-110"
+                                className="w-full h-96 object-cover transition-all duration-700 ease-in-out group-hover:scale-110 group-hover:brightness-110"
                               />
 
                             {/* Type Badge */}
