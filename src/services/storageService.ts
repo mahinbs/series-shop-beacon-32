@@ -69,6 +69,19 @@ export class StorageService {
   }
 
   /**
+   * Upload a banner image to the comic-pages bucket
+   */
+  static async uploadBannerImage(file: File): Promise<UploadResult> {
+    const folder = 'banner';
+    const timestamp = Date.now();
+    const randomId = Math.random().toString(36).substring(2, 15);
+    const fileExtension = file.name.split('.').pop();
+    const fileName = `banner-${timestamp}-${randomId}.${fileExtension}`;
+    
+    return this.uploadFile(file, folder, fileName, this.COMIC_BUCKET_NAME);
+  }
+
+  /**
    * Upload a comic page image
    */
   static async uploadComicPage(

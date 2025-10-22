@@ -25,7 +25,7 @@ interface BannerCarouselProps {
 const BannerCarousel = ({ 
   banners = [], 
   autoPlay = true, 
-  autoPlayInterval = 5000 
+  autoPlayInterval = 10000 
 }: BannerCarouselProps) => {
   const { elementRef, isVisible } = useScrollAnimation(0.2);
   const { banners: heroBanners, isLoading } = useHeroBanners();
