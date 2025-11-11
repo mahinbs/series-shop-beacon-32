@@ -251,15 +251,13 @@ const SimpleProductGrid = () => {
                         <p className="text-sm text-gray-300">by {product.author}</p>
                       )}
                       <p className="text-xs text-gray-400 uppercase tracking-wide">{product.category}</p>
-                      {/* Only show price for print products */}
-                      {product.product_type === 'print' && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-xl font-bold text-white">${product.price}</span>
-                          {product.original_price && (
-                            <span className="text-sm text-gray-400 line-through">${product.original_price}</span>
-                          )}
-                        </div>
-                      )}
+                      {/* Show price for all products */}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xl font-bold text-white">${product.price}</span>
+                        {product.original_price && (
+                          <span className="text-sm text-gray-400 line-through">${product.original_price}</span>
+                        )}
+                      </div>
                       {product.description && (
                         <p className="text-xs text-gray-300 line-clamp-2 mt-2">{product.description}</p>
                       )}
@@ -271,16 +269,24 @@ const SimpleProductGrid = () => {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        {/* Only show Add to Cart for print products */}
-                        {product.product_type === 'print' && (
-                          <button 
-                            onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
-                            className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-300 hover:scale-110"
-                            title="Add to Cart"
-                          >
-                            <ShoppingCart className="w-4 h-4" />
-                          </button>
-                        )}
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
+                          className="bg-red-600 hover:bg-red-700 text-white p-2 rounded-full transition-all duration-300 hover:scale-110"
+                          title="Add to Cart"
+                        >
+                          <ShoppingCart className="w-4 h-4" />
+                        </button>
+                        <button 
+                          onClick={(e) => { e.stopPropagation(); handleWishlistToggle(product); }}
+                          className={`p-2 rounded-full transition-all duration-300 hover:scale-110 ${
+                            isInWishlist(product.id)
+                              ? "text-red-500 hover:text-red-400 hover:bg-red-500/20"
+                              : "text-gray-400 hover:text-red-500 hover:bg-red-500/10"
+                          }`}
+                          title={isInWishlist(product.id) ? "Remove from Wishlist" : "Add to Wishlist"}
+                        >
+                          <Heart className="w-4 h-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -334,79 +340,40 @@ const SimpleProductGrid = () => {
                   )}
                   <p className="text-gray-500 text-xs uppercase tracking-wide">{product.category}</p>
                   
-                  {/* Only show price for print products and merchandise */}
-                  {(product.product_type === 'print' || product.product_type === 'merchandise') && (
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-white font-bold text-lg">${product.price}</span>
-                        {product.original_price && (
-                          <span className="text-gray-500 line-through text-sm">${product.original_price}</span>
-                        )}
+                  {/* Show price for all products */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-white font-bold text-lg">${product.price}</span>
+                      {product.original_price && (
+                        <span className="text-gray-500 line-through text-sm">${product.original_price}</span>
+                      )}
+                    </div>
+                    {product.can_unlock_with_coins && (
+                      <div className="text-gray-400 text-xs">
+                        {product.coins || `${Math.round(product.price * 100)} coins`}
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Show coins for digital products that can be unlocked */}
-                  {product.product_type !== 'print' && product.product_type !== 'merchandise' && product.can_unlock_with_coins && (
-                    <div className="text-gray-400 text-xs">
-                      {product.coins || `${Math.round(product.price * 100)} coins`}
-                    </div>
-                  )}
+                    )}
+                  </div>
                   
                   <div className="flex flex-col space-y-2 pt-2 mt-auto">
-                    {/* Digital books: Show Read Now button */}
-                    {product.product_type !== 'print' && product.product_type !== 'merchandise' ? (
-                      <button 
-                        onClick={async (e) => { 
-                          e.stopPropagation();
-                          try {
-                            // Fetch chapters for this book
-                            const chapters = await ChapterService.getBookChapters(product.id);
-                            
-                            if (chapters && chapters.length > 0) {
-                              // Navigate to first chapter
-                              const firstChapter = chapters[0];
-                              navigate(`/chapter/${firstChapter.id}`);
-                            } else {
-                              // Show toast if no chapters available
-                              toast({
-                                title: "No Chapters Available",
-                                description: "This book doesn't have any chapters yet. Please check back later.",
-                                variant: "destructive",
-                              });
-                            }
-                          } catch (error) {
-                            console.error('Error fetching chapters:', error);
-                            toast({
-                              title: "Error",
-                              description: "Failed to load chapters. Please try again.",
-                              variant: "destructive",
-                            });
-                          }
-                        }}
-                        className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold py-2 rounded transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
-                      >
-                        <BookOpen className="w-3 h-3 inline mr-1" />
-                        Read Now
-                      </button>
-                    ) : (
-                      /* Print books: Show Add to Cart + Buy Now */
-                      <>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
-                          className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold py-2 rounded transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
-                        >
-                          <ShoppingCart className="w-3 h-3 inline mr-1" />
-                          Add to Cart
-                        </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleBuyNow(product); }}
-                          className="w-full bg-white hover:bg-gray-100 text-black text-xs py-2 rounded transition-all duration-300 hover:shadow-lg"
-                        >
-                          Buy Now
-                        </button>
-                      </>
-                    )}
+                    {/* Add to Cart button for all products */}
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleAddToCart(product); }}
+                      className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white text-xs font-semibold py-2 rounded transition-all duration-300 hover:shadow-lg hover:shadow-red-500/30"
+                    >
+                      <ShoppingCart className="w-3 h-3 inline mr-1" />
+                      Add to Cart
+                    </button>
+                    
+                    {/* Buy Now button for all products */}
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); handleBuyNow(product); }}
+                      className="w-full bg-white hover:bg-gray-100 text-black text-xs py-2 rounded transition-all duration-300 hover:shadow-lg"
+                    >
+                      Buy Now
+                    </button>
+                    
+                    {/* Unlock with coins button if available */}
                     {product.can_unlock_with_coins && (
                       <button className="w-full text-gray-400 hover:text-white text-xs border border-gray-600 hover:border-gray-400 py-2 rounded transition-all duration-300">
                         Unlock with {product.coins || `${Math.round(product.price * 100)} coins`}

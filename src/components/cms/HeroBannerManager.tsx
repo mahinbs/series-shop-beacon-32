@@ -8,6 +8,7 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Trash2, Plus, Save, Edit, Upload, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { StorageService } from '@/services/storageService';
 
 interface BannerForm {
   title: string;
@@ -53,6 +54,20 @@ export const HeroBannerManager = () => {
     try {
       if (editingId) {
         console.log('Updating banner with ID:', editingId);
+        
+        // If updating and image URL changed, clean up old image
+        if (formData.image_url && !StorageService.isPreviewUrl(formData.image_url)) {
+          // Find the old banner to get the old image path
+          const oldBanner = banners.find(b => b.id === editingId);
+          if (oldBanner && oldBanner.image_url !== formData.image_url) {
+            const oldPath = StorageService.extractPathFromUrl(oldBanner.image_url);
+            if (oldPath) {
+              // Delete old image (don't wait for this to complete)
+              StorageService.deleteFile(oldPath, 'comic-pages').catch(console.error);
+            }
+          }
+        }
+        
         await updateBanner(editingId, formData);
         toast({
           title: "Success",
@@ -114,23 +129,37 @@ export const HeroBannerManager = () => {
   const handleImageUpload = async (file: File) => {
     setUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-      
-      // Create a temporary URL for immediate preview
-      const tempUrl = URL.createObjectURL(file);
+      // Create a temporary preview URL for immediate display
+      const tempUrl = StorageService.createPreviewUrl(file);
       setFormData(prev => ({ ...prev, image_url: tempUrl }));
+      
+      // Upload to Supabase Storage
+      const uploadResult = await StorageService.uploadBannerImage(file);
+      
+      if (uploadResult.error) {
+        throw new Error(uploadResult.error);
+      }
+      
+      // Update form with the actual Supabase URL
+      setFormData(prev => ({ ...prev, image_url: uploadResult.url }));
+      
+      // Clean up temporary URL
+      StorageService.revokePreviewUrl(tempUrl);
       
       toast({
         title: "Image uploaded",
-        description: "Image has been uploaded successfully",
+        description: "Image has been uploaded successfully to Supabase Storage",
       });
     } catch (error) {
+      console.error('Upload error:', error);
       toast({
         title: "Upload failed",
-        description: "Failed to upload image. Please try again.",
+        description: error instanceof Error ? error.message : "Failed to upload image. Please try again.",
         variant: "destructive",
       });
+      
+      // Reset to empty if upload failed
+      setFormData(prev => ({ ...prev, image_url: '' }));
     } finally {
       setUploading(false);
     }
@@ -162,16 +191,16 @@ export const HeroBannerManager = () => {
           <div>
             <CardTitle>Hero Banners Management</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Create up to 3 rotating banner slides for your home page
+              Create up to 4 rotating banner slides for your home page
             </p>
           </div>
           <Button 
             onClick={() => setShowAddForm(true)}
-            disabled={banners.length >= 3}
+            disabled={banners.length >= 4}
             className="flex items-center gap-2"
           >
             <Plus className="h-4 w-4" />
-            Add Banner {banners.length >= 3 && "(Max 3)"}
+            Add Banner {banners.length >= 4 && "(Max 4)"}
           </Button>
         </CardHeader>
         <CardContent>
@@ -181,7 +210,7 @@ export const HeroBannerManager = () => {
                 No hero banners created yet. Start by adding your first banner to display on the home page carousel.
               </p>
               <p className="text-sm text-muted-foreground">
-                You can add up to 3 hero banners that will be displayed as a rotating carousel on your website's home page.
+                You can add up to 4 hero banners that will be displayed as a rotating carousel on your website's home page.
               </p>
             </div>
           ) : (
@@ -308,7 +337,7 @@ export const HeroBannerManager = () => {
                   id="display_order"
                   type="number"
                   min="1"
-                  max="3"
+                  max="4"
                   value={formData.display_order}
                   onChange={(e) => setFormData({ ...formData, display_order: parseInt(e.target.value) })}
                   required

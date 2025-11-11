@@ -522,12 +522,12 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                         {bookItem.original_price && (
                           <span className="text-sm text-gray-400 line-through">${bookItem.original_price}</span>
                         )}
-                      </div>
+                  </div>
                       {bookItem.description && (
                         <p className="text-xs text-gray-300 line-clamp-2 mt-2">{bookItem.description}</p>
                       )}
-                    </div>
-                  </div>
+                        </div>
+                      </div>
 
                   {/* Badges */}
                   <div className="absolute top-3 left-3 space-y-2 z-10">
@@ -648,13 +648,13 @@ const SeriesGrid = ({ appliedFilters = [], searchTerm = '', sortBy = 'Newest Fir
                         {item.original_price && (
                           <span className="text-sm text-gray-400 line-through">${item.original_price}</span>
                         )}
-                      </div>
+                  </div>
                       {item.description && (
                         <p className="text-xs text-gray-300 line-clamp-2 mt-2">{item.description}</p>
                       )}
                       <p className="text-xs text-gray-400">Stock: {item.stock_quantity || 0}</p>
-                    </div>
-                  </div>
+                        </div>
+                      </div>
 
                   {/* Badges */}
                   <div className="absolute top-3 left-3 space-y-2 z-10">
